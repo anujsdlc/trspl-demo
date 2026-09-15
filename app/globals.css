@@ -1,26 +1,207 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Ink & Paper — premium editorial base */
+  --color-ink: #0A0A0A;
+  --color-ink-soft: #1A1A1A;
+  --color-ink-muted: #6B6B6B;
+  --color-ink-faint: #9A9A9A;
+
+  --color-paper: #F5EFE4;
+  --color-paper-warm: #EDE4D0;
+  --color-cream: #FAF6EE;
+  --color-line: #E5DCC5;
+  --color-line-strong: #C9BEA0;
+
+  /* Brand — TRS Relay red family */
+  --color-crimson: #C42127;
+  --color-crimson-deep: #8B1519;
+  --color-crimson-soft: #F5D9DA;
+
+  /* Accents — Gen-Z electric pop */
+  --color-mustard: #F1E71D;
+  --color-lime: #D4FF3A;
+  --color-coral: #FF5B3E;
+  --color-cobalt: #2E4BFF;
+  --color-mint: #A8E6B7;
+
+  /* Semantic */
+  --color-success: #16A34A;
+  --color-warning: #EAB308;
+  --color-danger: #DC2626;
+  --color-info: #2563EB;
+
+  --font-serif: 'Fraunces', 'Playfair Display', Georgia, serif;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --radius-sm: 0.375rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1.25rem;
+  --radius-xl: 2rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+html, body {
+  background: var(--color-cream);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-feature-settings: 'ss01', 'cv11';
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+.font-serif { font-family: var(--font-serif); font-feature-settings: 'ss01', 'ss02'; letter-spacing: -0.02em; }
+.font-mono { font-family: var(--font-mono); }
+
+.text-balance { text-wrap: balance; }
+.text-pretty { text-wrap: pretty; }
+
+::selection { background: var(--color-mustard); color: var(--color-ink); }
+
+/* Scrollbars */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-line-strong); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-ink-muted); }
+
+/* Marquee */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
 }
+.animate-marquee { animation: marquee 40s linear infinite; }
+
+@keyframes marqueeSlow {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.animate-marquee-slow { animation: marqueeSlow 80s linear infinite; }
+
+/* Ticker pulse */
+@keyframes pulseGlow {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.9); }
+}
+.pulse-dot { animation: pulseGlow 1.6s ease-in-out infinite; }
+
+/* Heart pop */
+@keyframes heartPop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.35); }
+  70% { transform: scale(0.92); }
+  100% { transform: scale(1); }
+}
+.heart-pop { animation: heartPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+/* Book hover lift */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.animate-float { animation: float 6s ease-in-out infinite; }
+
+/* Grid pattern */
+.bg-grid {
+  background-image:
+    linear-gradient(to right, rgba(10,10,10,0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(10,10,10,0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+.bg-grid-fine {
+  background-image:
+    linear-gradient(to right, rgba(10,10,10,0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(10,10,10,0.03) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Book card 3D tilt */
+.book-card {
+  transform-style: preserve-3d;
+  transition: transform 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+}
+.book-card:hover {
+  transform: translateY(-10px) rotateX(2deg) rotateY(-2deg);
+}
+.book-cover {
+  box-shadow:
+    0 1px 2px rgba(10,10,10,0.06),
+    0 10px 30px rgba(10,10,10,0.12),
+    inset 3px 0 8px rgba(0,0,0,0.15),
+    inset -1px 0 3px rgba(255,255,255,0.1);
+  transition: box-shadow 0.4s ease;
+}
+.book-card:hover .book-cover {
+  box-shadow:
+    0 4px 8px rgba(10,10,10,0.08),
+    0 24px 48px rgba(10,10,10,0.18),
+    inset 3px 0 8px rgba(0,0,0,0.15);
+}
+
+/* Loyalty card holographic */
+.holo {
+  background:
+    linear-gradient(120deg, rgba(255,255,255,0.15) 0%, transparent 40%, rgba(255,255,255,0.1) 60%, transparent 100%),
+    linear-gradient(135deg, #C42127 0%, #8B1519 50%, #4A0A0C 100%);
+  position: relative;
+  overflow: hidden;
+}
+.holo::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(45deg,
+    transparent 30%,
+    rgba(241, 231, 29, 0.15) 45%,
+    rgba(255, 255, 255, 0.3) 50%,
+    rgba(241, 231, 29, 0.15) 55%,
+    transparent 70%);
+  transform: translateX(-100%);
+  transition: transform 0.8s;
+}
+.holo:hover::before {
+  transform: translateX(100%);
+}
+
+/* Live sync bar */
+@keyframes syncSlide {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+.sync-slide { animation: syncSlide 2s ease-in-out infinite; }
+
+/* Skeleton shimmer */
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.shimmer {
+  background: linear-gradient(90deg, #eee 25%, #f5f5f5 50%, #eee 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Editorial number */
+.editorial-num {
+  font-family: var(--font-serif);
+  font-weight: 300;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.04em;
+}
+
+/* Subtle noise overlay */
+.noise-bg {
+  position: relative;
+}
+.noise-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E");
+  opacity: 0.04;
+  mix-blend-mode: multiply;
+}
+
+.container-editorial { max-width: 1400px; margin-inline: auto; padding-inline: 1.5rem; }
+@media (min-width: 768px) { .container-editorial { padding-inline: 3rem; } }
+@media (min-width: 1280px) { .container-editorial { padding-inline: 5rem; } }

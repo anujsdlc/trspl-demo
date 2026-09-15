@@ -17,8 +17,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${inter.variable} ${fraunces.variable} ${mono.variable} h-full antialiased`}
       style={{
-        // Override globals.css font vars with the loaded Google Fonts
-        // @ts-expect-error CSS vars
         '--font-sans': `var(--font-inter), ui-sans-serif, system-ui, sans-serif`,
         '--font-serif': `var(--font-fraunces), Georgia, serif`,
         '--font-mono': `var(--font-mono-jb), ui-monospace, monospace`,

@@ -29,7 +29,14 @@ export function ProductActions({ product }: { product: Product }) {
         }`}
         aria-label="Favourite"
       >
-        <Heart className={`w-5 h-5 ${fav ? 'fill-[color:var(--color-crimson)] stroke-[color:var(--color-crimson)] heart-pop' : ''}`} />
+        <Heart
+          className={`w-5 h-5 ${fav ? 'heart-pop' : ''}`}
+          strokeWidth={2.25}
+          style={{
+            fill: fav ? 'var(--color-crimson)' : 'none',
+            stroke: fav ? 'var(--color-crimson)' : 'var(--color-ink)',
+          }}
+        />
       </button>
     </div>
   );

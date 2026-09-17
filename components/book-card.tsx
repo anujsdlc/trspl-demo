@@ -43,12 +43,16 @@ export function BookCard({ product, size = 'md', showStock = true, storeCount = 
           )}
           <button
             onClick={(e) => { e.preventDefault(); toggle(product.id); }}
-            className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center bg-white/90 hover:bg-white rounded-full backdrop-blur-sm transition shadow-sm"
+            className="absolute top-2 right-2 w-9 h-9 flex items-center justify-center bg-white hover:bg-white rounded-full transition shadow-[0_2px_8px_rgba(0,0,0,0.15),0_1px_2px_rgba(0,0,0,0.1)]"
             aria-label="Save"
           >
             <Heart
-              className={`w-4 h-4 transition ${fav ? 'fill-[color:var(--color-crimson)] stroke-[color:var(--color-crimson)] heart-pop' : 'stroke-[color:var(--color-ink)]'}`}
-              strokeWidth={2}
+              className={`w-[18px] h-[18px] transition ${fav ? 'heart-pop' : ''}`}
+              strokeWidth={2.25}
+              style={{
+                fill: fav ? 'var(--color-crimson)' : 'none',
+                stroke: fav ? 'var(--color-crimson)' : 'var(--color-ink)',
+              }}
             />
           </button>
         </div>

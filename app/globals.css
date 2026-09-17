@@ -1,39 +1,43 @@
 @import "tailwindcss";
 
 @theme inline {
-  /* Ink & Paper — premium editorial base */
-  --color-ink: #0A0A0A;
-  --color-ink-soft: #1A1A1A;
-  --color-ink-muted: #6B6B6B;
-  --color-ink-faint: #9A9A9A;
+  /* Apple-style neutrals — pure white base */
+  --color-ink: #1D1D1F;
+  --color-ink-soft: #424245;
+  --color-ink-muted: #86868B;
+  --color-ink-faint: #C7C7CC;
 
-  --color-paper: #F5EFE4;
-  --color-paper-warm: #EDE4D0;
-  --color-cream: #FAF6EE;
-  --color-line: #E5DCC5;
-  --color-line-strong: #C9BEA0;
+  --color-paper: #F5F5F7;
+  --color-paper-warm: #EEEEEE;
+  --color-cream: #FFFFFF;
+  --color-line: #E5E5EA;
+  --color-line-strong: #D2D2D7;
 
-  /* Brand — TRS Relay red family */
+  /* Brand — Relay red (single accent) */
   --color-crimson: #C42127;
   --color-crimson-deep: #8B1519;
-  --color-crimson-soft: #F5D9DA;
+  --color-crimson-soft: #FCE9EA;
 
-  /* Accents — Gen-Z electric pop */
-  --color-mustard: #F1E71D;
-  --color-lime: #D4FF3A;
-  --color-coral: #FF5B3E;
-  --color-cobalt: #2E4BFF;
-  --color-mint: #A8E6B7;
+  /* Legacy accents mapped into the red-only palette so no component
+     needs surgery. Yellow/blue/green/mint pops become crimson variants
+     or neutral tones. */
+  --color-mustard: #C42127;
+  --color-lime: #FCE9EA;
+  --color-coral: #8B1519;
+  --color-cobalt: #1D1D1F;
+  --color-mint: #F5F5F7;
 
-  /* Semantic */
+  /* Semantic — keep for status where crimson can't carry meaning */
   --color-success: #16A34A;
-  --color-warning: #EAB308;
-  --color-danger: #DC2626;
-  --color-info: #2563EB;
+  --color-warning: #B45309;
+  --color-danger: #C42127;
+  --color-info: #1D1D1F;
 
-  --font-serif: 'Fraunces', 'Playfair Display', Georgia, serif;
-  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  /* Fonts — Inter throughout, with a display slot for Relay-style headings */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Text', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', ui-sans-serif, system-ui, sans-serif;
+  --font-serif: 'Instrument Serif', 'New York', ui-serif, Georgia, serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
 
   --radius-sm: 0.375rem;
   --radius-md: 0.75rem;
@@ -48,15 +52,23 @@ html, body {
   color: var(--color-ink);
   font-family: var(--font-sans);
   font-feature-settings: 'ss01', 'cv11';
+  letter-spacing: -0.011em;
 }
 
-.font-serif { font-family: var(--font-serif); font-feature-settings: 'ss01', 'ss02'; letter-spacing: -0.02em; }
-.font-mono { font-family: var(--font-mono); }
+/* Relay-style display: Inter Black, tight tracking, sharp edges.
+   Overrides Tailwind's default .font-serif so no page needs to change. */
+.font-serif {
+  font-family: var(--font-display);
+  font-weight: 900;
+  letter-spacing: -0.045em;
+  font-feature-settings: 'ss01', 'cv11';
+}
+.font-mono { font-family: var(--font-mono); letter-spacing: 0; }
 
 .text-balance { text-wrap: balance; }
 .text-pretty { text-wrap: pretty; }
 
-::selection { background: var(--color-mustard); color: var(--color-ink); }
+::selection { background: var(--color-crimson); color: #FFFFFF; }
 
 /* Scrollbars */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
@@ -103,14 +115,14 @@ html, body {
 /* Grid pattern */
 .bg-grid {
   background-image:
-    linear-gradient(to right, rgba(10,10,10,0.04) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(10,10,10,0.04) 1px, transparent 1px);
+    linear-gradient(to right, rgba(29,29,31,0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(29,29,31,0.05) 1px, transparent 1px);
   background-size: 40px 40px;
 }
 .bg-grid-fine {
   background-image:
-    linear-gradient(to right, rgba(10,10,10,0.03) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(10,10,10,0.03) 1px, transparent 1px);
+    linear-gradient(to right, rgba(29,29,31,0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(29,29,31,0.04) 1px, transparent 1px);
   background-size: 20px 20px;
 }
 
@@ -124,20 +136,20 @@ html, body {
 }
 .book-cover {
   box-shadow:
-    0 1px 2px rgba(10,10,10,0.06),
-    0 10px 30px rgba(10,10,10,0.12),
+    0 1px 2px rgba(29,29,31,0.06),
+    0 10px 30px rgba(29,29,31,0.12),
     inset 3px 0 8px rgba(0,0,0,0.15),
     inset -1px 0 3px rgba(255,255,255,0.1);
   transition: box-shadow 0.4s ease;
 }
 .book-card:hover .book-cover {
   box-shadow:
-    0 4px 8px rgba(10,10,10,0.08),
-    0 24px 48px rgba(10,10,10,0.18),
+    0 4px 8px rgba(29,29,31,0.08),
+    0 24px 48px rgba(29,29,31,0.18),
     inset 3px 0 8px rgba(0,0,0,0.15);
 }
 
-/* Loyalty card holographic */
+/* Loyalty card — crimson holographic (kept, brand card) */
 .holo {
   background:
     linear-gradient(120deg, rgba(255,255,255,0.15) 0%, transparent 40%, rgba(255,255,255,0.1) 60%, transparent 100%),
@@ -151,9 +163,9 @@ html, body {
   inset: 0;
   background: linear-gradient(45deg,
     transparent 30%,
-    rgba(241, 231, 29, 0.15) 45%,
-    rgba(255, 255, 255, 0.3) 50%,
-    rgba(241, 231, 29, 0.15) 55%,
+    rgba(255, 255, 255, 0.18) 45%,
+    rgba(255, 255, 255, 0.35) 50%,
+    rgba(255, 255, 255, 0.18) 55%,
     transparent 70%);
   transform: translateX(-100%);
   transition: transform 0.8s;
@@ -180,25 +192,32 @@ html, body {
   animation: shimmer 1.5s infinite;
 }
 
-/* Editorial number */
+/* Editorial number — kept elegant serif for tabular metrics */
 .editorial-num {
   font-family: var(--font-serif);
-  font-weight: 300;
+  font-weight: 400;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.03em;
+}
+
+/* Slanted Relay-style display accent — apply with className="relay-display" */
+.relay-display {
+  font-family: var(--font-display);
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  transform: skewX(-6deg);
+  display: inline-block;
 }
 
 /* Subtle noise overlay */
-.noise-bg {
-  position: relative;
-}
+.noise-bg { position: relative; }
 .noise-bg::after {
   content: '';
   position: absolute;
   inset: 0;
   pointer-events: none;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E");
-  opacity: 0.04;
+  opacity: 0.02;
   mix-blend-mode: multiply;
 }
 

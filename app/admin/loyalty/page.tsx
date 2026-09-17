@@ -1,6 +1,7 @@
-import { TIERS, BONUSES, CATEGORY_MULTIPLIER, VOLUME_TIERS } from '@/lib/loyalty';
+import Link from 'next/link';
+import { TIERS, CATEGORY_MULTIPLIER, VOLUME_TIERS } from '@/lib/loyalty';
 import { inr } from '@/lib/utils';
-import { Award, Users, TrendingUp, Gift, Sparkles, Target, Zap, Plus, Play, MoreHorizontal, Edit2 } from 'lucide-react';
+import { Award, Users, TrendingUp, Gift, Sparkles, Target, Zap, Plus, MoreHorizontal, Edit2, ArrowRight } from 'lucide-react';
 
 const MOCK_MEMBERS = [
   { id: 'TRS-8827-4413-9021', name: 'Anjali Krishnan',    tier: 'PLATINUM', points: 12480, ytd: 47200, city: 'Bangalore', join: '2024-04-11' },
@@ -37,7 +38,9 @@ export default function LoyaltyAdmin() {
           <h1 className="font-serif text-4xl leading-tight tracking-tight">Loyalty Console</h1>
         </div>
         <div className="flex items-center gap-2">
-          <button className="h-9 px-3 border border-[color:var(--color-line)] rounded-md text-xs hover:bg-[color:var(--color-paper)]">Export members</button>
+          <Link href="/admin/loyalty/members" className="h-9 px-3 border border-[color:var(--color-line)] rounded-md text-xs hover:bg-[color:var(--color-paper)] inline-flex items-center gap-1.5">
+            <Users className="w-3.5 h-3.5" /> All members <ArrowRight className="w-3 h-3" />
+          </Link>
           <button className="h-9 px-4 bg-[color:var(--color-ink)] text-[color:var(--color-cream)] rounded-md text-xs font-medium hover:bg-[color:var(--color-crimson)] inline-flex items-center gap-1.5">
             <Plus className="w-3.5 h-3.5" /> New campaign
           </button>
@@ -89,7 +92,9 @@ export default function LoyaltyAdmin() {
                 <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)]">Members</div>
                 <div className="font-serif text-2xl mt-1">Top Skyliners</div>
               </div>
-              <button className="text-xs border-b border-[color:var(--color-ink)] hover:text-[color:var(--color-crimson)]">All members</button>
+              <Link href="/admin/loyalty/members" className="text-xs border-b border-[color:var(--color-ink)] hover:text-[color:var(--color-crimson)] inline-flex items-center gap-1">
+                All members <ArrowRight className="w-3 h-3" />
+              </Link>
             </div>
             <table className="w-full text-sm">
               <thead>
@@ -117,7 +122,9 @@ export default function LoyaltyAdmin() {
                       <td className="px-3 py-2.5 text-right font-mono text-xs">{m.points.toLocaleString('en-IN')}</td>
                       <td className="px-3 py-2.5 text-right font-mono text-xs">{inr(m.ytd)}</td>
                       <td className="px-2 py-2.5">
-                        <button className="p-1 hover:bg-[color:var(--color-paper)] rounded"><MoreHorizontal className="w-3.5 h-3.5" /></button>
+                        <Link href={`/admin/loyalty/members?id=${m.id}`} className="p-1 hover:bg-[color:var(--color-paper)] rounded inline-flex" title="View card">
+                          <MoreHorizontal className="w-3.5 h-3.5" />
+                        </Link>
                       </td>
                     </tr>
                   );

@@ -36,9 +36,19 @@ export function BookCard({ product, size = 'md', showStock = true, storeCount = 
             sizes="(max-width: 768px) 45vw, (max-width: 1200px) 25vw, 200px"
             className="object-cover"
           />
-          {product.compare && product.compare > product.price && (
-            <div className="absolute top-2 left-2 bg-[color:var(--color-mustard)] text-[color:var(--color-ink)] text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-sm">
+          {product.bogo && (
+            <div className="absolute top-2 left-2 bg-[color:var(--color-crimson)] text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-sm shadow-sm">
+              Buy 1 · Get 1
+            </div>
+          )}
+          {!product.bogo && product.compare && product.compare > product.price && (
+            <div className="absolute top-2 left-2 bg-[color:var(--color-crimson)] text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-sm shadow-sm">
               -{Math.round(((product.compare - product.price) / product.compare) * 100)}%
+            </div>
+          )}
+          {product.newArrival && (
+            <div className="absolute bottom-2 left-2 bg-white/95 text-[color:var(--color-ink)] text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-sm shadow-sm">
+              New
             </div>
           )}
           <button

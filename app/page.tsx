@@ -2,22 +2,68 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { FavouritesProvider } from '@/components/favourites';
 import { StoreNav, StoreFooter } from '@/components/store-nav';
-import { BookCard } from '@/components/book-card';
-import { LiveStockStrip } from '@/components/live-stock-strip';
 import { LoyaltyCardPreview } from '@/components/loyalty-card';
-import { VibeTags } from '@/components/vibe-tags';
-import { FEATURED, MANGA, FICTION, NONFIC, PRODUCTS_BY_BRAND, ALL_PRODUCTS, type Product } from '@/lib/products';
-import { STORES, BRAND_META, type StoreBrand } from '@/lib/stores';
-import { ChocoBayMark, PashmaMark, MotechMark, MishtaMark, SmilenMark, GladysMark } from '@/components/brand-marks';
+import { ProductShelf, TerminalPickShelf, CategoryTileRow } from '@/components/product-shelf';
+import {
+  FEATURED, MANGA, FICTION, NONFIC, PRODUCTS_BY_BRAND, PRODUCTS_BY_CATEGORY,
+  ALL_PRODUCTS, type Product,
+} from '@/lib/products';
+import { BRAND_META, type StoreBrand } from '@/lib/stores';
+import {
+  ChocoBayMark, PashmaMark, MotechMark, MishtaMark, SmilenMark, GladysMark,
+} from '@/components/brand-marks';
 import { RelayLogo } from '@/components/relay-logo';
-import { ArrowUpRight, Plane, Sparkles, MapPin, Zap, Package, Award, ChevronRight } from 'lucide-react';
+import {
+  ArrowUpRight, Plane, Sparkles, Award, ChevronRight, Tag, Coffee, Utensils,
+  Smartphone, ShoppingBag, Zap, Gift, BookOpen,
+} from 'lucide-react';
 
 export default function HomePage() {
-  const hero = FEATURED.filter(p => p.category !== 'confectionery').slice(0, 4);
-  const heroFeature = hero[0];
-  const bestsellers = FICTION.slice(0, 12);
-  const mangaTop = MANGA.slice(0, 12);
-  const nonfic = NONFIC.slice(0, 8);
+  // === Hero anchor ===
+  const heroFeature = FEATURED[0];
+
+  // === Merchandising slices ===
+  const bogo = ALL_PRODUCTS.filter(p => p.bogo);
+  const newArrivals = [
+    ...ALL_PRODUCTS.filter(p => p.newArrival),
+    ...FICTION.slice(0, 6),
+  ].slice(0, 10);
+  const relayPicks = ALL_PRODUCTS.filter(p => p.relayPick).slice(0, 10);
+  const bestsellers = [
+    ...FICTION.filter(p => p.featured),
+    ...ALL_PRODUCTS.filter(p => p.bestseller),
+  ].slice(0, 10);
+
+  const snacks = PRODUCTS_BY_CATEGORY.snacks;
+  const drinks = PRODUCTS_BY_CATEGORY.drinks;
+  const travelEssentials = PRODUCTS_BY_CATEGORY.travel;
+  const wellness = PRODUCTS_BY_CATEGORY['personal-care'];
+  const magazines = PRODUCTS_BY_CATEGORY.magazines;
+
+  // Tech from Relay (chargers, cables, power banks, earphones) + Motech premium
+  const techShelf = [
+    ...PRODUCTS_BY_BRAND.RLY.filter(p => p.category === 'tech'),
+    ...PRODUCTS_BY_BRAND.MTC.slice(0, 4),
+  ];
+
+  // Gifting = Choco Bay + Mishta + Relay gifts + Smilen + Gladys
+  const gifting = [
+    ...PRODUCTS_BY_BRAND.CB.slice(0, 4),
+    ...PRODUCTS_BY_BRAND.MSH.slice(0, 3),
+    ...PRODUCTS_BY_BRAND.SML.slice(0, 2),
+    ...PRODUCTS_BY_BRAND.GLD.slice(0, 1),
+    ...PRODUCTS_BY_CATEGORY.gifts.filter(p => p.brand === 'RLY'),
+  ];
+
+  // Terminal picks — hardcoded to a signature store; a real app would infer
+  // from GPS/pincode. Mix snacks, drinks, tech, travel — the impulse cart.
+  const terminalPicks = [
+    ...snacks.slice(0, 2),
+    ...drinks.slice(0, 1),
+    ...travelEssentials.slice(0, 1),
+    ...techShelf.slice(0, 1),
+  ];
+
   const chocolates = PRODUCTS_BY_BRAND.CB.slice(0, 4);
   const tech = PRODUCTS_BY_BRAND.MTC.slice(0, 4);
   const luxury = PRODUCTS_BY_BRAND.PSH.slice(0, 3);
@@ -26,25 +72,36 @@ export default function HomePage() {
   const smilen = PRODUCTS_BY_BRAND.SML.slice(0, 3);
   const gladys = PRODUCTS_BY_BRAND.GLD.slice(0, 3);
 
+  const departmentTiles = [
+    { label: 'Snacks',    href: '/browse?cat=snacks',        image: 'https://images.unsplash.com/photo-1613919113640-25732ec5e61f?w=400&q=80' },
+    { label: 'Drinks',    href: '/browse?cat=drinks',        image: 'https://images.unsplash.com/photo-1613218841863-9420a4e29ea1?w=400&q=80' },
+    { label: 'Tech',      href: '/browse?cat=tech',          image: 'https://images.unsplash.com/photo-1587037542794-6ad4433f95a1?w=400&q=80' },
+    { label: 'Travel',    href: '/browse?cat=travel',        image: 'https://images.unsplash.com/photo-1585909695284-32d2985ac9c0?w=400&q=80' },
+    { label: 'Books',     href: '/browse',                   image: 'https://images.unsplash.com/photo-1495640388908-05fa85288e61?w=400&q=80' },
+    { label: 'Wellness',  href: '/browse?cat=personal-care', image: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400&q=80' },
+    { label: 'Gifts',     href: '/browse?cat=gifts',         image: 'https://images.unsplash.com/photo-1512909006721-3d6018887383?w=400&q=80' },
+    { label: 'Magazines', href: '/browse?cat=magazines',     image: 'https://images.unsplash.com/photo-1594736797933-d0a501ba2fe6?w=400&q=80' },
+  ];
+
   return (
     <FavouritesProvider>
       <StoreNav />
 
       {/* === HERO === */}
-      <section className="relative overflow-hidden noise-bg min-h-[calc(100vh-96px)] max-h-[calc(100vh-96px)] flex flex-col">
-        <div className="container-editorial pt-6 md:pt-10 pb-6 relative flex-1 flex flex-col justify-between">
-          <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.3em] text-[color:var(--color-ink-muted)] mb-8">
+      <section className="relative overflow-hidden noise-bg">
+        <div className="container-editorial pt-6 md:pt-10 pb-10 relative">
+          <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.3em] text-[color:var(--color-ink-muted)] mb-6">
             <span className="w-6 h-px bg-[color:var(--color-ink)]" />
             <span>Vol. 01 · Bangalore · Now delivering</span>
-            <span className="ml-3 inline-flex items-center gap-1.5 px-2 py-0.5 bg-[color:var(--color-mustard)] text-[color:var(--color-ink)] rounded-full font-mono tracking-normal">
-              <span className="w-1.5 h-1.5 bg-[color:var(--color-ink)] rounded-full pulse-dot" />
+            <span className="ml-3 inline-flex items-center gap-1.5 px-2 py-0.5 bg-[color:var(--color-crimson)] text-white rounded-full font-mono tracking-normal">
+              <span className="w-1.5 h-1.5 bg-white rounded-full pulse-dot" />
               live
             </span>
           </div>
 
-          <div className="grid md:grid-cols-12 gap-6 md:gap-10 items-center flex-1">
+          <div className="grid md:grid-cols-12 gap-6 md:gap-10 items-center">
             <div className="md:col-span-7">
-              <h1 className="font-serif text-[11vw] md:text-[8vw] lg:text-[6.5vw] leading-[0.9] tracking-tighter text-balance">
+              <h1 className="font-serif text-[10vw] md:text-[7vw] lg:text-[5.5vw] leading-[0.9] tracking-tighter text-balance">
                 Everything you need.<br />
                 <span className="text-[color:var(--color-crimson)]">Right at your gate.</span>
               </h1>
@@ -52,11 +109,11 @@ export default function HomePage() {
                 India&apos;s airport convenience store, now online. Snacks, drinks, books, tech, gifts, wellness and travel essentials — reserved the second you tap add-to-bag, ready at the store nearest your gate.
               </p>
               <div className="mt-6 flex flex-wrap items-center gap-3">
-                <Link href="/browse" className="inline-flex items-center gap-2 h-12 px-6 bg-[color:var(--color-ink)] text-[color:var(--color-cream)] rounded-full text-sm font-medium hover:bg-[color:var(--color-crimson)] transition group">
-                  Explore the shelf
+                <Link href="/browse" className="inline-flex items-center gap-2 h-12 px-6 bg-[color:var(--color-crimson)] text-white rounded-full text-sm font-medium hover:bg-[color:var(--color-crimson-deep)] transition group">
+                  Shop everything
                   <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition" />
                 </Link>
-                <Link href="/loyalty" className="inline-flex items-center gap-2 h-12 px-6 border border-[color:var(--color-ink)] rounded-full text-sm font-medium hover:bg-[color:var(--color-ink)] hover:text-[color:var(--color-cream)] transition">
+                <Link href="/loyalty" className="inline-flex items-center gap-2 h-12 px-6 border border-[color:var(--color-ink)] rounded-full text-sm font-medium hover:bg-[color:var(--color-ink)] hover:text-white transition">
                   Skyline · Join Free
                 </Link>
               </div>
@@ -66,9 +123,9 @@ export default function HomePage() {
               {heroFeature && (
                 <div className="relative">
                   <div className="absolute -top-6 -left-2 text-[10px] uppercase tracking-widest text-[color:var(--color-crimson)] font-mono z-10">
-                    ✦ Editor&apos;s pick this week
+                    ✦ Relay Recommends
                   </div>
-                  <div className="relative aspect-[3/4] max-h-[52vh] rounded-lg overflow-hidden bg-gradient-to-br from-[color:var(--color-paper)] to-[color:var(--color-paper-warm)] shadow-2xl book-cover">
+                  <div className="relative aspect-[3/4] max-h-[52vh] rounded-lg overflow-hidden bg-[color:var(--color-paper)] shadow-2xl book-cover">
                     <Image src={heroFeature.image} alt={heroFeature.title} fill className="object-cover" priority sizes="(max-width: 768px) 100vw, 40vw" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                     <div className="absolute bottom-0 left-0 right-0 p-5 text-white">
@@ -76,8 +133,8 @@ export default function HomePage() {
                       <h2 className="font-serif text-xl md:text-2xl leading-tight">{heroFeature.title}</h2>
                     </div>
                   </div>
-                  <div className="absolute -bottom-5 -right-3 bg-[color:var(--color-mustard)] px-4 py-2.5 rounded-md shadow-lg rotate-3">
-                    <div className="text-[9px] font-mono uppercase tracking-wider text-[color:var(--color-ink)]/60">Reserve now</div>
+                  <div className="absolute -bottom-5 -right-3 bg-[color:var(--color-crimson)] text-white px-4 py-2.5 rounded-md shadow-lg rotate-3">
+                    <div className="text-[9px] font-mono uppercase tracking-wider opacity-80">Reserve now</div>
                     <div className="font-serif text-base leading-none">Pick up post-security</div>
                   </div>
                 </div>
@@ -85,8 +142,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Hero stats — bottom of viewport */}
-          <div className="mt-6 grid grid-cols-3 md:grid-cols-4 gap-3 md:gap-6">
+          <div className="mt-10 grid grid-cols-3 md:grid-cols-4 gap-3 md:gap-6">
             {[
               { n: '51', l: 'Live stores' },
               { n: '12', l: 'Cities' },
@@ -100,145 +156,141 @@ export default function HomePage() {
             ))}
           </div>
         </div>
-
-        {/* Sub-brand marquee */}
-        <div className="bg-[color:var(--color-ink)] text-[color:var(--color-cream)] py-4 overflow-hidden">
-          <div className="flex whitespace-nowrap animate-marquee-slow">
-            {Array(2).fill(0).map((_, i) => (
-              <div key={i} className="flex items-center gap-16 pr-16 shrink-0">
-                {Object.entries(BRAND_META).map(([code, meta]) => (
-                  <div key={code} className="flex items-center gap-3">
-                    <div className="w-2 h-2 rounded-full" style={{ background: meta.color }} />
-                    <span className="font-serif text-2xl md:text-3xl italic">{meta.name}</span>
-                    <span className="text-xs text-white/40 uppercase tracking-widest">{meta.category}</span>
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
       </section>
 
-      {/* === LIVE INVENTORY BANNER === */}
-      <section className="container-editorial py-16 md:py-24">
-        <div className="grid md:grid-cols-12 gap-8 items-start">
-          <div className="md:col-span-4">
-            <div className="text-[10px] uppercase tracking-[0.3em] text-[color:var(--color-crimson)] mb-4 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 bg-[color:var(--color-crimson)] rounded-full pulse-dot" /> LIVE INVENTORY
-            </div>
-            <h2 className="font-serif text-4xl md:text-5xl leading-tight tracking-tight">
-              Every shelf. <br />Every store. <br /><span className="italic">Every second.</span>
-            </h2>
-          </div>
-          <div className="md:col-span-8">
-            <p className="text-lg leading-relaxed text-[color:var(--color-ink-soft)] max-w-2xl">
-              Type a pincode, we check all {STORES.length} stores in under 200ms and route your order from the one closest to you. No warehouse. Just shelves — synced in real time.
-            </p>
-            <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-4">
-              {[
-                { icon: Zap, l: 'Sync', v: '< 200ms', s: 'Store → web' },
-                { icon: Package, l: 'SKUs live', v: ALL_PRODUCTS.length.toLocaleString(), s: 'Across 51 stores' },
-                { icon: MapPin, l: 'Cities', v: '12', s: 'From Kochi to Kolkata' },
-                { icon: Plane, l: 'Terminals', v: '38', s: 'Airport + landside' },
-              ].map((k) => (
-                <div key={k.l} className="p-5 border border-[color:var(--color-line)] rounded-lg bg-[color:var(--color-paper)]/40 hover:bg-[color:var(--color-paper)] transition">
-                  <k.icon className="w-4 h-4 text-[color:var(--color-crimson)] mb-6" />
-                  <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)]">{k.l}</div>
-                  <div className="editorial-num text-3xl mt-1">{k.v}</div>
-                  <div className="text-[11px] text-[color:var(--color-ink-muted)] mt-1">{k.s}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* === DEPARTMENT TILES — quick access carousel === */}
+      <CategoryTileRow tiles={departmentTiles} />
 
-      <LiveStockStrip />
+      {/* === RELAY RECOMMENDS — editor's picks === */}
+      <ProductShelf
+        kicker="Editor's picks"
+        title="Relay Recommends."
+        subtitle="Hand-picked by our store teams — the small joys that make every transit better."
+        href="/browse?sort=featured"
+        products={relayPicks.length > 3 ? relayPicks : FEATURED}
+        Icon={Sparkles}
+      />
 
-      <VibeTags />
+      {/* === BUY 1 GET 1 FREE === */}
+      {bogo.length > 0 && (
+        <ProductShelf
+          kicker="Weekly offers"
+          title="Buy 1. Get 1 Free."
+          subtitle="Grab-and-go pairs that pay for the second one. Ends Sunday midnight."
+          href="/browse?offer=bogo"
+          products={bogo}
+          tone="offer"
+          Icon={Tag}
+          viewAllLabel="See all offers"
+        />
+      )}
+
+      {/* === TERMINAL PICK === */}
+      <TerminalPickShelf
+        storeCode="RLY-BLR-04"
+        storeLabel="Bangalore Terminal 2 · Gate A"
+        city="Bangalore"
+        picks={terminalPicks}
+      />
 
       {/* === BESTSELLERS === */}
-      <section className="container-editorial py-16 md:py-24">
-        <ShelfHeader kicker="Flying off the shelves — literally" title="Bestsellers, no cap." href="/browse?sort=bestseller" />
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6 md:gap-8">
-          {bestsellers.map(p => <BookCard key={p.id} product={p} storeCount={((p.id.length * 7) % 22) + 4} />)}
-        </div>
-      </section>
+      <ProductShelf
+        kicker="Flying off the shelves"
+        title="Bestsellers this week."
+        subtitle="Whether it's crisps or a bestseller — this is what other travellers grabbed today."
+        href="/browse?sort=bestseller"
+        products={bestsellers}
+        Icon={Award}
+      />
 
-      {/* === MANGA === */}
-      <section className="bg-[color:var(--color-ink)] text-[color:var(--color-cream)] py-16 md:py-24 relative overflow-hidden">
-        <div className="absolute inset-0 bg-grid opacity-30" />
-        <div className="container-editorial relative">
-          <div className="flex items-end justify-between mb-12 gap-4 flex-wrap">
-            <div>
-              <div className="text-[10px] uppercase tracking-[0.3em] text-[color:var(--color-mustard)] mb-3 flex items-center gap-2">
-                <Sparkles className="w-3 h-3" /> MANGA BESTSELLERS
-              </div>
-              <h2 className="font-serif text-4xl md:text-6xl leading-none tracking-tight">
-                One Piece. Berserk.<br /><span className="italic text-[color:var(--color-mustard)]">Every arc.</span>
-              </h2>
-            </div>
-            <Link href="/browse?cat=manga" className="text-sm border border-white/30 hover:bg-white hover:text-[color:var(--color-ink)] px-5 py-2.5 rounded-full transition inline-flex items-center gap-2">
-              Full shelf <ArrowUpRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6 md:gap-8" style={{
-            ['--color-ink' as string]: '#F5EFE4',
-            ['--color-ink-muted' as string]: '#9A9A9A',
-            ['--color-ink-faint' as string]: '#6B6B6B',
-            ['--color-crimson' as string]: '#F1E71D',
-          }}>
-            {mangaTop.map(p => <BookCard key={p.id} product={p} storeCount={((p.id.length * 5) % 15) + 6} />)}
-          </div>
-        </div>
-      </section>
+      {/* === SNACKS === */}
+      <ProductShelf
+        kicker="Grab & go"
+        title="Snack aisle."
+        subtitle="Chips, trail mix, corn puffs — the classics and the healthy pivot."
+        href="/browse?cat=snacks"
+        products={snacks}
+        Icon={Utensils}
+      />
 
-      {/* === HOW IT WORKS === */}
-      <section className="container-editorial py-24 md:py-32">
-        <div className="grid md:grid-cols-12 gap-12 items-start">
-          <div className="md:col-span-5 md:sticky md:top-32">
-            <div className="text-[10px] uppercase tracking-[0.3em] text-[color:var(--color-crimson)] mb-4">The Relay method</div>
-            <h2 className="font-serif text-5xl md:text-6xl leading-[0.95] tracking-tighter">
-              Not a warehouse.<br />
-              <span className="italic">51 warehouses.</span>
-            </h2>
-            <p className="mt-6 text-[color:var(--color-ink-soft)] leading-relaxed max-w-md">
-              You order. We find the closest store that stocks it. Store staff pack it. A local rider brings it — often the same day.
-            </p>
-          </div>
-          <div className="md:col-span-7 space-y-1">
-            {[
-              { n: '01', t: 'Type your pincode', d: 'We check delivery zones across all 51 stores in real time.' },
-              { n: '02', t: 'Nearest store selected', d: 'Allocation engine picks the store with stock and shortest reach — often 4-8 km away.' },
-              { n: '03', t: 'Stock reserved instantly', d: 'The moment payment clears, that book is off the shelf. No overselling.' },
-              { n: '04', t: 'Store team packs it', d: 'Picklist prints at the store console. GST-compliant invoice included.' },
-              { n: '05', t: 'Local rider delivers', d: 'Same-city rider for BLR/DEL/BOM/HYD. Courier partner elsewhere.' },
-              { n: '06', t: 'Points credit + review', d: 'Skyline points land in your wallet. Rate the read. We remember for next time.' },
-            ].map((s) => (
-              <div key={s.n} className="group grid grid-cols-[80px_1fr] gap-6 py-6 border-b border-[color:var(--color-line)] hover:pl-4 transition-all">
-                <div className="editorial-num text-4xl text-[color:var(--color-crimson)]">{s.n}</div>
-                <div>
-                  <div className="font-serif text-2xl leading-tight">{s.t}</div>
-                  <div className="mt-2 text-sm text-[color:var(--color-ink-muted)] max-w-md">{s.d}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* === DRINKS === */}
+      <ProductShelf
+        kicker="Stay hydrated"
+        title="Drinks & Refreshments."
+        subtitle="Water, energy, juice, coffee, chai. Everything to reset before boarding."
+        href="/browse?cat=drinks"
+        products={drinks}
+        Icon={Coffee}
+      />
 
-      {/* === NON-FICTION === */}
-      <section className="container-editorial py-16 md:py-24">
-        <ShelfHeader kicker="Big brain energy" title="Non-fiction to actually finish." href="/browse?cat=non-fiction" />
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-10">
-          {nonfic.map(p => <BookCard key={p.id} product={p} size="lg" storeCount={((p.id.length * 3) % 20) + 5} />)}
-        </div>
-      </section>
+      {/* === TECH === */}
+      <ProductShelf
+        kicker="Powered up"
+        title="Chargers, buds, powerbanks."
+        subtitle="From Anker fast chargers to Sennheiser cans — everything to keep your kit alive."
+        href="/browse?cat=tech"
+        products={techShelf}
+        Icon={Smartphone}
+      />
 
-      {/* === CROSS-BRAND === */}
-      <section className="bg-[color:var(--color-paper)] py-24 md:py-32">
+      {/* === TRAVEL ESSENTIALS === */}
+      <ProductShelf
+        kicker="Boarding-ready"
+        title="Travel essentials."
+        subtitle="Neck pillows, TSA locks, eye masks, luggage scales — the stuff you forgot to pack."
+        href="/browse?cat=travel"
+        products={travelEssentials}
+        Icon={Plane}
+      />
+
+      {/* === GIFTING === */}
+      <ProductShelf
+        kicker="Coming home?"
+        title="Gifting Ideas."
+        subtitle="Ferrero boxes, Mishta sweets, cashmere wraps, Gladje signature — one for everyone waiting."
+        href="/browse?cat=gifts"
+        products={gifting}
+        Icon={Gift}
+      />
+
+      {/* === NEW ARRIVALS === */}
+      <ProductShelf
+        kicker="Just landed"
+        title="New Arrivals."
+        subtitle="Fresh drops across every shelf — books, tech, snacks, magazines."
+        href="/browse?sort=new"
+        products={newArrivals}
+        Icon={Zap}
+      />
+
+      {/* === MAGAZINES === */}
+      {magazines.length > 0 && (
+        <ProductShelf
+          kicker="For the flight"
+          title="Magazines & Reads."
+          subtitle="Vogue, Forbes, Nat Geo Traveller, GQ — pick one, we&apos;ll add a bookmark."
+          href="/browse?cat=magazines"
+          products={magazines}
+          Icon={BookOpen}
+        />
+      )}
+
+      {/* === WELLNESS === */}
+      {wellness.length > 0 && (
+        <ProductShelf
+          kicker="Personal care"
+          title="Wellness aisle."
+          subtitle="Deodorant, hand cream, face wash, lip balm — travel-size when needed."
+          href="/browse?cat=personal-care"
+          products={wellness}
+          Icon={ShoppingBag}
+        />
+      )}
+
+      {/* === CROSS-BRAND (kept, redesigned) === */}
+      <section className="bg-[color:var(--color-paper)] py-20 md:py-32">
         <div className="container-editorial">
-          <div className="flex items-end justify-between mb-16 flex-wrap gap-4">
+          <div className="flex items-end justify-between mb-12 flex-wrap gap-4">
             <div>
               <div className="text-[10px] uppercase tracking-[0.3em] text-[color:var(--color-ink-muted)] mb-3">The TRS network</div>
               <h2 className="font-serif text-5xl md:text-6xl leading-none tracking-tighter">
@@ -262,7 +314,7 @@ export default function HomePage() {
       </section>
 
       {/* === LOYALTY TEASER === */}
-      <section className="container-editorial py-24 md:py-32">
+      <section className="container-editorial py-20 md:py-28">
         <div className="grid md:grid-cols-2 gap-12 items-center">
           <div>
             <div className="text-[10px] uppercase tracking-[0.3em] text-[color:var(--color-crimson)] mb-4 flex items-center gap-2">
@@ -274,7 +326,7 @@ export default function HomePage() {
             <p className="mt-8 text-lg leading-relaxed max-w-md text-[color:var(--color-ink-soft)]">
               Earn on every purchase — a bottle of water at Relay, a Ferrero box at Choco Bay, cashmere at Pashma. Points work across all seven brands. Redeem anywhere.
             </p>
-            <div className="mt-10 space-y-3 max-w-md">
+            <div className="mt-8 space-y-3 max-w-md">
               {['Sign-up bonus of 250 points', 'Category multipliers up to 4× on Pashma', 'Referral bonus of 1,000 points per join', 'Volume bonus up to +50% on big orders'].map(x => (
                 <div key={x} className="flex items-center gap-3 text-sm">
                   <div className="w-1.5 h-1.5 rounded-full bg-[color:var(--color-crimson)]" />
@@ -282,7 +334,7 @@ export default function HomePage() {
                 </div>
               ))}
             </div>
-            <Link href="/loyalty" className="mt-10 inline-flex items-center gap-2 h-12 px-6 bg-[color:var(--color-ink)] text-[color:var(--color-cream)] rounded-full text-sm font-medium hover:bg-[color:var(--color-crimson)] transition group">
+            <Link href="/loyalty" className="mt-10 inline-flex items-center gap-2 h-12 px-6 bg-[color:var(--color-crimson)] text-white rounded-full text-sm font-medium hover:bg-[color:var(--color-crimson-deep)] transition group">
               See how it works
               <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition" />
             </Link>

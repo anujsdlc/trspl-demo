@@ -18,6 +18,17 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Relay by TRS — Read anywhere. Delivered from anywhere.",
   description: "India's first travel-retail bookstore online. Books, tech, chocolates & luxury across 51 airport stores.",
+  appleWebApp: {
+    capable: true,
+    title: 'Relay',
+    statusBarStyle: 'black-translucent',
+  },
+};
+
+export const viewport = {
+  themeColor: '#CA0538',
+  width: 'device-width',
+  initialScale: 1,
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

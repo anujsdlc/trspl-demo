@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 88" width="200" height="88">
+  <rect width="200" height="88" rx="10" fill="#CA0538"/>
+  <g transform="skewX(-8)">
+    <text
+      x="18" y="66"
+      font-family="-apple-system, BlinkMacSystemFont, 'Inter', 'Helvetica Neue', Arial, sans-serif"
+      font-size="62"
+      font-weight="900"
+      fill="#FFFFFF"
+      letter-spacing="-2.5"
+      textLength="140"
+      lengthAdjust="spacingAndGlyphs"
+    >RELAY</text>
+  </g>
+  <circle cx="172" cy="60" r="7" fill="none" stroke="#FFFFFF" stroke-width="3.5"/>
+</svg>

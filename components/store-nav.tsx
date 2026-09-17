@@ -63,7 +63,7 @@ export function StoreNav() {
               aria-label="Search"
             >
               <Search className="w-4 h-4" />
-              <span className="flex-1 text-left">Search books, tech, gifts, chocolates…</span>
+              <span className="flex-1 text-left">Search snacks, drinks, tech, books, gifts…</span>
               <span className="text-[10px] font-mono border border-[color:var(--color-line-strong)] rounded px-1.5 py-0.5">⌘K</span>
             </button>
 
@@ -100,20 +100,21 @@ export function StoreNav() {
         {/* Row 2: Categories */}
         <div className="container-editorial h-11 hidden lg:flex items-center justify-between">
           <nav className="flex items-center gap-6 text-[13px] tracking-tight">
-            <Link href="/browse" className="hover:text-[color:var(--color-crimson)] transition font-medium">Bookstore</Link>
-            <Link href="/browse?cat=manga" className="hover:text-[color:var(--color-crimson)] transition">Manga</Link>
-            <Link href="/browse?cat=non-fiction" className="hover:text-[color:var(--color-crimson)] transition">Non-Fiction</Link>
-            <Link href="/browse?cat=children" className="hover:text-[color:var(--color-crimson)] transition">Kids</Link>
+            <Link href="/browse?cat=snacks" className="hover:text-[color:var(--color-crimson)] transition">Snacks</Link>
+            <Link href="/browse?cat=drinks" className="hover:text-[color:var(--color-crimson)] transition">Drinks</Link>
+            <Link href="/browse?cat=tech" className="hover:text-[color:var(--color-crimson)] transition">Tech</Link>
+            <Link href="/browse?cat=travel" className="hover:text-[color:var(--color-crimson)] transition">Travel</Link>
+            <Link href="/browse" className="hover:text-[color:var(--color-crimson)] transition font-medium">Books</Link>
+            <Link href="/browse?cat=gifts" className="hover:text-[color:var(--color-crimson)] transition">Gifts</Link>
+            <Link href="/browse?cat=personal-care" className="hover:text-[color:var(--color-crimson)] transition">Wellness</Link>
             <span className="text-[color:var(--color-line-strong)]">·</span>
-            <Link href="/browse?brand=MTC" className="hover:text-[color:var(--color-crimson)] transition">Motech</Link>
             <Link href="/browse?brand=CB" className="hover:text-[color:var(--color-crimson)] transition">Choco Bay</Link>
+            <Link href="/browse?brand=MTC" className="hover:text-[color:var(--color-crimson)] transition">Motech</Link>
             <Link href="/browse?brand=PSH" className="hover:text-[color:var(--color-crimson)] transition">Pashma</Link>
-            <Link href="/browse?brand=MSH" className="hover:text-[color:var(--color-crimson)] transition">Mishta</Link>
             <span className="text-[color:var(--color-line-strong)]">·</span>
-            <Link href="/about" className="hover:text-[color:var(--color-crimson)] transition">About</Link>
             <Link href="/loyalty" className="hover:text-[color:var(--color-crimson)] transition font-medium inline-flex items-center gap-1.5">
               Skyline
-              <span className="text-[9px] px-1.5 py-0.5 bg-[color:var(--color-mustard)] text-[color:var(--color-ink)] rounded-full uppercase tracking-wider font-bold">Join</span>
+              <span className="text-[9px] px-1.5 py-0.5 bg-[color:var(--color-crimson)] text-white rounded-full uppercase tracking-wider font-bold">Join</span>
             </Link>
           </nav>
           <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)] font-mono flex items-center gap-2">
@@ -127,12 +128,14 @@ export function StoreNav() {
         {open && (
           <div className="lg:hidden border-t border-[color:var(--color-line)] bg-[color:var(--color-cream)]">
             <nav className="container-editorial py-6 flex flex-col gap-4 text-lg font-serif">
-              <Link href="/browse" onClick={() => setOpen(false)}>Bookstore</Link>
-              <Link href="/browse?cat=manga" onClick={() => setOpen(false)}>Manga</Link>
-              <Link href="/browse?cat=tech" onClick={() => setOpen(false)}>Motech · Tech</Link>
-              <Link href="/browse?cat=confectionery" onClick={() => setOpen(false)}>Choco Bay</Link>
-              <Link href="/browse?cat=cashmere" onClick={() => setOpen(false)}>Pashma</Link>
-              <Link href="/about" onClick={() => setOpen(false)}>About TRS</Link>
+              <Link href="/browse?cat=snacks" onClick={() => setOpen(false)}>Snacks &amp; Drinks</Link>
+              <Link href="/browse?cat=tech" onClick={() => setOpen(false)}>Tech accessories</Link>
+              <Link href="/browse?cat=travel" onClick={() => setOpen(false)}>Travel essentials</Link>
+              <Link href="/browse" onClick={() => setOpen(false)}>Books &amp; Magazines</Link>
+              <Link href="/browse?cat=gifts" onClick={() => setOpen(false)}>Gifts &amp; Souvenirs</Link>
+              <Link href="/browse?cat=personal-care" onClick={() => setOpen(false)}>Wellness</Link>
+              <Link href="/browse?brand=CB" onClick={() => setOpen(false)}>Choco Bay chocolates</Link>
+              <Link href="/browse?brand=PSH" onClick={() => setOpen(false)}>Pashma cashmere</Link>
               <Link href="/loyalty" onClick={() => setOpen(false)}>Skyline Loyalty</Link>
               <Link href="/admin" onClick={() => setOpen(false)}>Admin Console</Link>
             </nav>
@@ -154,7 +157,7 @@ export function StoreFooter() {
               <div className="text-[10px] uppercase tracking-[0.25em] text-white/40 mt-2">by Travel Retail Services</div>
             </div>
             <p className="font-serif text-3xl md:text-4xl leading-tight max-w-md text-balance">
-              A bookstore for people who are always <span className="italic text-[color:var(--color-mustard)]">between gates</span>.
+              A convenience store for people who are always <span className="italic text-[color:var(--color-crimson)]">between gates</span>.
             </p>
             <div className="mt-8 flex items-center gap-3 text-xs text-white/60 font-mono">
               <Plane className="w-3.5 h-3.5" />
@@ -164,7 +167,7 @@ export function StoreFooter() {
           <div className="text-xs">
             <div className="text-[10px] uppercase tracking-widest text-white/40 mb-4">Shop</div>
             <ul className="space-y-2.5">
-              <li>Bookstore</li><li>Manga</li><li>Motech</li><li>Choco Bay</li><li>Pashma</li><li>Mishta</li>
+              <li>Snacks &amp; Drinks</li><li>Tech accessories</li><li>Travel essentials</li><li>Books &amp; Magazines</li><li>Gifts</li><li>Wellness</li>
             </ul>
           </div>
           <div className="text-xs">

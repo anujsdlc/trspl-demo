@@ -3,7 +3,8 @@ import type { StoreBrand } from './stores';
 
 export type Category =
   | 'manga' | 'fiction' | 'non-fiction' | 'children' | 'books' | 'stationery' | 'toys'
-  | 'confectionery' | 'sweets' | 'tech' | 'cashmere' | 'travel' | 'gifts';
+  | 'confectionery' | 'sweets' | 'tech' | 'cashmere' | 'travel' | 'gifts'
+  | 'snacks' | 'drinks' | 'personal-care' | 'magazines';
 
 export interface Product {
   id: string;
@@ -74,6 +75,60 @@ const tech: Product[] = [
   { id: 'mt-008', sku: 'MT-BAG-CB', title: 'Cabin Trolley 55cm', subtitle: 'Hard-shell · TSA lock', brand: 'MTC', category: 'travel', image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=800&q=80', price: 6999, compare: 8999, tags: ['travel', 'bag'], hsn: '4202', featured: true },
 ];
 
+// Relay convenience assortment — snacks, drinks, wellness, tech, travel,
+// magazines, gifting — everything the store actually sells beyond books.
+const relayConvenience: Product[] = [
+  // Snacks
+  { id: 'rly-sn-001', sku: 'RLY-LAY-CS', title: "Lay's Classic Salted", subtitle: 'Party pack · 90g', brand: 'RLY', category: 'snacks', image: 'https://images.unsplash.com/photo-1613919113640-25732ec5e61f?w=800&q=80', price: 60, tags: ['snacks', 'crisps'], hsn: '1905', weight: '90g', bestBefore: '2026-04', fssai: '10012011000401', featured: true },
+  { id: 'rly-sn-002', sku: 'RLY-PRG-OR', title: 'Pringles Original', subtitle: 'Stacked crisps · 165g', brand: 'RLY', category: 'snacks', image: 'https://images.unsplash.com/photo-1614415625657-de6a8b9dd76b?w=800&q=80', price: 199, tags: ['snacks', 'crisps', 'imported'], hsn: '1905', weight: '165g', bestBefore: '2026-10', fssai: '10012011000402' },
+  { id: 'rly-sn-003', sku: 'RLY-HD-BJ', title: "Haldiram's Aloo Bhujia", subtitle: 'Signature savoury · 200g', brand: 'RLY', category: 'snacks', image: 'https://images.unsplash.com/photo-1599909533730-d8d8d3946f92?w=800&q=80', price: 99, tags: ['snacks', 'indian'], hsn: '1905', weight: '200g', bestBefore: '2026-06', fssai: '10012011000403' },
+  { id: 'rly-sn-004', sku: 'RLY-KKR-MM', title: 'Kurkure Masala Munch', subtitle: 'Corn puffs · 90g', brand: 'RLY', category: 'snacks', image: 'https://images.unsplash.com/photo-1621939514649-280e2ee25f60?w=800&q=80', price: 40, tags: ['snacks', 'spicy'], hsn: '1905', weight: '90g', bestBefore: '2026-05', fssai: '10012011000404' },
+  { id: 'rly-sn-005', sku: 'RLY-NUT-TR', title: 'Nutty Yogi Trail Mix', subtitle: 'Roasted nuts & berries · 200g', brand: 'RLY', category: 'snacks', image: 'https://images.unsplash.com/photo-1599599810769-bcde5a160d32?w=800&q=80', price: 349, compare: 399, tags: ['snacks', 'healthy'], hsn: '2008', weight: '200g', bestBefore: '2026-09', fssai: '10012011000405', featured: true },
+  { id: 'rly-sn-006', sku: 'RLY-POP-SS', title: 'PopCorners Sea Salt', subtitle: 'Popped corn chips · 85g', brand: 'RLY', category: 'snacks', image: 'https://images.unsplash.com/photo-1600955471077-56d78d33c2b9?w=800&q=80', price: 149, tags: ['snacks', 'gluten-free'], hsn: '1905', weight: '85g', bestBefore: '2026-08', fssai: '10012011000406' },
+
+  // Drinks
+  { id: 'rly-dr-001', sku: 'RLY-AQ-1L', title: 'Aquafina Water', subtitle: 'Purified · 1L', brand: 'RLY', category: 'drinks', image: 'https://images.unsplash.com/photo-1523362628745-0c100150b504?w=800&q=80', price: 40, tags: ['drinks', 'water'], hsn: '2201', weight: '1L' },
+  { id: 'rly-dr-002', sku: 'RLY-RB-250', title: 'Red Bull Energy Drink', subtitle: 'Original · 250ml', brand: 'RLY', category: 'drinks', image: 'https://images.unsplash.com/photo-1613218841863-9420a4e29ea1?w=800&q=80', price: 125, tags: ['drinks', 'energy'], hsn: '2202', weight: '250ml', bestBefore: '2027-02', featured: true },
+  { id: 'rly-dr-003', sku: 'RLY-TRP-OR', title: 'Tropicana Orange', subtitle: 'Chilled juice · 200ml', brand: 'RLY', category: 'drinks', image: 'https://images.unsplash.com/photo-1613478223719-2ab802602423?w=800&q=80', price: 45, tags: ['drinks', 'juice'], hsn: '2009', weight: '200ml', bestBefore: '2026-05' },
+  { id: 'rly-dr-004', sku: 'RLY-NES-100', title: 'Nescafé Sunrise Instant', subtitle: 'Rich blend · 100g', brand: 'RLY', category: 'drinks', image: 'https://images.unsplash.com/photo-1611854779393-1b2da9d400fe?w=800&q=80', price: 349, tags: ['drinks', 'coffee'], hsn: '0901', weight: '100g', bestBefore: '2027-04' },
+  { id: 'rly-dr-005', sku: 'RLY-CP-MC', title: 'Chai Point Masala Chai', subtitle: 'RTD tea · 250ml', brand: 'RLY', category: 'drinks', image: 'https://images.unsplash.com/photo-1571934811356-5cc061b6821f?w=800&q=80', price: 79, tags: ['drinks', 'tea', 'indian'], hsn: '0902', weight: '250ml', bestBefore: '2026-07' },
+  { id: 'rly-dr-006', sku: 'RLY-BS-VD', title: 'Bisleri Vedica Himalayan', subtitle: 'Mineral water · 750ml', brand: 'RLY', category: 'drinks', image: 'https://images.unsplash.com/photo-1616118132534-381148898bb4?w=800&q=80', price: 60, tags: ['drinks', 'water', 'premium'], hsn: '2201', weight: '750ml' },
+
+  // Tech accessories (Relay's convenience tech — mid-tier, not premium Motech)
+  { id: 'rly-tc-001', sku: 'RLY-AN-45W', title: 'Anker 45W USB-C Charger', subtitle: 'Compact GaN · single port', brand: 'RLY', category: 'tech', image: 'https://images.unsplash.com/photo-1587037542794-6ad4433f95a1?w=800&q=80', price: 999, compare: 1299, tags: ['tech', 'charger'], hsn: '8504', featured: true },
+  { id: 'rly-tc-002', sku: 'RLY-BLK-C1', title: 'Belkin USB-C to USB-C 1m', subtitle: 'Braided · 60W PD', brand: 'RLY', category: 'tech', image: 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=800&q=80', price: 599, tags: ['tech', 'cable'], hsn: '8544' },
+  { id: 'rly-tc-003', sku: 'RLY-BT-R4', title: 'boAt Rockerz 425', subtitle: 'Wireless neckband · 25h', brand: 'RLY', category: 'tech', image: 'https://images.unsplash.com/photo-1608156639585-b3a032ef9689?w=800&q=80', price: 1999, compare: 2499, tags: ['tech', 'audio'], hsn: '8518' },
+  { id: 'rly-tc-004', sku: 'RLY-PRT-PB', title: 'Portronics Power Bank 10K', subtitle: '10000 mAh · PD 22.5W', brand: 'RLY', category: 'tech', image: 'https://images.unsplash.com/photo-1609091839311-d5365f9ff1c5?w=800&q=80', price: 1299, tags: ['tech', 'power'], hsn: '8507' },
+  { id: 'rly-tc-005', sku: 'RLY-HP-EP', title: 'HP Wired Earphones', subtitle: 'In-ear · 3.5mm', brand: 'RLY', category: 'tech', image: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=800&q=80', price: 349, tags: ['tech', 'audio', 'wired'] },
+
+  // Travel essentials
+  { id: 'rly-tr-001', sku: 'RLY-TR-NP', title: 'Inflatable Neck Pillow', subtitle: 'Memory foam · travel case', brand: 'RLY', category: 'travel', image: 'https://images.unsplash.com/photo-1585909695284-32d2985ac9c0?w=800&q=80', price: 599, tags: ['travel', 'comfort'], featured: true },
+  { id: 'rly-tr-002', sku: 'RLY-TR-EMK', title: 'Eye Mask + Earplugs Kit', subtitle: 'Sleep essentials on-board', brand: 'RLY', category: 'travel', image: 'https://images.unsplash.com/photo-1583321500900-82807e458f3c?w=800&q=80', price: 199, tags: ['travel', 'sleep'] },
+  { id: 'rly-tr-003', sku: 'RLY-TR-DL', title: 'Digital Luggage Scale', subtitle: 'Weigh up to 50kg', brand: 'RLY', category: 'travel', image: 'https://images.unsplash.com/photo-1568992688065-536aad8a12f6?w=800&q=80', price: 899, tags: ['travel', 'gadget'] },
+  { id: 'rly-tr-004', sku: 'RLY-TR-TSA', title: 'TSA-Approved Lock', subtitle: 'Combination · steel body', brand: 'RLY', category: 'travel', image: 'https://images.unsplash.com/photo-1621569642780-4864752e847e?w=800&q=80', price: 349, tags: ['travel', 'security'] },
+  { id: 'rly-tr-005', sku: 'RLY-TR-PW', title: 'Passport & RFID Wallet', subtitle: 'Vegan leather · card slots', brand: 'RLY', category: 'travel', image: 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=800&q=80', price: 799, compare: 999, tags: ['travel', 'security'] },
+
+  // Personal care / wellness
+  { id: 'rly-pc-001', sku: 'RLY-PC-NHC', title: 'Nivea Hand Cream', subtitle: 'Nourishing · 100ml', brand: 'RLY', category: 'personal-care', image: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=800&q=80', price: 199, tags: ['wellness', 'hands'], hsn: '3304', weight: '100ml' },
+  { id: 'rly-pc-002', sku: 'RLY-PC-OSD', title: 'Old Spice Deodorant', subtitle: 'Original · 150ml', brand: 'RLY', category: 'personal-care', image: 'https://images.unsplash.com/photo-1585386959984-a4155224a1ad?w=800&q=80', price: 299, tags: ['wellness', 'grooming'], hsn: '3307', weight: '150ml' },
+  { id: 'rly-pc-003', sku: 'RLY-PC-NFW', title: 'Neutrogena Face Wash', subtitle: 'Deep clean · 100g', brand: 'RLY', category: 'personal-care', image: 'https://images.unsplash.com/photo-1607602132700-068258431c6c?w=800&q=80', price: 399, tags: ['wellness', 'skincare'], hsn: '3304', weight: '100g' },
+  { id: 'rly-pc-004', sku: 'RLY-PC-CT', title: 'Colgate Travel Toothpaste', subtitle: 'Fresh mint · 50g', brand: 'RLY', category: 'personal-care', image: 'https://images.unsplash.com/photo-1602166242292-91cd94ce5f2b?w=800&q=80', price: 89, tags: ['wellness', 'travel-size'], hsn: '3306', weight: '50g' },
+  { id: 'rly-pc-005', sku: 'RLY-PC-BLB', title: 'Boro Plus Lip Balm', subtitle: 'Nourish & protect', brand: 'RLY', category: 'personal-care', image: 'https://images.unsplash.com/photo-1616683693504-3ea7e9ad6fec?w=800&q=80', price: 79, tags: ['wellness', 'lips'], hsn: '3304' },
+
+  // Magazines
+  { id: 'rly-mg-001', sku: 'RLY-MG-VG', title: 'Vogue India', subtitle: 'September issue', brand: 'RLY', category: 'magazines', image: 'https://images.unsplash.com/photo-1594736797933-d0a501ba2fe6?w=800&q=80', price: 250, tags: ['magazine', 'fashion'], hsn: '4902', featured: true },
+  { id: 'rly-mg-002', sku: 'RLY-MG-FB', title: 'Forbes India', subtitle: 'Latest edition', brand: 'RLY', category: 'magazines', image: 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=800&q=80', price: 199, tags: ['magazine', 'business'], hsn: '4902' },
+  { id: 'rly-mg-003', sku: 'RLY-MG-NG', title: 'National Geographic Traveller', subtitle: 'Latest edition', brand: 'RLY', category: 'magazines', image: 'https://images.unsplash.com/photo-1543353071-873f17a7a088?w=800&q=80', price: 350, tags: ['magazine', 'travel'], hsn: '4902' },
+  { id: 'rly-mg-004', sku: 'RLY-MG-GQ', title: 'GQ India', subtitle: 'Style & culture', brand: 'RLY', category: 'magazines', image: 'https://images.unsplash.com/photo-1571907483086-3c1b1a3cd7c7?w=800&q=80', price: 299, tags: ['magazine', 'lifestyle'], hsn: '4902' },
+  { id: 'rly-mg-005', sku: 'RLY-MG-OB', title: 'Outlook Business', subtitle: 'Fortnightly · latest', brand: 'RLY', category: 'magazines', image: 'https://images.unsplash.com/photo-1495020689067-958852a7765e?w=800&q=80', price: 100, tags: ['magazine', 'business'], hsn: '4902' },
+
+  // Gifts / souvenirs at Relay
+  { id: 'rly-gf-001', sku: 'RLY-GF-IND', title: 'Incredible India — Guide Set', subtitle: 'City walk collection · 3 volumes', brand: 'RLY', category: 'gifts', image: 'https://images.unsplash.com/photo-1587411768515-ab6c22e83b7b?w=800&q=80', price: 999, tags: ['gift', 'souvenir', 'travel'], hsn: '4901' },
+  { id: 'rly-gf-002', sku: 'RLY-GF-MG', title: 'Delhi Airport Souvenir Mug', subtitle: 'Ceramic · dishwasher safe', brand: 'RLY', category: 'gifts', image: 'https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?w=800&q=80', price: 599, tags: ['gift', 'souvenir'], hsn: '6912' },
+  { id: 'rly-gf-003', sku: 'RLY-GF-TJ', title: 'Miniature Taj Mahal', subtitle: 'Hand-finished · 12cm', brand: 'RLY', category: 'gifts', image: 'https://images.unsplash.com/photo-1564507592333-c60657eea523?w=800&q=80', price: 799, tags: ['gift', 'souvenir', 'india'], hsn: '9503' },
+  { id: 'rly-gf-004', sku: 'RLY-GF-JR', title: 'Traveller Journal', subtitle: 'Leather-bound · lined', brand: 'RLY', category: 'gifts', image: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=800&q=80', price: 499, tags: ['gift', 'stationery', 'travel'], hsn: '4820' },
+];
+
 const cashmere: Product[] = [
   { id: 'ps-001', sku: 'PS-SCF-CH', title: 'Pure Cashmere Shawl · Charcoal', subtitle: 'Woven in Ladakh · 100% pashmina', brand: 'PSH', category: 'cashmere', image: 'https://images.unsplash.com/photo-1601924582970-9238bcb495d9?w=800&q=80', price: 14999, tags: ['luxury', 'shawl', 'winter'], hsn: '6214', featured: true },
   { id: 'ps-002', sku: 'PS-SCF-IV', title: 'Ivory Ring Stole', subtitle: 'Featherweight · 200g', brand: 'PSH', category: 'cashmere', image: 'https://images.unsplash.com/photo-1520903920243-00d872a2d1c9?w=800&q=80', price: 8999, tags: ['luxury', 'stole'] },
@@ -81,11 +136,12 @@ const cashmere: Product[] = [
   { id: 'ps-004', sku: 'PS-SCF-BL', title: 'Cobalt Silk-Cashmere Wrap', subtitle: 'Hand-loomed · 80/20 blend', brand: 'PSH', category: 'cashmere', image: 'https://images.unsplash.com/photo-1584464491033-06628f3a6b7b?w=800&q=80', price: 11999, tags: ['luxury', 'wrap'] },
 ];
 
-export const ALL_PRODUCTS: Product[] = [...books, ...chocolates, ...mishta, ...tech, ...cashmere];
+export const ALL_PRODUCTS: Product[] = [...books, ...chocolates, ...mishta, ...tech, ...cashmere, ...relayConvenience];
 
 export const PRODUCTS_BY_CATEGORY: Record<Category, Product[]> = {
   manga: [], fiction: [], 'non-fiction': [], children: [], books: [], stationery: [], toys: [],
   confectionery: [], sweets: [], tech: [], cashmere: [], travel: [], gifts: [],
+  snacks: [], drinks: [], 'personal-care': [], magazines: [],
 };
 for (const p of ALL_PRODUCTS) PRODUCTS_BY_CATEGORY[p.category]?.push(p);
 

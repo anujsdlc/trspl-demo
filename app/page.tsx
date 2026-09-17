@@ -45,11 +45,11 @@ export default function HomePage() {
           <div className="grid md:grid-cols-12 gap-6 md:gap-10 items-center flex-1">
             <div className="md:col-span-7">
               <h1 className="font-serif text-[11vw] md:text-[8vw] lg:text-[6.5vw] leading-[0.9] tracking-tighter text-balance">
-                Read <span className="italic">anywhere.</span><br />
-                Delivered from <span className="text-[color:var(--color-crimson)] italic">anywhere.</span>
+                Everything you need.<br />
+                <span className="text-[color:var(--color-crimson)]">Right at your gate.</span>
               </h1>
               <p className="mt-5 max-w-lg text-base md:text-lg leading-relaxed text-[color:var(--color-ink-soft)] text-pretty">
-                India&apos;s first travel-retail bookstore online. Every title on every shelf across our 51 airport stores — reserved the second you tap add-to-bag, shipped from the location nearest to you.
+                India&apos;s airport convenience store, now online. Snacks, drinks, books, tech, gifts, wellness and travel essentials — reserved the second you tap add-to-bag, ready at the store nearest your gate.
               </p>
               <div className="mt-6 flex flex-wrap items-center gap-3">
                 <Link href="/browse" className="inline-flex items-center gap-2 h-12 px-6 bg-[color:var(--color-ink)] text-[color:var(--color-cream)] rounded-full text-sm font-medium hover:bg-[color:var(--color-crimson)] transition group">
@@ -240,13 +240,13 @@ export default function HomePage() {
         <div className="container-editorial">
           <div className="flex items-end justify-between mb-16 flex-wrap gap-4">
             <div>
-              <div className="text-[10px] uppercase tracking-[0.3em] text-[color:var(--color-ink-muted)] mb-3">Beyond books</div>
+              <div className="text-[10px] uppercase tracking-[0.3em] text-[color:var(--color-ink-muted)] mb-3">The TRS network</div>
               <h2 className="font-serif text-5xl md:text-6xl leading-none tracking-tighter">
                 Seven brands.<br /><span className="italic">One journey.</span>
               </h2>
             </div>
             <p className="text-[color:var(--color-ink-muted)] max-w-md">
-              The full TRS collection online for the first time — from Motech tech to Pashma cashmere.
+              Relay is our convenience anchor. Alongside it — Choco Bay chocolates, Mishta sweets, Smilen gifting, Glady&apos;s premium chocolates, Motech tech, and Pashma cashmere. One card. Every gate.
             </p>
           </div>
           <div className="mobile-scroll grid md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
@@ -272,7 +272,7 @@ export default function HomePage() {
               One card.<br />51 stores.<br /><span className="italic">Every gate.</span>
             </h2>
             <p className="mt-8 text-lg leading-relaxed max-w-md text-[color:var(--color-ink-soft)]">
-              Earn on every purchase — at any TRS store, online or airport. Books, chocolates, tech, cashmere. Points work across all seven brands. Redeem anywhere.
+              Earn on every purchase — a bottle of water at Relay, a Ferrero box at Choco Bay, cashmere at Pashma. Points work across all seven brands. Redeem anywhere.
             </p>
             <div className="mt-10 space-y-3 max-w-md">
               {['Sign-up bonus of 250 points', 'Category multipliers up to 4× on Pashma', 'Referral bonus of 1,000 points per join', 'Volume bonus up to +50% on big orders'].map(x => (

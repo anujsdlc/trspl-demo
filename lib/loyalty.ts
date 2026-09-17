@@ -96,6 +96,10 @@ export const CATEGORY_MULTIPLIER: Record<string, { mult: number; label: string }
   gifts:         { mult: 2,   label: 'Gifting · 2× points' },
   stationery:    { mult: 1,   label: 'Stationery · base points' },
   toys:          { mult: 1,   label: 'Toys · base points' },
+  snacks:        { mult: 1.5, label: 'Snacks · 1.5× points' },
+  drinks:        { mult: 1,   label: 'Drinks · base points' },
+  'personal-care': { mult: 1.5, label: 'Wellness · 1.5× points' },
+  magazines:     { mult: 2,   label: 'Magazines · 2× points' },
 };
 
 export const VOLUME_TIERS = [

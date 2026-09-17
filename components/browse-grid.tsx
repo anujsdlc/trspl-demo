@@ -9,16 +9,21 @@ import { inr } from '@/lib/utils';
 
 const CATEGORIES: { key: string; label: string }[] = [
   { key: 'all', label: 'All' },
+  { key: 'snacks', label: 'Snacks' },
+  { key: 'drinks', label: 'Drinks' },
+  { key: 'tech', label: 'Tech' },
+  { key: 'travel', label: 'Travel essentials' },
+  { key: 'personal-care', label: 'Wellness' },
+  { key: 'magazines', label: 'Magazines' },
+  { key: 'gifts', label: 'Gifts' },
   { key: 'fiction', label: 'Fiction' },
   { key: 'non-fiction', label: 'Non-Fiction' },
   { key: 'manga', label: 'Manga' },
   { key: 'children', label: "Children's" },
-  { key: 'books', label: 'General' },
-  { key: 'tech', label: 'Tech' },
+  { key: 'books', label: 'General books' },
   { key: 'confectionery', label: 'Chocolates' },
   { key: 'sweets', label: 'Indian Sweets' },
   { key: 'cashmere', label: 'Cashmere' },
-  { key: 'travel', label: 'Travel' },
   { key: 'stationery', label: 'Stationery' },
 ];
 

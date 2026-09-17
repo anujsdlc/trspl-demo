@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Relay by TRS — Read anywhere. Delivered from anywhere.",
-  description: "India's first travel-retail bookstore online. Books, tech, chocolates & luxury across 51 airport stores.",
+  title: "Relay by TRS — Your travel companion, at every gate.",
+  description: "India's airport convenience retail. Snacks, drinks, books, tech, gifts, travel essentials and wellness — everything a modern traveller needs, at 26 Relay stores and 51 TRS stores across 12 cities.",
   appleWebApp: {
     capable: true,
     title: 'Relay',

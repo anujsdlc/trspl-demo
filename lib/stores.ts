@@ -44,7 +44,7 @@ const brandCounts: Record<string, [StoreBrand, number, { city: string; terminals
 
 const RELAY: [StoreBrand, string, string[]][] = [
   ['RLY', 'Delhi', ['T3-Intl', 'T3-Dom']],
-  ['RLY', 'Gurgaon', ['Landside']],
+  ['RLY', 'Gurgaon', ['Landside', 'Cyber Hub']],
   ['RLY', 'Bangalore', ['T2-A', 'T2-B', 'T2-C', 'T1-A', 'T1-B', 'T1-C', 'T2-D']],
   ['RLY', 'Mumbai', ['T2-Intl', 'T2-Dom']],
   ['RLY', 'Hyderabad', ['T1-A', 'T1-B', 'T1-C']],
@@ -113,7 +113,7 @@ for (const [brand, city, terminals] of allRows) {
 }
 
 export const BRAND_META: Record<StoreBrand, { name: string; color: string; category: string }> = {
-  RLY: { name: 'Relay',     color: '#CA0538', category: 'Books · Tech · Snacks · Gifts' },
+  RLY: { name: 'Relay',     color: '#CA0538', category: 'Snacks · Drinks · Books · Tech · Travel · Gifts · Wellness' },
   CB:  { name: 'Choco Bay', color: '#6B4423', category: 'Confectionery' },
   MSH: { name: 'Mishta',    color: '#5A3A2A', category: 'Indian Sweets' },
   SML: { name: 'Smilen',    color: '#20A39E', category: 'Confectionery · Gifting' },

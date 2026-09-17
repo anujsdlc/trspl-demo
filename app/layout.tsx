@@ -1,25 +1,18 @@
 import type { Metadata } from "next";
-import { Inter, Instrument_Serif, JetBrains_Mono } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
+const geist = Geist({
+  variable: "--font-geist",
   subsets: ["latin"],
   display: 'swap',
   weight: ['300', '400', '500', '600', '700', '800', '900'],
 });
-const instrumentSerif = Instrument_Serif({
-  variable: "--font-instrument",
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
   subsets: ["latin"],
   display: 'swap',
-  weight: ['400'],
-  style: ['normal', 'italic'],
-});
-const mono = JetBrains_Mono({
-  variable: "--font-mono-jb",
-  subsets: ["latin"],
-  display: 'swap',
-  weight: ['300', '400', '500'],
+  weight: ['300', '400', '500', '600'],
 });
 
 export const metadata: Metadata = {
@@ -31,11 +24,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${instrumentSerif.variable} ${mono.variable} h-full antialiased`}
+      className={`${geist.variable} ${geistMono.variable} h-full antialiased`}
       style={{
-        '--font-sans': `var(--font-inter), -apple-system, BlinkMacSystemFont, "SF Pro Text", ui-sans-serif, system-ui, sans-serif`,
-        '--font-serif': `var(--font-instrument), "New York", ui-serif, Georgia, serif`,
-        '--font-mono': `var(--font-mono-jb), "SF Mono", ui-monospace, monospace`,
+        '--font-sans': `var(--font-geist), -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", ui-sans-serif, system-ui, sans-serif`,
+        '--font-display': `var(--font-geist), -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", ui-sans-serif, system-ui, sans-serif`,
+        '--font-mono': `var(--font-geist-mono), "SF Mono", ui-monospace, monospace`,
       } as React.CSSProperties}
     >
       <body className="min-h-full flex flex-col">{children}</body>

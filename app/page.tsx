@@ -21,6 +21,10 @@ export default function HomePage() {
   const chocolates = PRODUCTS_BY_BRAND.CB.slice(0, 4);
   const tech = PRODUCTS_BY_BRAND.MTC.slice(0, 4);
   const luxury = PRODUCTS_BY_BRAND.PSH.slice(0, 3);
+  const relayBooks = PRODUCTS_BY_BRAND.RLY.slice(0, 4);
+  const mishta = PRODUCTS_BY_BRAND.MSH.slice(0, 3);
+  const smilen = PRODUCTS_BY_BRAND.SML.slice(0, 3);
+  const gladys = PRODUCTS_BY_BRAND.GLD.slice(0, 3);
 
   return (
     <FavouritesProvider>
@@ -245,10 +249,14 @@ export default function HomePage() {
               The full TRS collection online for the first time — from Motech tech to Pashma cashmere.
             </p>
           </div>
-          <div className="grid md:grid-cols-3 gap-6 md:gap-8">
+          <div className="mobile-scroll grid md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
+            <BrandTile brand="RLY" products={relayBooks} />
             <BrandTile brand="MTC" products={tech} />
             <BrandTile brand="CB" products={chocolates} />
             <BrandTile brand="PSH" products={luxury} />
+            <BrandTile brand="MSH" products={mishta} />
+            <BrandTile brand="SML" products={smilen} />
+            <BrandTile brand="GLD" products={gladys} />
           </div>
         </div>
       </section>
@@ -317,12 +325,13 @@ function BrandTile({ brand, products }: { brand: StoreBrand; products: Product[]
         <div className="w-2.5 h-2.5 rounded-full" style={{ background: meta.color }} />
       </div>
       <div className="absolute bottom-6 left-6 right-6 text-white">
-        {brand === 'MTC' && <MotechMark className="h-12 w-auto" color="#F1E71D" />}
-        {brand === 'CB' && <ChocoBayMark className="h-8 w-auto" color="#fff" />}
-        {brand === 'PSH' && <PashmaMark className="h-14 w-auto" color="#fff" />}
-        {!['MTC', 'CB', 'PSH'].includes(brand) && (
-          <div className="font-serif text-5xl md:text-6xl italic leading-none">{meta.name}</div>
-        )}
+        {brand === 'RLY' && <RelayLogo className="h-10 w-auto" />}
+        {brand === 'MTC' && <MotechMark className="h-12 w-auto" color="#FFFFFF" />}
+        {brand === 'CB'  && <ChocoBayMark className="h-8 w-auto" color="#FFFFFF" />}
+        {brand === 'PSH' && <PashmaMark className="h-14 w-auto" color="#FFFFFF" />}
+        {brand === 'MSH' && <MishtaMark className="h-12 w-auto" color="#FFFFFF" />}
+        {brand === 'SML' && <SmilenMark className="h-12 w-auto" color="#FFFFFF" />}
+        {brand === 'GLD' && <GladysMark className="h-12 w-auto" color="#FFFFFF" />}
         <div className="mt-3 flex items-center gap-2 text-sm">
           Shop the collection <ArrowUpRight className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition" />
         </div>

@@ -113,7 +113,7 @@ for (const [brand, city, terminals] of allRows) {
 }
 
 export const BRAND_META: Record<StoreBrand, { name: string; color: string; category: string }> = {
-  RLY: { name: 'Relay',     color: '#C42127', category: 'Books · Tech · Snacks · Gifts' },
+  RLY: { name: 'Relay',     color: '#CA0538', category: 'Books · Tech · Snacks · Gifts' },
   CB:  { name: 'Choco Bay', color: '#6B4423', category: 'Confectionery' },
   MSH: { name: 'Mishta',    color: '#5A3A2A', category: 'Indian Sweets' },
   SML: { name: 'Smilen',    color: '#20A39E', category: 'Confectionery · Gifting' },

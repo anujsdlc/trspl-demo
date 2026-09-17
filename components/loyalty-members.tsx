@@ -407,8 +407,8 @@ function AddMemberModal({ onClose, onSave, existing }: { onClose: () => void; on
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 overflow-y-auto" onClick={onClose}>
-      <form onSubmit={submit} className="w-full max-w-xl bg-white rounded-xl shadow-2xl my-8" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 overflow-y-auto animate-fade-in" onClick={onClose}>
+      <form onSubmit={submit} className="w-full max-w-xl bg-white rounded-xl shadow-2xl my-8 animate-slide-up" onClick={e => e.stopPropagation()}>
         <div className="px-6 py-4 border-b border-[color:var(--color-line)] flex items-center justify-between">
           <div>
             <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)]">Skyline Programme</div>
@@ -554,8 +554,8 @@ function MemberDetailDrawer({ member, onClose, onUpdate, onDelete }: {
   const [editMode, setEditMode] = useState(false);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex justify-end" onClick={onClose}>
-      <div className="w-full max-w-2xl bg-[color:var(--color-cream)] h-full overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 bg-black/40 flex justify-end animate-fade-in" onClick={onClose}>
+      <div className="w-full max-w-2xl bg-[color:var(--color-cream)] h-full overflow-y-auto shadow-2xl animate-slide-in-right" onClick={e => e.stopPropagation()}>
         <div className="sticky top-0 z-10 bg-[color:var(--color-cream)] border-b border-[color:var(--color-line)] px-6 py-4 flex items-center justify-between">
           <div>
             <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)]">Member · {member.id}</div>
@@ -794,40 +794,40 @@ function ActivityFeed({ member }: { member: Member }) {
 function MemberCard({ member }: { member: Member }) {
   const tier = tierMeta(member.tier);
   return (
-    <div className="relative max-w-[420px] mx-auto">
-      <div className="absolute -inset-6 bg-[color:var(--color-crimson)]/15 blur-3xl rounded-full -z-10" />
-      <div className="holo aspect-[1.586/1] rounded-2xl p-6 text-white shadow-2xl relative overflow-hidden">
+    <div className="relative max-w-[440px] mx-auto">
+      <div className="absolute -inset-6 bg-[color:var(--color-crimson)]/12 blur-3xl rounded-full -z-10" />
+      <div className="holo aspect-[1.586/1] rounded-[22px] px-7 py-6 text-white shadow-[0_20px_60px_-20px_rgba(196,33,39,0.5)] relative overflow-hidden">
         <div className="relative z-10 flex items-start justify-between">
           <div>
-            <div className="text-[9px] uppercase tracking-[0.3em] text-white/60 font-mono">Travel Retail Services</div>
-            <div className="font-serif text-2xl italic mt-1">Skyline</div>
+            <div className="text-[9px] uppercase tracking-[0.35em] text-white/55 font-mono">Travel Retail Services</div>
+            <div className="font-serif text-[26px] mt-1 tracking-tight leading-none">Skyline</div>
           </div>
           <div className="text-right">
-            <div className="text-[9px] uppercase tracking-widest text-white/60 font-mono">{tier.name}</div>
-            <div className="mt-1 flex items-center gap-1 text-[color:var(--color-mustard)]">
+            <div className="text-[9px] uppercase tracking-[0.25em] text-white/55 font-mono">{tier.name}</div>
+            <div className="mt-1 inline-flex items-center gap-1 text-white/90">
               <Sparkles className="w-3 h-3" />
               <span className="text-[10px] font-mono uppercase tracking-wider">{tier.earn}× base rate</span>
             </div>
           </div>
         </div>
-        <div className="relative z-10 mt-6">
-          <div className="text-[9px] uppercase tracking-widest text-white/50 font-mono">Member</div>
-          <div className="font-serif text-xl mt-0.5">{member.name}</div>
-          <div className="font-mono text-[11px] mt-1 text-white/70">{member.id}</div>
+        <div className="relative z-10 mt-5">
+          <div className="text-[9px] uppercase tracking-[0.25em] text-white/45 font-mono">Member</div>
+          <div className="font-serif text-[19px] mt-1 leading-tight">{member.name}</div>
+          <div className="font-mono text-[11px] mt-1.5 text-white/65 tracking-wider">{member.id}</div>
         </div>
-        <div className="relative z-10 mt-4 flex items-end justify-between">
-          <div>
-            <div className="text-[9px] uppercase tracking-widest text-white/50 font-mono">Points balance</div>
-            <div className="editorial-num text-3xl text-[color:var(--color-mustard)]">
+        <div className="relative z-10 mt-4 flex items-end justify-between gap-4">
+          <div className="min-w-0">
+            <div className="text-[9px] uppercase tracking-[0.25em] text-white/45 font-mono">Points balance</div>
+            <div className="editorial-num text-[32px] leading-none mt-1">
               {member.points.toLocaleString('en-IN')}
             </div>
-            <div className="text-[10px] text-white/50 font-mono mt-0.5">Member since {member.joinDate}</div>
+            <div className="text-[10px] text-white/45 font-mono mt-1 tracking-wider">Member since {member.joinDate}</div>
           </div>
-          <div className="w-16 h-16 bg-white rounded-md p-1.5">
+          <div className="shrink-0 w-[72px] h-[72px] bg-white rounded-lg p-2 shadow-inner">
             <QRPattern seed={member.id} />
           </div>
         </div>
-        <Plane className="absolute top-6 right-24 w-8 h-8 text-white/10 rotate-45" />
+        <Plane className="absolute top-8 right-32 w-8 h-8 text-white/10 rotate-45 pointer-events-none" />
       </div>
     </div>
   );

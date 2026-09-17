@@ -1,14 +1,58 @@
-// RELAY logo — bold white slanted sans on crimson red badge with a
-// pin-dot circle in place of the terminal period.
+// RELAY logo — uses the official supplied PNG artwork.
+// public/relay-logo.png contains the RELAY. wordmark on the red brand
+// square with the pin-dot terminal. This component is the single place
+// the app renders it, so anywhere we want the logo we import from here.
 
-const RELAY_RED = '#ca0538';
+import Image from 'next/image';
 
-export function RelayLogo({ className, monochrome }: { className?: string; monochrome?: boolean }) {
-  const bg = monochrome ? 'transparent' : RELAY_RED;
-  const fg = monochrome ? 'currentColor' : '#FFFFFF';
+interface LogoProps {
+  className?: string;
+  /** Rare cases where we need a knocked-out mono version (e.g. print or
+   *  dark-on-light contexts). When true we fall back to a simple SVG that
+   *  matches the wordmark shape in `currentColor`. */
+  monochrome?: boolean;
+}
+
+const LOGO_SRC = '/relay-logo.png';
+// Intrinsic pixel dimensions of the artwork — required by next/image so
+// it can reserve layout space without shifting.
+const INTRINSIC_W = 1650;
+const INTRINSIC_H = 787;
+
+export function RelayLogo({ className, monochrome }: LogoProps) {
+  if (monochrome) return <MonoRelay className={className} />;
+  return (
+    <Image
+      src={LOGO_SRC}
+      alt="Relay"
+      width={INTRINSIC_W}
+      height={INTRINSIC_H}
+      className={className}
+      priority
+      unoptimized
+    />
+  );
+}
+
+export function RelayMark({ className }: { className?: string }) {
+  // Small variant (formerly a red square with a lone R) — now the same
+  // official wordmark, just scaled small. Keeps a consistent brand look.
+  return (
+    <Image
+      src={LOGO_SRC}
+      alt="Relay"
+      width={INTRINSIC_W}
+      height={INTRINSIC_H}
+      className={className}
+      priority
+      unoptimized
+    />
+  );
+}
+
+function MonoRelay({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 200 88" className={className} xmlns="http://www.w3.org/2000/svg" aria-label="Relay">
-      <rect width="200" height="88" rx="6" fill={bg} />
       <g transform="skewX(-8)">
         <text
           x="18"
@@ -16,37 +60,13 @@ export function RelayLogo({ className, monochrome }: { className?: string; monoc
           fontFamily="var(--font-display), 'Inter', system-ui, sans-serif"
           fontSize="62"
           fontWeight="900"
-          fill={fg}
+          fill="currentColor"
           letterSpacing="-2.5"
-          style={{ fontStretch: 'condensed' }}
         >
           RELAY
         </text>
       </g>
-      {/* Pin-dot replacing the period */}
-      <circle cx="172" cy="60" r="7" fill="none" stroke={fg} strokeWidth="3.5" />
-    </svg>
-  );
-}
-
-export function RelayMark({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 40 40" className={className} xmlns="http://www.w3.org/2000/svg" aria-label="Relay">
-      <rect width="40" height="40" rx="6" fill={RELAY_RED} />
-      <g transform="skewX(-8)">
-        <text
-          x="7"
-          y="30"
-          fontFamily="var(--font-display), 'Inter', system-ui, sans-serif"
-          fontSize="24"
-          fontWeight="900"
-          fill="#FFFFFF"
-          letterSpacing="-1"
-        >
-          R
-        </text>
-      </g>
-      <circle cx="30" cy="26" r="3" fill="none" stroke="#FFFFFF" strokeWidth="1.8" />
+      <circle cx="172" cy="60" r="7" fill="none" stroke="currentColor" strokeWidth="3.5" />
     </svg>
   );
 }

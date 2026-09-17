@@ -27,8 +27,8 @@ export default function HomePage() {
       <StoreNav />
 
       {/* === HERO === */}
-      <section className="relative overflow-hidden noise-bg">
-        <div className="container-editorial pt-12 md:pt-20 pb-20 md:pb-32 relative">
+      <section className="relative overflow-hidden noise-bg min-h-[calc(100vh-96px)] max-h-[calc(100vh-96px)] flex flex-col">
+        <div className="container-editorial pt-6 md:pt-10 pb-6 relative flex-1 flex flex-col justify-between">
           <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.3em] text-[color:var(--color-ink-muted)] mb-8">
             <span className="w-6 h-px bg-[color:var(--color-ink)]" />
             <span>Vol. 01 · Bangalore · Now delivering</span>
@@ -38,16 +38,16 @@ export default function HomePage() {
             </span>
           </div>
 
-          <div className="grid md:grid-cols-12 gap-8 md:gap-12 items-end">
+          <div className="grid md:grid-cols-12 gap-6 md:gap-10 items-center flex-1">
             <div className="md:col-span-7">
-              <h1 className="font-serif text-[13vw] md:text-[10vw] lg:text-[8.5vw] leading-[0.9] tracking-tighter text-balance">
+              <h1 className="font-serif text-[11vw] md:text-[8vw] lg:text-[6.5vw] leading-[0.9] tracking-tighter text-balance">
                 Read <span className="italic">anywhere.</span><br />
-                Delivered from <span className="text-[color:var(--color-crimson)]">anywhere.</span>
+                Delivered from <span className="text-[color:var(--color-crimson)] italic">anywhere.</span>
               </h1>
-              <p className="mt-8 max-w-lg text-lg leading-relaxed text-[color:var(--color-ink-soft)] text-pretty">
+              <p className="mt-5 max-w-lg text-base md:text-lg leading-relaxed text-[color:var(--color-ink-soft)] text-pretty">
                 India&apos;s first travel-retail bookstore online. Every title on every shelf across our 51 airport stores — reserved the second you tap add-to-bag, shipped from the location nearest to you.
               </p>
-              <div className="mt-10 flex flex-wrap items-center gap-3">
+              <div className="mt-6 flex flex-wrap items-center gap-3">
                 <Link href="/browse" className="inline-flex items-center gap-2 h-12 px-6 bg-[color:var(--color-ink)] text-[color:var(--color-cream)] rounded-full text-sm font-medium hover:bg-[color:var(--color-crimson)] transition group">
                   Explore the shelf
                   <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition" />
@@ -56,38 +56,44 @@ export default function HomePage() {
                   Skyline · Join Free
                 </Link>
               </div>
-
-              <div className="mt-14 grid grid-cols-3 gap-4 md:gap-8 max-w-lg">
-                {[{ n: '51', l: 'Live stores' }, { n: '12', l: 'Cities' }, { n: '1', l: 'Loyalty card' }].map(s => (
-                  <div key={s.l}>
-                    <div className="editorial-num text-5xl md:text-6xl">{s.n}</div>
-                    <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)] mt-2">{s.l}</div>
-                  </div>
-                ))}
-              </div>
             </div>
 
-            <div className="md:col-span-5">
+            <div className="md:col-span-5 hidden md:block">
               {heroFeature && (
                 <div className="relative">
-                  <div className="absolute -top-8 -left-4 text-[10px] uppercase tracking-widest text-[color:var(--color-crimson)] font-mono z-10">
+                  <div className="absolute -top-6 -left-2 text-[10px] uppercase tracking-widest text-[color:var(--color-crimson)] font-mono z-10">
                     ✦ Editor&apos;s pick this week
                   </div>
-                  <div className="relative aspect-[3/4] max-h-[560px] rounded-lg overflow-hidden bg-gradient-to-br from-[color:var(--color-paper)] to-[color:var(--color-paper-warm)] shadow-2xl book-cover">
+                  <div className="relative aspect-[3/4] max-h-[52vh] rounded-lg overflow-hidden bg-gradient-to-br from-[color:var(--color-paper)] to-[color:var(--color-paper-warm)] shadow-2xl book-cover">
                     <Image src={heroFeature.image} alt={heroFeature.title} fill className="object-cover" priority sizes="(max-width: 768px) 100vw, 40vw" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                    <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                      <div className="text-[10px] uppercase tracking-widest text-white/70 mb-2 font-mono">In stock · 18 stores</div>
-                      <h2 className="font-serif text-2xl md:text-3xl leading-tight">{heroFeature.title}</h2>
+                    <div className="absolute bottom-0 left-0 right-0 p-5 text-white">
+                      <div className="text-[10px] uppercase tracking-widest text-white/70 mb-1 font-mono">In stock · 18 stores</div>
+                      <h2 className="font-serif text-xl md:text-2xl leading-tight">{heroFeature.title}</h2>
                     </div>
                   </div>
-                  <div className="absolute -bottom-6 -right-4 md:-right-8 bg-[color:var(--color-mustard)] px-4 py-3 rounded-md shadow-lg rotate-3">
+                  <div className="absolute -bottom-5 -right-3 bg-[color:var(--color-mustard)] px-4 py-2.5 rounded-md shadow-lg rotate-3">
                     <div className="text-[9px] font-mono uppercase tracking-wider text-[color:var(--color-ink)]/60">Reserve now</div>
-                    <div className="font-serif text-lg leading-none">Pick up post-security</div>
+                    <div className="font-serif text-base leading-none">Pick up post-security</div>
                   </div>
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Hero stats — bottom of viewport */}
+          <div className="mt-6 grid grid-cols-3 md:grid-cols-4 gap-3 md:gap-6">
+            {[
+              { n: '51', l: 'Live stores' },
+              { n: '12', l: 'Cities' },
+              { n: '1.7K', l: 'SKUs live' },
+              { n: '1', l: 'Loyalty card' },
+            ].map(s => (
+              <div key={s.l} className="border-t border-[color:var(--color-line)] pt-3">
+                <div className="editorial-num text-3xl md:text-4xl">{s.n}</div>
+                <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)] mt-1">{s.l}</div>
+              </div>
+            ))}
           </div>
         </div>
 

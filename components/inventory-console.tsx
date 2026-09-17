@@ -1,8 +1,8 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
+import NextLink from 'next/link';
 import { ALL_PRODUCTS, stockFor, PRODUCTS_BY_BRAND, type Product } from '@/lib/products';
 import { STORES, BRAND_META, type StoreBrand } from '@/lib/stores';
 import { inr } from '@/lib/utils';
@@ -145,7 +145,7 @@ export function InventoryConsole() {
             <Warehouse className="w-3 h-3" /> Multi-location stock
             <span className="ml-2 flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 bg-[color:var(--color-success)] rounded-full pulse-dot" />
-              <span className="font-mono">synced 12s ago · 51 stores</span>
+              <span className="font-mono">synced 12s ago · {STORES.length} stores</span>
             </span>
           </div>
           <h1 className="font-serif text-4xl leading-tight tracking-tight">Inventory Console</h1>
@@ -154,9 +154,9 @@ export function InventoryConsole() {
           <button className="h-9 px-3 border border-[color:var(--color-line)] rounded-md text-xs inline-flex items-center gap-1.5 hover:bg-[color:var(--color-paper)]">
             <Download className="w-3.5 h-3.5" /> Export CSV
           </button>
-          <button className="h-9 px-3 border border-[color:var(--color-line)] rounded-md text-xs inline-flex items-center gap-1.5 hover:bg-[color:var(--color-paper)]">
-            <Upload className="w-3.5 h-3.5" /> Bulk import
-          </button>
+          <NextLink href="/admin/inventory/bulk" className="h-9 px-3 border border-[color:var(--color-ink)] bg-[color:var(--color-ink)] text-[color:var(--color-cream)] rounded-md text-xs font-medium inline-flex items-center gap-1.5 hover:bg-[color:var(--color-crimson)]">
+            <Upload className="w-3.5 h-3.5" /> Bulk upload
+          </NextLink>
           <button className="h-9 px-3 border border-[color:var(--color-line)] rounded-md text-xs inline-flex items-center gap-1.5 hover:bg-[color:var(--color-paper)]">
             <RefreshCw className="w-3.5 h-3.5" /> Recount
           </button>
@@ -280,9 +280,8 @@ export function InventoryConsole() {
                 </thead>
                 <tbody>
                   {filtered.slice(0, 60).map(p => (
-                    <>
+                    <Fragment key={p.id}>
                       <tr
-                        key={p.id}
                         className={`border-b border-[color:var(--color-line)] hover:bg-[color:var(--color-paper)]/30 transition ${selected.has(p.id) ? 'bg-[color:var(--color-crimson)]/5' : ''}`}
                       >
                         <td className="px-4 py-2.5">
@@ -333,7 +332,7 @@ export function InventoryConsole() {
                           </td>
                         </tr>
                       )}
-                    </>
+                    </Fragment>
                   ))}
                 </tbody>
               </table>

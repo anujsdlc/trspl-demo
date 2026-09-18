@@ -1,9 +1,9 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import { Heart, MapPin } from 'lucide-react';
 import { useFavourites } from './favourites';
+import { SafeImage } from './safe-image';
 import type { Product } from '@/lib/products';
 import { inr } from '@/lib/utils';
 
@@ -29,9 +29,10 @@ export function BookCard({ product, size = 'md', showStock = true, storeCount = 
     <div className="group book-card">
       <Link href={`/product/${product.id}`} className="block">
         <div className={`relative w-full ${heights[size]} bg-gradient-to-br from-[color:var(--color-paper)] to-[color:var(--color-paper-warm)] rounded-md overflow-hidden book-cover`}>
-          <Image
+          <SafeImage
             src={product.image}
             alt={product.title}
+            fallbackSeed={product.title}
             fill
             sizes="(max-width: 768px) 45vw, (max-width: 1200px) 25vw, 200px"
             className="object-cover"

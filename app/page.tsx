@@ -1,8 +1,8 @@
-import Image from 'next/image';
 import Link from 'next/link';
 import { FavouritesProvider } from '@/components/favourites';
 import { StoreNav, StoreFooter } from '@/components/store-nav';
 import { LoyaltyCardPreview } from '@/components/loyalty-card';
+import { SafeImage } from '@/components/safe-image';
 import { ProductShelf, TerminalPickShelf, CategoryTileRow } from '@/components/product-shelf';
 import {
   FEATURED, MANGA, FICTION, NONFIC, PRODUCTS_BY_BRAND, PRODUCTS_BY_CATEGORY,
@@ -126,7 +126,7 @@ export default function HomePage() {
                     ✦ Relay Recommends
                   </div>
                   <div className="relative aspect-[3/4] max-h-[52vh] rounded-lg overflow-hidden bg-[color:var(--color-paper)] shadow-2xl book-cover">
-                    <Image src={heroFeature.image} alt={heroFeature.title} fill className="object-cover" priority sizes="(max-width: 768px) 100vw, 40vw" />
+                    <SafeImage src={heroFeature.image} alt={heroFeature.title} fallbackSeed={heroFeature.title} fill className="object-cover" priority sizes="(max-width: 768px) 100vw, 40vw" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                     <div className="absolute bottom-0 left-0 right-0 p-5 text-white">
                       <div className="text-[10px] uppercase tracking-widest text-white/70 mb-1 font-mono">In stock · 18 stores</div>
@@ -370,7 +370,7 @@ function BrandTile({ brand, products }: { brand: StoreBrand; products: Product[]
   if (!cover) return null;
   return (
     <Link href={`/browse?brand=${brand}`} className="group block relative aspect-[3/4] rounded-xl overflow-hidden">
-      <Image src={cover.image} alt={meta.name} fill className="object-cover group-hover:scale-105 transition duration-700" sizes="(max-width: 768px) 100vw, 33vw" />
+      <SafeImage src={cover.image} alt={meta.name} fallbackSeed={meta.name} fill className="object-cover group-hover:scale-105 transition duration-700" sizes="(max-width: 768px) 100vw, 33vw" />
       <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
       <div className="absolute top-6 left-6 right-6 flex items-center justify-between text-white">
         <div className="text-[10px] uppercase tracking-widest font-mono">{meta.category}</div>

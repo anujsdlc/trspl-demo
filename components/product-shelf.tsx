@@ -1,7 +1,7 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import { ArrowRight, ArrowUpRight, Tag, Sparkles } from 'lucide-react';
 import { BookCard } from './book-card';
+import { SafeImage } from './safe-image';
 import type { Product } from '@/lib/products';
 
 interface ProductShelfProps {
@@ -161,9 +161,10 @@ export function TerminalPickShelf({ storeCode, storeLabel, city, picks }: {
             {picks.slice(0, 5).map(p => (
               <Link key={p.id} href={`/product/${p.id}`} className="group block">
                 <div className="relative aspect-[3/4] rounded-md overflow-hidden bg-white/5">
-                  <Image
+                  <SafeImage
                     src={p.image}
                     alt={p.title}
+                    fallbackSeed={p.title}
                     fill
                     sizes="(max-width: 768px) 42vw, 200px"
                     className="object-cover group-hover:scale-105 transition duration-500"
@@ -197,7 +198,7 @@ export function CategoryTileRow({ tiles }: { tiles: { label: string; href: strin
         {tiles.map(t => (
           <Link key={t.label} href={t.href} className="group flex flex-col items-center gap-2 text-center">
             <div className="w-full aspect-square rounded-full overflow-hidden bg-[color:var(--color-paper)] border border-[color:var(--color-line)] relative group-hover:border-[color:var(--color-crimson)] transition">
-              <Image src={t.image} alt={t.label} fill sizes="100px" className="object-cover group-hover:scale-105 transition" />
+              <SafeImage src={t.image} alt={t.label} fallbackSeed={t.label} fill sizes="100px" className="object-cover group-hover:scale-105 transition" />
             </div>
             <div className="text-xs md:text-sm font-medium">{t.label}</div>
           </Link>

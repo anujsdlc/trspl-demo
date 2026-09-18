@@ -74,13 +74,13 @@ export default function HomePage() {
 
   const departmentTiles = [
     { label: 'Snacks',    href: '/browse?cat=snacks',        image: 'https://images.unsplash.com/photo-1613919113640-25732ec5e61f?w=400&q=80' },
-    { label: 'Drinks',    href: '/browse?cat=drinks',        image: 'https://images.unsplash.com/photo-1613218841863-9420a4e29ea1?w=400&q=80' },
-    { label: 'Tech',      href: '/browse?cat=tech',          image: 'https://images.unsplash.com/photo-1587037542794-6ad4433f95a1?w=400&q=80' },
+    { label: 'Drinks',    href: '/browse?cat=drinks',        image: 'https://images.unsplash.com/photo-1554978991-33ef7f31d658?w=400&q=80' },
+    { label: 'Tech',      href: '/browse?cat=tech',          image: 'https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=400&q=80' },
     { label: 'Travel',    href: '/browse?cat=travel',        image: 'https://images.unsplash.com/photo-1585909695284-32d2985ac9c0?w=400&q=80' },
     { label: 'Books',     href: '/browse',                   image: 'https://images.unsplash.com/photo-1495640388908-05fa85288e61?w=400&q=80' },
     { label: 'Wellness',  href: '/browse?cat=personal-care', image: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400&q=80' },
     { label: 'Gifts',     href: '/browse?cat=gifts',         image: 'https://images.unsplash.com/photo-1512909006721-3d6018887383?w=400&q=80' },
-    { label: 'Magazines', href: '/browse?cat=magazines',     image: 'https://images.unsplash.com/photo-1594736797933-d0a501ba2fe6?w=400&q=80' },
+    { label: 'Magazines', href: '/browse?cat=magazines',     image: 'https://images.unsplash.com/photo-1611746872915-64382b5c76da?w=400&q=80' },
   ];
 
   return (

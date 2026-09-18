@@ -14,7 +14,7 @@ import {
 import {
   Upload, Download, FileText, ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle,
   XCircle, X, Package, DollarSign, ArrowRightLeft, Boxes, Sparkles, Database, Lock,
-  Circle, ChevronRight, RefreshCw,
+  Circle, ChevronRight, RefreshCw, FolderOpen, Image as ImageIcon, Trash2,
 } from 'lucide-react';
 
 const CATEGORIES = ['manga', 'fiction', 'non-fiction', 'children', 'books', 'stationery', 'toys', 'confectionery', 'sweets', 'tech', 'cashmere', 'travel', 'gifts'];
@@ -37,6 +37,12 @@ export function BulkUploadWizard() {
   const [filter, setFilter] = useState<'all' | 'ok' | 'warning' | 'error'>('all');
   const [isDragging, setIsDragging] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
+  const imageFolderInput = useRef<HTMLInputElement>(null);
+
+  // SKU (uppercase) → data URL for the primary product image, populated
+  // from the user's local product-images folder.
+  const [images, setImages] = useState<Record<string, string>>({});
+  const [processingImages, setProcessingImages] = useState(false);
 
   const validSKUs = useMemo(() => new Set(ALL_PRODUCTS.map(p => p.sku)), []);
   const validStores = useMemo(() => new Set([...STORES.map(s => s.code), ...STORES.map(s => s.id)]), []);
@@ -83,7 +89,7 @@ export function BulkUploadWizard() {
 
     // Persist based on the current mode.
     if (mode === 'products') {
-      addUploadedProducts(commitableRows.map(r => rowToProduct(r.raw)));
+      addUploadedProducts(commitableRows.map(r => rowToProduct(r.raw, images[r.raw.sku?.toUpperCase()])));
     } else if (mode === 'stock') {
       saveStockAdjustments(commitableRows.map(r => rowToStockAdjustment(r.raw)));
     } else if (mode === 'price') {
@@ -107,7 +113,41 @@ export function BulkUploadWizard() {
   const reset = () => {
     setMode(null); setStep('mode'); setRawText(''); setValidated([]);
     setCommitted(false); setProgress(0); setFilter('all');
+    setImages({});
   };
+
+  // Parse an entire local folder — files come in with their
+  // `webkitRelativePath` set to "<root>/<SKU>/<filename>". We take the
+  // first image file inside each SKU subfolder, downscale it, and store
+  // as a JPEG data URL keyed by uppercased SKU.
+  const handleImageFolder = useCallback(async (fileList: FileList | null) => {
+    if (!fileList || fileList.length === 0) return;
+    setProcessingImages(true);
+    const grouped: Record<string, File> = {};
+    for (const f of Array.from(fileList)) {
+      if (!f.type.startsWith('image/')) continue;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const path: string = (f as any).webkitRelativePath || f.name;
+      const parts = path.split('/');
+      if (parts.length < 2) continue;
+      // Immediate parent folder name = SKU
+      const sku = parts[parts.length - 2].trim().toUpperCase();
+      if (!sku || grouped[sku]) continue; // first image per SKU wins
+      grouped[sku] = f;
+    }
+    const dataUrls: Record<string, string> = {};
+    for (const [sku, file] of Object.entries(grouped)) {
+      try {
+        dataUrls[sku] = await downscaleToDataUrl(file, 800, 1000, 0.82);
+      } catch {
+        // skip files we can't decode
+      }
+    }
+    setImages(prev => ({ ...prev, ...dataUrls }));
+    setProcessingImages(false);
+  }, []);
+
+  const clearImages = () => setImages({});
 
   const currentMode = mode ? BULK_MODES[mode] : null;
 
@@ -302,6 +342,96 @@ export function BulkUploadWizard() {
             <SummaryCard label="Errors — skipped" value={summary.error} color="danger" />
           </div>
 
+          {/* Image folder attach (products mode only) */}
+          {mode === 'products' && (
+            <div className="mb-6 p-4 bg-white rounded-xl border border-[color:var(--color-line)]">
+              <div className="flex items-start gap-4 flex-wrap">
+                <div className="flex-1 min-w-[280px]">
+                  <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)] mb-1 flex items-center gap-1.5">
+                    <ImageIcon className="w-3 h-3" /> Attach product images (optional)
+                  </div>
+                  <div className="font-serif text-xl leading-tight">Point at your images folder.</div>
+                  <div className="text-xs text-[color:var(--color-ink-muted)] mt-1 max-w-lg">
+                    Structure: <span className="font-mono">product-images/&lt;SKU&gt;/front.jpg</span>. We&apos;ll grab the first image inside each SKU sub-folder, downscale it, and attach it to the matching row. Nothing gets uploaded to a server — everything stays on this browser.
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {Object.keys(images).length > 0 && (
+                    <button
+                      onClick={clearImages}
+                      className="h-9 px-3 border border-[color:var(--color-line)] rounded-md text-xs inline-flex items-center gap-1.5 hover:bg-[color:var(--color-paper)]"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> Clear
+                    </button>
+                  )}
+                  <label className="h-9 px-4 bg-[color:var(--color-ink)] text-[color:var(--color-cream)] rounded-md text-xs font-medium hover:bg-[color:var(--color-crimson)] inline-flex items-center gap-1.5 cursor-pointer">
+                    <FolderOpen className="w-3.5 h-3.5" />
+                    {processingImages ? 'Processing…' : Object.keys(images).length > 0 ? 'Change folder' : 'Choose folder'}
+                    <input
+                      ref={imageFolderInput}
+                      type="file"
+                      // @ts-expect-error -- non-standard directory attributes needed for cross-browser folder pick
+                      webkitdirectory="true"
+                      directory="true"
+                      multiple
+                      className="hidden"
+                      onChange={e => handleImageFolder(e.target.files)}
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {Object.keys(images).length > 0 && (
+                <div className="mt-4">
+                  {(() => {
+                    const csvSkus = new Set(validated.map(v => v.raw.sku?.toUpperCase()).filter(Boolean));
+                    const imageSkus = Object.keys(images);
+                    const matched = imageSkus.filter(s => csvSkus.has(s));
+                    const orphan = imageSkus.filter(s => !csvSkus.has(s));
+                    const missing = validated.filter(v => v.status !== 'error' && !images[v.raw.sku?.toUpperCase()]).length;
+                    return (
+                      <>
+                        <div className="flex items-center gap-3 flex-wrap text-xs mb-3">
+                          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-[color:var(--color-success)]/10 text-[color:var(--color-success)]">
+                            <CheckCircle2 className="w-3 h-3" /> {matched.length} SKU{matched.length === 1 ? '' : 's'} matched
+                          </span>
+                          {orphan.length > 0 && (
+                            <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-[color:var(--color-warning)]/10 text-[color:var(--color-warning)]">
+                              <AlertTriangle className="w-3 h-3" /> {orphan.length} folder{orphan.length === 1 ? '' : 's'} without a CSV row
+                            </span>
+                          )}
+                          {missing > 0 && (
+                            <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-[color:var(--color-paper)] text-[color:var(--color-ink-muted)]">
+                              <ImageIcon className="w-3 h-3" /> {missing} row{missing === 1 ? '' : 's'} without an image — placeholder will be used
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
+                          {imageSkus.slice(0, 30).map(sku => (
+                            <div key={sku} className="shrink-0 text-center">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={images[sku]}
+                                alt={sku}
+                                className={`w-16 h-20 object-cover rounded border ${csvSkus.has(sku) ? 'border-[color:var(--color-line)]' : 'border-[color:var(--color-warning)]'}`}
+                              />
+                              <div className="font-mono text-[10px] mt-1 max-w-[64px] truncate">{sku}</div>
+                            </div>
+                          ))}
+                          {imageSkus.length > 30 && (
+                            <div className="shrink-0 w-16 h-20 flex items-center justify-center text-[10px] font-mono text-[color:var(--color-ink-muted)] border border-dashed border-[color:var(--color-line)] rounded">
+                              +{imageSkus.length - 30}
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Filter chips */}
           <div className="mb-4 flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-1 border border-[color:var(--color-line)] rounded-md p-1 text-xs bg-white">
@@ -495,4 +625,30 @@ function SummaryCard({ label, value, color }: { label: string; value: number; co
       <div className={`editorial-num text-4xl mt-1 ${text}`}>{value}</div>
     </div>
   );
+}
+
+/** Downscale + re-encode an image file as a JPEG data URL. Keeps
+ *  localStorage payloads small while still looking decent on cards. */
+async function downscaleToDataUrl(file: File, maxW: number, maxH: number, quality: number): Promise<string> {
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(new Error('read failed'));
+    reader.readAsDataURL(file);
+  });
+  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const el = new Image();
+    el.onload = () => resolve(el);
+    el.onerror = () => reject(new Error('decode failed'));
+    el.src = dataUrl;
+  });
+  const ratio = Math.min(maxW / img.width, maxH / img.height, 1);
+  const w = Math.max(1, Math.round(img.width * ratio));
+  const h = Math.max(1, Math.round(img.height * ratio));
+  const canvas = document.createElement('canvas');
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return dataUrl;
+  ctx.drawImage(img, 0, 0, w, h);
+  return canvas.toDataURL('image/jpeg', quality);
 }

@@ -96,7 +96,7 @@ export function loadTransfers(): TransferRecord[] { return read<TransferRecord>(
 
 const PLACEHOLDER_IMAGE = 'https://images.unsplash.com/photo-1481391319762-47dff72954d9?w=800&h=1000&fit=crop&crop=entropy&q=90&auto=format';
 
-export function rowToProduct(row: Record<string, string>): Product {
+export function rowToProduct(row: Record<string, string>, imageOverride?: string): Product {
   const compare = row.compare_price ? Number(row.compare_price) : null;
   return {
     id: `up-${row.sku.toLowerCase()}`,
@@ -105,7 +105,7 @@ export function rowToProduct(row: Record<string, string>): Product {
     subtitle: row.subtitle || undefined,
     brand: row.brand as StoreBrand,
     category: row.category as Category,
-    image: PLACEHOLDER_IMAGE,
+    image: imageOverride ?? PLACEHOLDER_IMAGE,
     price: Number(row.price),
     compare: compare && !Number.isNaN(compare) ? compare : undefined,
     tags: [row.category],

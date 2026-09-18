@@ -8,6 +8,10 @@ import {
   parseCSV, toCSV, downloadCSV, validate, BULK_MODES, type BulkMode, type ValidatedRow,
 } from '@/lib/csv';
 import {
+  addUploadedProducts, saveStockAdjustments, savePriceChanges, saveTransfers,
+  rowToProduct, rowToStockAdjustment, rowToPriceChange, rowToTransfer,
+} from '@/lib/inventory-store';
+import {
   Upload, Download, FileText, ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle,
   XCircle, X, Package, DollarSign, ArrowRightLeft, Boxes, Sparkles, Database, Lock,
   Circle, ChevronRight, RefreshCw,
@@ -74,7 +78,21 @@ export function BulkUploadWizard() {
   const commit = async () => {
     setCommitting(true);
     setProgress(0);
-    const commitable = validated.filter(v => v.status !== 'error').length;
+    const commitableRows = validated.filter(v => v.status !== 'error');
+    const commitable = commitableRows.length;
+
+    // Persist based on the current mode.
+    if (mode === 'products') {
+      addUploadedProducts(commitableRows.map(r => rowToProduct(r.raw)));
+    } else if (mode === 'stock') {
+      saveStockAdjustments(commitableRows.map(r => rowToStockAdjustment(r.raw)));
+    } else if (mode === 'price') {
+      savePriceChanges(commitableRows.map(r => rowToPriceChange(r.raw)));
+    } else if (mode === 'transfer') {
+      saveTransfers(commitableRows.map(r => rowToTransfer(r.raw)));
+    }
+
+    // Animated progress feedback.
     let done = 0;
     const tick = setInterval(() => {
       done += Math.max(1, Math.floor(commitable / 30));

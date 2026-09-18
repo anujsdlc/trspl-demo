@@ -1,11 +1,14 @@
 'use client';
 
-import { Fragment, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import NextLink from 'next/link';
 import { ALL_PRODUCTS, stockFor, PRODUCTS_BY_BRAND, type Product } from '@/lib/products';
 import { STORES, BRAND_META, type StoreBrand } from '@/lib/stores';
 import { inr } from '@/lib/utils';
+import {
+  loadUploadedProducts, loadStockAdjustments, loadPriceChanges,
+} from '@/lib/inventory-store';
 import {
   Search, Download, Upload, Filter, ArrowUpDown, AlertTriangle,
   Package, MapPin, Zap, TrendingDown, ChevronDown, ChevronRight, X,
@@ -37,15 +40,73 @@ interface EnrichedProduct extends Product {
 }
 
 export function InventoryConsole() {
-  // Enrich all products with per-store stock
+  // Load bulk-uploaded products + adjustments from localStorage on mount.
+  const [uploadedProducts, setUploadedProducts] = useState<Product[]>([]);
+  const [stockAdjustments, setStockAdjustments] = useState<ReturnType<typeof loadStockAdjustments>>([]);
+  const [priceChanges, setPriceChanges] = useState<ReturnType<typeof loadPriceChanges>>([]);
+  useEffect(() => {
+    setUploadedProducts(loadUploadedProducts());
+    setStockAdjustments(loadStockAdjustments());
+    setPriceChanges(loadPriceChanges());
+  }, []);
+
+  // Latest price change per SKU wins over the seed price.
+  const priceOverrides = useMemo(() => {
+    const m = new Map<string, number>();
+    // priceChanges is stored newest-first; walk from oldest → newest so the
+    // last entry wins for each SKU.
+    for (let i = priceChanges.length - 1; i >= 0; i--) {
+      const c = priceChanges[i];
+      m.set(c.sku, c.newPrice);
+    }
+    return m;
+  }, [priceChanges]);
+
+  // Sum of net stock deltas from bulk-upload stock adjustments, keyed by
+  // productId + storeCode. 'set' resets; add/remove accumulate.
+  const stockDeltas = useMemo(() => {
+    const skuToId = new Map(
+      [...ALL_PRODUCTS, ...uploadedProducts].map(p => [p.sku, p.id])
+    );
+    const setValues = new Map<string, number>();      // key = productId::storeCode
+    const additiveDeltas = new Map<string, number>();
+    // Walk oldest → newest so 'set' followed by 'add' composes correctly.
+    for (let i = stockAdjustments.length - 1; i >= 0; i--) {
+      const adj = stockAdjustments[i];
+      const productId = skuToId.get(adj.sku);
+      if (!productId) continue;
+      const store = STORES.find(s => s.code === adj.storeCode || s.id === adj.storeCode);
+      if (!store) continue;
+      const key = `${productId}::${store.id}`;
+      if (adj.action === 'set') {
+        setValues.set(key, adj.quantity);
+        additiveDeltas.set(key, 0);
+      } else if (adj.action === 'add') {
+        additiveDeltas.set(key, (additiveDeltas.get(key) ?? 0) + adj.quantity);
+      } else if (adj.action === 'remove') {
+        additiveDeltas.set(key, (additiveDeltas.get(key) ?? 0) - adj.quantity);
+      }
+    }
+    return { setValues, additiveDeltas };
+  }, [stockAdjustments, uploadedProducts]);
+
+  function effectiveStock(productId: string, storeId: string): number {
+    const key = `${productId}::${storeId}`;
+    const base = stockDeltas.setValues.get(key) ?? stockFor(productId, storeId);
+    return Math.max(0, base + (stockDeltas.additiveDeltas.get(key) ?? 0));
+  }
+
+  // Enrich static + uploaded products with per-store stock
   const enriched = useMemo<EnrichedProduct[]>(() => {
-    return ALL_PRODUCTS.map(p => {
+    const all = [...uploadedProducts, ...ALL_PRODUCTS];
+    return all.map(p => {
+      const price = priceOverrides.get(p.sku) ?? p.price;
       const relevantStores = STORES.filter(s => s.brand === p.brand);
       const storeStock = relevantStores.map(s => ({
         storeId: s.id,
         storeCode: s.code,
         storeLocation: s.location,
-        qty: stockFor(p.id, s.id),
+        qty: effectiveStock(p.id, s.id),
       }));
       const totalStock = storeStock.reduce((sum, x) => sum + x.qty, 0);
       const reserved = Math.floor(totalStock * 0.08);
@@ -54,16 +115,17 @@ export function InventoryConsole() {
       const status: 'in-stock' | 'low' | 'out' = totalStock === 0 ? 'out' : totalStock < reorderAt * relevantStores.length * 0.5 ? 'low' : 'in-stock';
       return {
         ...p,
+        price,
         totalStock,
         reserved,
         available,
         storeStock: storeStock.sort((a, b) => b.qty - a.qty),
-        stockValue: totalStock * p.price,
+        stockValue: totalStock * price,
         status,
         reorderAt,
       };
     });
-  }, []);
+  }, [uploadedProducts, priceOverrides, stockDeltas]);
 
   // Filters
   const [query, setQuery] = useState('');

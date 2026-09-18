@@ -15,6 +15,10 @@ import {
   loadSuppliers, loadCustomers, loadPOs, loadSOs,
   SEED_SUPPLIERS, SEED_CUSTOMERS, SEED_POS, SEED_SOS,
 } from '@/lib/erp/phase2';
+import {
+  loadCoA, loadJVs, loadBankEntries, computeBalances, summariseByType,
+  SEED_COA, SEED_JVS, SEED_BANK_ENTRIES,
+} from '@/lib/erp/phase3';
 
 const ICONS: Record<string, React.ElementType> = {
   LayoutDashboard, Building2, Warehouse, Landmark, BookOpenText, ShoppingCart,
@@ -32,8 +36,17 @@ export function ERPDashboard() {
     customers: SEED_CUSTOMERS.length,
     pos: SEED_POS.length,
     sos: SEED_SOS.length,
+    ledgers: SEED_COA.length,
+    journals: SEED_JVS.length,
+    bank: SEED_BANK_ENTRIES.length,
   });
+  const [netIncome, setNetIncome] = useState(0);
   useEffect(() => {
+    const coa = loadCoA();
+    const jvs = loadJVs();
+    const balances = computeBalances(coa, jvs);
+    const s = summariseByType(balances);
+    setNetIncome(s.income - s.expense);
     setCounts({
       branches: loadBranches().length,
       warehouses: loadWarehouses().length,
@@ -43,11 +56,15 @@ export function ERPDashboard() {
       customers: loadCustomers().length,
       pos: loadPOs().length,
       sos: loadSOs().length,
+      ledgers: coa.length,
+      journals: jvs.length,
+      bank: loadBankEntries().length,
     });
   }, []);
 
   const phase1 = ERP_MODULES.filter(m => m.phase === 1 && m.key !== 'dashboard');
   const phase2 = ERP_MODULES.filter(m => m.phase === 2 && m.status === 'live');
+  const phase3 = ERP_MODULES.filter(m => m.phase === 3 && m.status === 'live');
   const coming = ERP_MODULES.filter(m => m.status === 'coming-soon');
 
   return (
@@ -140,12 +157,50 @@ export function ERPDashboard() {
         </div>
       </div>
 
+      {/* Phase 3 — Finance */}
+      <div className="mb-10">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-crimson)] mb-1 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 bg-[color:var(--color-crimson)] rounded-full pulse-dot" /> Phase 3 · Live
+            </div>
+            <h2 className="font-serif text-2xl">Finance</h2>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {phase3.map(m => {
+            const Icon = ICONS[m.icon];
+            const count = m.key === 'accounts' ? counts.journals
+                       : m.key === 'gst-returns' ? counts.sos
+                       : m.key === 'bank-recon' ? counts.bank
+                       : 0;
+            return (
+              <Link key={m.key} href={m.href} className="group bg-white rounded-xl border border-[color:var(--color-line)] p-5 hover:border-[color:var(--color-ink)] hover:shadow-md transition">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="w-10 h-10 bg-[color:var(--color-paper)] rounded-md flex items-center justify-center">
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-[color:var(--color-ink-muted)] group-hover:text-[color:var(--color-crimson)] group-hover:translate-x-1 transition" />
+                </div>
+                <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)]">{m.label}</div>
+                <div className="editorial-num text-4xl mt-1">{count.toLocaleString('en-IN')}</div>
+                <div className="text-[11px] text-[color:var(--color-ink-muted)] mt-1">
+                  {m.key === 'accounts' && `Journal entries · net income ${netIncome >= 0 ? '+' : ''}₹${(netIncome / 100000).toFixed(1)}L`}
+                  {m.key === 'gst-returns' && 'Invoices sourced for GSTR-1'}
+                  {m.key === 'bank-recon' && 'Bank statement entries · auto-match ready'}
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Coming soon roadmap */}
       <div>
         <div className="flex items-center justify-between mb-4">
           <div>
             <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)] mb-1">Roadmap</div>
-            <h2 className="font-serif text-2xl">Coming in Phases 3 – 6</h2>
+            <h2 className="font-serif text-2xl">Coming in Phases 4 – 6</h2>
           </div>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">

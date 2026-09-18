@@ -11,6 +11,10 @@ import {
   loadBranches, loadWarehouses, loadGST, loadBookMaster, ERP_MODULES,
   SEED_BRANCHES, SEED_WAREHOUSES, SEED_GST, SEED_BOOK_MASTER,
 } from '@/lib/erp/foundations';
+import {
+  loadSuppliers, loadCustomers, loadPOs, loadSOs,
+  SEED_SUPPLIERS, SEED_CUSTOMERS, SEED_POS, SEED_SOS,
+} from '@/lib/erp/phase2';
 
 const ICONS: Record<string, React.ElementType> = {
   LayoutDashboard, Building2, Warehouse, Landmark, BookOpenText, ShoppingCart,
@@ -24,6 +28,10 @@ export function ERPDashboard() {
     warehouses: SEED_WAREHOUSES.length,
     gst: SEED_GST.length,
     books: SEED_BOOK_MASTER.length,
+    suppliers: SEED_SUPPLIERS.length,
+    customers: SEED_CUSTOMERS.length,
+    pos: SEED_POS.length,
+    sos: SEED_SOS.length,
   });
   useEffect(() => {
     setCounts({
@@ -31,10 +39,15 @@ export function ERPDashboard() {
       warehouses: loadWarehouses().length,
       gst: loadGST().length,
       books: loadBookMaster().length,
+      suppliers: loadSuppliers().length,
+      customers: loadCustomers().length,
+      pos: loadPOs().length,
+      sos: loadSOs().length,
     });
   }, []);
 
   const phase1 = ERP_MODULES.filter(m => m.phase === 1 && m.key !== 'dashboard');
+  const phase2 = ERP_MODULES.filter(m => m.phase === 2 && m.status === 'live');
   const coming = ERP_MODULES.filter(m => m.status === 'coming-soon');
 
   return (
@@ -87,12 +100,52 @@ export function ERPDashboard() {
         </div>
       </div>
 
+      {/* Phase 2 — Buy → Sell */}
+      <div className="mb-10">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-crimson)] mb-1 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 bg-[color:var(--color-crimson)] rounded-full pulse-dot" /> Phase 2 · Live
+            </div>
+            <h2 className="font-serif text-2xl">Buy → Sell</h2>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {phase2.map(m => {
+            const Icon = ICONS[m.icon];
+            const count = m.key === 'suppliers' ? counts.suppliers
+                       : m.key === 'customers' ? counts.customers
+                       : m.key === 'purchase' ? counts.pos
+                       : m.key === 'sales' ? counts.sos
+                       : 0;
+            return (
+              <Link key={m.key} href={m.href} className="group bg-white rounded-xl border border-[color:var(--color-line)] p-5 hover:border-[color:var(--color-ink)] hover:shadow-md transition">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="w-10 h-10 bg-[color:var(--color-paper)] rounded-md flex items-center justify-center">
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-[color:var(--color-ink-muted)] group-hover:text-[color:var(--color-crimson)] group-hover:translate-x-1 transition" />
+                </div>
+                <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)]">{m.label}</div>
+                <div className="editorial-num text-4xl mt-1">{count.toLocaleString('en-IN')}</div>
+                <div className="text-[11px] text-[color:var(--color-ink-muted)] mt-1">
+                  {m.key === 'suppliers' && 'Publishers · distributors · importers'}
+                  {m.key === 'customers' && 'Schools · dealers · retail'}
+                  {m.key === 'purchase' && 'PO → GRN → Bill'}
+                  {m.key === 'sales' && 'Quote → SO → Invoice → Receipt'}
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Coming soon roadmap */}
       <div>
         <div className="flex items-center justify-between mb-4">
           <div>
             <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)] mb-1">Roadmap</div>
-            <h2 className="font-serif text-2xl">Coming in Phases 2 – 6</h2>
+            <h2 className="font-serif text-2xl">Coming in Phases 3 – 6</h2>
           </div>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">

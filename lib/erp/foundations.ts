@@ -257,7 +257,7 @@ export const ERP_MODULES: ERPModule[] = [
   { key: 'crm',           label: 'CRM & Leads',         href: '/admin/erp/crm',                 icon: 'HeartHandshake',  status: 'live',        phase: 4, section: 'Field Ops' },
   { key: 'reports',       label: 'Reports & Dashboards',href: '/admin/erp/reports',             icon: 'BarChart3',       status: 'live',        phase: 5, section: 'Insight' },
   { key: 'hr',            label: 'HR & Attendance',     href: '/admin/erp/hr',                  icon: 'UserRound',       status: 'live',        phase: 5, section: 'Insight' },
-  { key: 'tally',         label: 'Tally Migration',     href: '/admin/erp/migration/tally',     icon: 'FileInput',       status: 'coming-soon', phase: 6, section: 'Admin' },
-  { key: 'security',      label: 'Security & Access',   href: '/admin/erp/security',            icon: 'Lock',            status: 'coming-soon', phase: 6, section: 'Admin' },
-  { key: 'system',        label: 'System Settings',     href: '/admin/erp/system',              icon: 'Settings2',       status: 'coming-soon', phase: 6, section: 'Admin' },
+  { key: 'tally',         label: 'Tally Migration',     href: '/admin/erp/migration/tally',     icon: 'FileInput',       status: 'live',        phase: 6, section: 'Admin' },
+  { key: 'security',      label: 'Security & Access',   href: '/admin/erp/security',            icon: 'Lock',            status: 'live',        phase: 6, section: 'Admin' },
+  { key: 'system',        label: 'System Settings',     href: '/admin/erp/system',              icon: 'Settings2',       status: 'live',        phase: 6, section: 'Admin' },
 ];

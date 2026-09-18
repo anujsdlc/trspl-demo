@@ -27,6 +27,10 @@ import {
   loadEmployees, loadAttendance, loadLeaves,
   SEED_EMPLOYEES, SEED_ATTENDANCE, SEED_LEAVES,
 } from '@/lib/erp/phase5';
+import {
+  loadMigrations, loadUsers, loadAlerts,
+  SEED_MIGRATIONS, SEED_USERS, SEED_ALERTS,
+} from '@/lib/erp/phase6';
 
 const ICONS: Record<string, React.ElementType> = {
   LayoutDashboard, Building2, Warehouse, Landmark, BookOpenText, ShoppingCart,
@@ -52,6 +56,9 @@ export function ERPDashboard() {
     leads: SEED_LEADS.length,
     employees: SEED_EMPLOYEES.length,
     leavesPending: SEED_LEAVES.filter(l => l.status === 'pending').length,
+    migrations: SEED_MIGRATIONS.length,
+    users: SEED_USERS.length,
+    activeAlerts: SEED_ALERTS.filter(a => !a.resolved).length,
   });
   const [netIncome, setNetIncome] = useState(0);
   useEffect(() => {
@@ -77,6 +84,9 @@ export function ERPDashboard() {
       leads: loadLeads().length,
       employees: loadEmployees().length,
       leavesPending: loadLeaves().filter(l => l.status === 'pending').length,
+      migrations: loadMigrations().length,
+      users: loadUsers().length,
+      activeAlerts: loadAlerts().filter(a => !a.resolved).length,
     });
   }, []);
 
@@ -85,6 +95,7 @@ export function ERPDashboard() {
   const phase3 = ERP_MODULES.filter(m => m.phase === 3 && m.status === 'live');
   const phase4 = ERP_MODULES.filter(m => m.phase === 4 && m.status === 'live');
   const phase5 = ERP_MODULES.filter(m => m.phase === 5 && m.status === 'live');
+  const phase6 = ERP_MODULES.filter(m => m.phase === 6 && m.status === 'live');
   const coming = ERP_MODULES.filter(m => m.status === 'coming-soon');
 
   return (
@@ -289,33 +300,58 @@ export function ERPDashboard() {
         </div>
       </div>
 
-      {/* Coming soon roadmap */}
-      <div>
+      {/* Phase 6 — Admin */}
+      <div className="mb-10">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)] mb-1">Roadmap</div>
-            <h2 className="font-serif text-2xl">Coming in Phase 6</h2>
+            <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-crimson)] mb-1 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 bg-[color:var(--color-crimson)] rounded-full pulse-dot" /> Phase 6 · Live
+            </div>
+            <h2 className="font-serif text-2xl">Admin</h2>
           </div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-          {coming.map(m => {
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {phase6.map(m => {
             const Icon = ICONS[m.icon];
+            const count = m.key === 'tally' ? counts.migrations
+                       : m.key === 'security' ? counts.users
+                       : m.key === 'system' ? counts.activeAlerts
+                       : 0;
             return (
-              <div key={m.key} className="p-4 border border-dashed border-[color:var(--color-line-strong)] rounded-lg bg-white/40">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded bg-[color:var(--color-paper)]/60 flex items-center justify-center">
-                    <Icon className="w-4 h-4 text-[color:var(--color-ink-muted)]" />
+              <Link key={m.key} href={m.href} className="group bg-white rounded-xl border border-[color:var(--color-line)] p-5 hover:border-[color:var(--color-ink)] hover:shadow-md transition">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="w-10 h-10 bg-[color:var(--color-paper)] rounded-md flex items-center justify-center">
+                    <Icon className="w-5 h-5" />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium truncate">{m.label}</div>
-                    <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)]">
-                      Phase {m.phase} · {m.section}
-                    </div>
-                  </div>
+                  <ArrowRight className="w-4 h-4 text-[color:var(--color-ink-muted)] group-hover:text-[color:var(--color-crimson)] group-hover:translate-x-1 transition" />
                 </div>
-              </div>
+                <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)]">{m.label}</div>
+                <div className="editorial-num text-4xl mt-1">{count.toLocaleString('en-IN')}</div>
+                <div className="text-[11px] text-[color:var(--color-ink-muted)] mt-1">
+                  {m.key === 'tally' && 'Migration jobs · reconciled with source'}
+                  {m.key === 'security' && 'Users across roles & scopes'}
+                  {m.key === 'system' && `Active alerts${counts.activeAlerts === 0 ? ' · all green' : ' · action required'}`}
+                </div>
+              </Link>
             );
           })}
+        </div>
+      </div>
+
+      {/* All phases complete */}
+      <div className="mb-4 p-6 bg-[color:var(--color-ink)] text-white rounded-xl flex items-center justify-between gap-4 flex-wrap">
+        <div>
+          <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-mustard)] flex items-center gap-2 mb-1">
+            <span className="w-1.5 h-1.5 bg-[color:var(--color-mustard)] rounded-full" />
+            All six phases live
+          </div>
+          <div className="font-serif text-2xl">Full ERP shipped end-to-end.</div>
+          <div className="text-sm text-white/70 mt-1">
+            20 modules · every buy/sell/close-book/fair/deploy motion covered · localStorage persistence.
+          </div>
+        </div>
+        <div className="text-xs text-white/60 font-mono">
+          Roadmap complete
         </div>
       </div>
     </div>

@@ -18,8 +18,8 @@ export function GSTReturnsConsole() {
   const [period, setPeriod] = useState('2026-09');
 
   useEffect(() => {
-    setSOs(loadSOs());
-    setGst(loadGST());
+    loadSOs().then(setSOs);
+    loadGST().then(setGst);
     setHydrated(true);
   }, []);
 

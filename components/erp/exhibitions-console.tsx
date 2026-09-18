@@ -22,8 +22,8 @@ const STATUSES: ExhibitionStatus[] = ['draft', 'approved', 'live', 'closed', 'se
 export function ExhibitionsConsole() {
   const [rows, setRows] = useState<ExhibitionEvent[]>(SEED_EXHIBITIONS);
   const [hydrated, setHydrated] = useState(false);
-  useEffect(() => { setRows(loadExhibitions()); setHydrated(true); }, []);
-  function refresh() { setRows(loadExhibitions()); }
+  useEffect(() => { loadExhibitions().then(setRows); setHydrated(true); }, []);
+  function refresh() { loadExhibitions().then(setRows); }
 
   const [q, setQ] = useState('');
   const [statusFilter, setStatusFilter] = useState<ExhibitionStatus | 'all'>('all');

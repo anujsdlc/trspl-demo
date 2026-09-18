@@ -1,3 +1,5 @@
+import { readList, writeList, upsertRow as upsertStore, deleteRow as deleteStore, readSingle, writeSingle } from './store';
+
 // ERP Phase 1 — Foundations data layer.
 // Branches, warehouses, GST registrations, and the extended book master.
 // All persisted in localStorage; each module ships with deterministic seed
@@ -9,38 +11,7 @@
 
 export type Status = 'active' | 'inactive';
 
-function isBrowser() {
-  return typeof window !== 'undefined';
-}
 
-function read<T>(key: string, fallback: T[]): T[] {
-  if (!isBrowser()) return fallback;
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return fallback;
-    return JSON.parse(raw) as T[];
-  } catch {
-    return fallback;
-  }
-}
-
-function write<T>(key: string, rows: T[]) {
-  if (!isBrowser()) return;
-  localStorage.setItem(key, JSON.stringify(rows));
-}
-
-function upsertRow<T extends { id: string }>(key: string, seed: T[], row: T) {
-  const rows = read<T>(key, seed);
-  const idx = rows.findIndex(r => r.id === row.id);
-  if (idx >= 0) rows[idx] = row;
-  else rows.unshift(row);
-  write(key, rows);
-}
-
-function deleteRow<T extends { id: string }>(key: string, seed: T[], id: string) {
-  const rows = read<T>(key, seed);
-  write(key, rows.filter(r => r.id !== id));
-}
 
 // ---------------------------------------------------------------------------
 // Branches
@@ -78,9 +49,9 @@ export const SEED_BRANCHES: Branch[] = [
   { id: 'br-008', code: 'BR-CHN-01', name: 'Chennai Landside Branch', type: 'branch', address: 'MAA T4 Concourse', city: 'Chennai', state: 'Tamil Nadu', pincode: '600027', gstin: '33AABCT1332L1ZC', manager: 'C. Pillai', phone: '+91 44 4900 2727', email: 'chennai@trs.co.in', status: 'active', createdOn: '2024-08-05' },
 ];
 
-export function loadBranches(): Branch[] { return read(BRANCH_KEY, SEED_BRANCHES); }
-export function saveBranch(b: Branch) { upsertRow(BRANCH_KEY, SEED_BRANCHES, b); }
-export function deleteBranch(id: string) { deleteRow(BRANCH_KEY, SEED_BRANCHES, id); }
+export async function loadBranches(): Promise<Branch[]> { return readList<Branch>(BRANCH_KEY, SEED_BRANCHES); }
+export async function saveBranch(b: Branch): Promise<void> { await upsertStore<Branch>(BRANCH_KEY, SEED_BRANCHES, b); }
+export async function deleteBranch(id: string): Promise<void> { await deleteStore(BRANCH_KEY, SEED_BRANCHES, id); }
 
 // ---------------------------------------------------------------------------
 // Warehouses
@@ -122,9 +93,9 @@ export const SEED_WAREHOUSES: Warehouse[] = [
   { id: 'wh-012', code: 'WH-CCU-GD', name: 'Kolkata Sub-Branch Godown', type: 'godown', branchId: 'br-007', address: 'Kaikhali Depot', capacitySqft: 6500, capacityTitles: 22000, manager: 'B. Chatterjee', status: 'active', gstin: '19AABCT1332L1ZK', createdOn: '2024-07-11' },
 ];
 
-export function loadWarehouses(): Warehouse[] { return read(WAREHOUSE_KEY, SEED_WAREHOUSES); }
-export function saveWarehouse(w: Warehouse) { upsertRow(WAREHOUSE_KEY, SEED_WAREHOUSES, w); }
-export function deleteWarehouse(id: string) { deleteRow(WAREHOUSE_KEY, SEED_WAREHOUSES, id); }
+export async function loadWarehouses(): Promise<Warehouse[]> { return readList<Warehouse>(WAREHOUSE_KEY, SEED_WAREHOUSES); }
+export async function saveWarehouse(w: Warehouse): Promise<void> { await upsertStore<Warehouse>(WAREHOUSE_KEY, SEED_WAREHOUSES, w); }
+export async function deleteWarehouse(id: string): Promise<void> { await deleteStore(WAREHOUSE_KEY, SEED_WAREHOUSES, id); }
 
 // ---------------------------------------------------------------------------
 // GST registrations (per state, all under the same PAN / firm)
@@ -160,9 +131,9 @@ export const SEED_GST: GSTRegistration[] = [
   { id: 'gst-008', gstin: '33AABCT1332L1ZC', legalName: 'Travel Retail Services Pvt Ltd', tradeName: 'TRS Tamil Nadu', state: 'Tamil Nadu', stateCode: '33', address: 'MAA T4 Concourse', pincode: '600027', registrationDate: '2024-08-05', compositeScheme: false, ewaybillEnabled: true, einvoiceEnabled: true, status: 'active', turnoverBucket: '5-20cr' },
 ];
 
-export function loadGST(): GSTRegistration[] { return read(GST_KEY, SEED_GST); }
-export function saveGST(row: GSTRegistration) { upsertRow(GST_KEY, SEED_GST, row); }
-export function deleteGST(id: string) { deleteRow(GST_KEY, SEED_GST, id); }
+export async function loadGST(): Promise<GSTRegistration[]> { return readList<GSTRegistration>(GST_KEY, SEED_GST); }
+export async function saveGST(row: GSTRegistration): Promise<void> { await upsertStore<GSTRegistration>(GST_KEY, SEED_GST, row); }
+export async function deleteGST(id: string): Promise<void> { await deleteStore(GST_KEY, SEED_GST, id); }
 
 // ---------------------------------------------------------------------------
 // Book master — extended for publisher/distributor domain
@@ -215,9 +186,9 @@ export const SEED_BOOK_MASTER: BookMaster[] = [
   { id: 'bkm-016', isbn: '9788131529103', barcode: '8901234567906', title: 'Introduction to Algorithms',        board: 'UGC',         class: 'UG',  subject: 'Computer Sc', edition: '4th',       academicSession: '2026-2027', publisher: 'MIT / PHI',    pages: 1312, language: 'English', binding: 'hardcover', mrp: 1899, landedCost: 1139, gstRate: 12, hsnCode: '4901', status: 'active', createdOn: '2026-07-02', author: 'Cormen, Leiserson, Rivest, Stein' },
 ];
 
-export function loadBookMaster(): BookMaster[] { return read(BOOKMASTER_KEY, SEED_BOOK_MASTER); }
-export function saveBookMaster(b: BookMaster) { upsertRow(BOOKMASTER_KEY, SEED_BOOK_MASTER, b); }
-export function deleteBookMaster(id: string) { deleteRow(BOOKMASTER_KEY, SEED_BOOK_MASTER, id); }
+export async function loadBookMaster(): Promise<BookMaster[]> { return readList<BookMaster>(BOOKMASTER_KEY, SEED_BOOK_MASTER); }
+export async function saveBookMaster(b: BookMaster): Promise<void> { await upsertStore<BookMaster>(BOOKMASTER_KEY, SEED_BOOK_MASTER, b); }
+export async function deleteBookMaster(id: string): Promise<void> { await deleteStore(BOOKMASTER_KEY, SEED_BOOK_MASTER, id); }
 
 export const BOARDS: Board[] = ['CBSE', 'ICSE', 'IB', 'IGCSE', 'State Board', 'UGC', 'General'];
 export const CLASSES = ['Pre-KG', 'LKG', 'UKG', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', 'UG', 'PG', 'Reference', 'All'];

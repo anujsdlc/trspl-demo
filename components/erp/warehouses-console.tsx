@@ -6,8 +6,8 @@ import {
   Package, Tent, ArrowRightLeft, Building2,
 } from 'lucide-react';
 import {
-  loadWarehouses, saveWarehouse, deleteWarehouse, loadBranches, SEED_WAREHOUSES,
-  type Warehouse, type WarehouseType,
+  loadWarehouses, saveWarehouse, deleteWarehouse, loadBranches, SEED_WAREHOUSES, SEED_BRANCHES,
+  type Warehouse, type WarehouseType, type Branch,
 } from '@/lib/erp/foundations';
 
 const TYPES: WarehouseType[] = ['branch', 'godown', 'exhibition', 'in-transit'];
@@ -21,11 +21,15 @@ const TYPE_META: Record<WarehouseType, { color: string; label: string; icon: Rea
 
 export function WarehousesConsole() {
   const [rows, setRows] = useState<Warehouse[]>(SEED_WAREHOUSES);
+  const [branches, setBranches] = useState<Branch[]>(SEED_BRANCHES);
   const [hydrated, setHydrated] = useState(false);
-  useEffect(() => { setRows(loadWarehouses()); setHydrated(true); }, []);
-  function refresh() { setRows(loadWarehouses()); }
+  useEffect(() => {
+    loadWarehouses().then(setRows);
+    loadBranches().then(setBranches);
+    setHydrated(true);
+  }, []);
+  function refresh() { loadWarehouses().then(setRows); }
 
-  const branches = useMemo(() => loadBranches(), [hydrated]);
   const branchById = useMemo(() => new Map(branches.map(b => [b.id, b])), [branches]);
 
   const [q, setQ] = useState('');
@@ -201,7 +205,7 @@ function Th({ label, className }: { label: string; className?: string }) {
 
 function WarehouseModal({ warehouse, branches, onClose, onSave }: {
   warehouse: Warehouse | null;
-  branches: ReturnType<typeof loadBranches>;
+  branches: Branch[];
   onClose: () => void;
   onSave: (w: Warehouse) => void;
 }) {

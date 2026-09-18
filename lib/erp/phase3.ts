@@ -1,3 +1,5 @@
+import { readList, writeList, upsertRow as upsertStore, deleteRow as deleteStore, readSingle, writeSingle } from './store';
+
 // ERP Phase 3 — Finance data layer.
 // Chart of Accounts, Journals, GST returns, Bank reconciliation.
 
@@ -5,30 +7,7 @@
 // Common helpers
 // ---------------------------------------------------------------------------
 
-function isBrowser() { return typeof window !== 'undefined'; }
 
-function read<T>(key: string, fallback: T[]): T[] {
-  if (!isBrowser()) return fallback;
-  try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) as T[] : fallback; } catch { return fallback; }
-}
-
-function write<T>(key: string, rows: T[]) {
-  if (!isBrowser()) return;
-  localStorage.setItem(key, JSON.stringify(rows));
-}
-
-function upsertRow<T extends { id: string }>(key: string, seed: T[], row: T) {
-  const rows = read<T>(key, seed);
-  const idx = rows.findIndex(r => r.id === row.id);
-  if (idx >= 0) rows[idx] = row;
-  else rows.unshift(row);
-  write(key, rows);
-}
-
-function deleteRow<T extends { id: string }>(key: string, seed: T[], id: string) {
-  const rows = read<T>(key, seed);
-  write(key, rows.filter(r => r.id !== id));
-}
 
 // ---------------------------------------------------------------------------
 // Chart of Accounts
@@ -105,9 +84,9 @@ export const SEED_COA: Ledger[] = [
   { id: 'led-6200', code: '6200', name: 'Depreciation',                                type: 'expense',  group: 'Depreciation',         nature: 'debit',  openingBalance: 0,        status: 'active' },
 ];
 
-export function loadCoA(): Ledger[] { return read(COA_KEY, SEED_COA); }
-export function saveLedger(l: Ledger) { upsertRow(COA_KEY, SEED_COA, l); }
-export function deleteLedger(id: string) { deleteRow(COA_KEY, SEED_COA, id); }
+export async function loadCoA(): Promise<Ledger[]> { return readList<Ledger>(COA_KEY, SEED_COA); }
+export async function saveLedger(l: Ledger): Promise<void> { await upsertStore<Ledger>(COA_KEY, SEED_COA, l); }
+export async function deleteLedger(id: string): Promise<void> { await deleteStore(COA_KEY, SEED_COA, id); }
 
 // ---------------------------------------------------------------------------
 // Journal Entries
@@ -236,9 +215,9 @@ export const SEED_JVS: JournalEntry[] = [
   },
 ];
 
-export function loadJVs(): JournalEntry[] { return read(JV_KEY, SEED_JVS); }
-export function saveJV(j: JournalEntry) { upsertRow(JV_KEY, SEED_JVS, j); }
-export function deleteJV(id: string) { deleteRow(JV_KEY, SEED_JVS, id); }
+export async function loadJVs(): Promise<JournalEntry[]> { return readList<JournalEntry>(JV_KEY, SEED_JVS); }
+export async function saveJV(j: JournalEntry): Promise<void> { await upsertStore<JournalEntry>(JV_KEY, SEED_JVS, j); }
+export async function deleteJV(id: string): Promise<void> { await deleteStore(JV_KEY, SEED_JVS, id); }
 
 // ---------------------------------------------------------------------------
 // Bank statement entries + reconciliation
@@ -276,8 +255,8 @@ export const SEED_BANK_ENTRIES: BankEntry[] = [
   { id: 'bnk-012', bankLedgerId: 'led-1002', txnDate: '2026-09-16', particulars: 'Cash deposit — Mumbai counter',           debit: 0,        credit: 68000,  balance: 1048000, matchStatus: 'unmatched' },
 ];
 
-export function loadBankEntries(): BankEntry[] { return read(BANK_KEY, SEED_BANK_ENTRIES); }
-export function saveBankEntry(e: BankEntry) { upsertRow(BANK_KEY, SEED_BANK_ENTRIES, e); }
+export async function loadBankEntries(): Promise<BankEntry[]> { return readList<BankEntry>(BANK_KEY, SEED_BANK_ENTRIES); }
+export async function saveBankEntry(e: BankEntry): Promise<void> { await upsertStore<BankEntry>(BANK_KEY, SEED_BANK_ENTRIES, e); }
 
 // ---------------------------------------------------------------------------
 // Derived: trial balance / P&L / balance sheet

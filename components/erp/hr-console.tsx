@@ -11,8 +11,9 @@ import {
   loadAttendance, SEED_ATTENDANCE,
   loadLeaves, saveLeave, SEED_LEAVES,
   type Employee, type EmployeeType, type LeaveApplication, type LeaveStatus,
+  type AttendanceRow,
 } from '@/lib/erp/phase5';
-import { loadBranches, SEED_BRANCHES } from '@/lib/erp/foundations';
+import { loadBranches, SEED_BRANCHES, type Branch } from '@/lib/erp/foundations';
 import { inr } from '@/lib/utils';
 import { KPI, Th, StatusPill, Field } from './ui';
 
@@ -33,17 +34,17 @@ export function HRConsole() {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    setEmployees(loadEmployees());
-    setAttendance(loadAttendance());
-    setLeaves(loadLeaves());
-    setBranches(loadBranches());
+    loadEmployees().then(setEmployees);
+    loadAttendance().then(setAttendance);
+    loadLeaves().then(setLeaves);
+    loadBranches().then(setBranches);
     setHydrated(true);
   }, []);
 
   function refresh() {
-    setEmployees(loadEmployees());
-    setAttendance(loadAttendance());
-    setLeaves(loadLeaves());
+    loadEmployees().then(setEmployees);
+    loadAttendance().then(setAttendance);
+    loadLeaves().then(setLeaves);
   }
 
   const kpi = useMemo(() => ({
@@ -104,7 +105,7 @@ export function HRConsole() {
 
 function EmployeesTab({ employees, branches, onSave, onDelete, hydrated }: {
   employees: Employee[];
-  branches: ReturnType<typeof loadBranches>;
+  branches: Branch[];
   onSave: (e: Employee) => void;
   onDelete: (id: string) => void;
   hydrated: boolean;
@@ -203,7 +204,7 @@ function EmployeesTab({ employees, branches, onSave, onDelete, hydrated }: {
   );
 }
 
-function EmployeeModal({ row, branches, onClose, onSave }: { row: Employee | null; branches: ReturnType<typeof loadBranches>; onClose: () => void; onSave: (e: Employee) => void }) {
+function EmployeeModal({ row, branches, onClose, onSave }: { row: Employee | null; branches: Branch[]; onClose: () => void; onSave: (e: Employee) => void }) {
   const [form, setForm] = useState<Employee>(row ?? {
     id: `emp-${Date.now().toString(36)}`, code: '', name: '', designation: '',
     department: 'Sales', branchId: branches[0]?.id ?? 'br-001', type: 'permanent',
@@ -279,7 +280,7 @@ function EmployeeModal({ row, branches, onClose, onSave }: { row: Employee | nul
 
 // ============================================================================
 
-function AttendanceTab({ attendance, employees }: { attendance: ReturnType<typeof loadAttendance>; employees: Employee[] }) {
+function AttendanceTab({ attendance, employees }: { attendance: AttendanceRow[]; employees: Employee[] }) {
   const empById = useMemo(() => new Map(employees.map(e => [e.id, e])), [employees]);
   const totals = useMemo(() => ({
     avgPresent: attendance.length ? (attendance.reduce((s, a) => s + a.present, 0) / attendance.length).toFixed(1) : '0',
@@ -428,7 +429,7 @@ function LeavesTab({ leaves, employees, onDecide }: {
 
 // ============================================================================
 
-function PayrollTab({ employees, attendance }: { employees: Employee[]; attendance: ReturnType<typeof loadAttendance> }) {
+function PayrollTab({ employees, attendance }: { employees: Employee[]; attendance: AttendanceRow[] }) {
   const attById = useMemo(() => new Map(attendance.map(a => [a.employeeId, a])), [attendance]);
   const rows = useMemo(() => employees.filter(e => e.status === 'active').map(e => {
     const att = attById.get(e.id);

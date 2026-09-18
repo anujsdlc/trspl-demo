@@ -1,21 +1,9 @@
+import { readList, writeList, upsertRow as upsertStore, deleteRow as deleteStore, readSingle, writeSingle } from './store';
+
 // ERP Phase 5 — Insight data layer (HR + Attendance only; Reports aggregate
 // live from Phase 2/3/4 data).
 
-function isBrowser() { return typeof window !== 'undefined'; }
-function read<T>(key: string, fallback: T[]): T[] {
-  if (!isBrowser()) return fallback;
-  try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) as T[] : fallback; } catch { return fallback; }
-}
-function write<T>(key: string, rows: T[]) { if (isBrowser()) localStorage.setItem(key, JSON.stringify(rows)); }
-function upsert<T extends { id: string }>(key: string, seed: T[], row: T) {
-  const rows = read<T>(key, seed);
-  const idx = rows.findIndex(r => r.id === row.id);
-  if (idx >= 0) rows[idx] = row; else rows.unshift(row);
-  write(key, rows);
-}
-function del<T extends { id: string }>(key: string, seed: T[], id: string) {
-  write(key, read<T>(key, seed).filter(r => r.id !== id));
-}
+
 
 // ---------------------------------------------------------------------------
 // Employees
@@ -66,9 +54,9 @@ export const SEED_EMPLOYEES: Employee[] = [
   { id: 'emp-018', code: 'TRS-018', name: 'B. Chatterjee',        designation: 'Sub-Branch Manager',           department: 'Sales',       branchId: 'br-007', type: 'permanent',  joinDate: '2024-06-30', reportsTo: 'emp-005', email: 'bc@trs.co.in',       phone: '+91 90520 33001', monthlyGross: 82000,  status: 'active', documentsComplete: true, pfNumber: 'WB/CCU/11001/018', bankAccount: 'ICICI ****5522',  pan: 'AKZPC8901D' },
 ];
 
-export function loadEmployees(): Employee[] { return read(EMP_KEY, SEED_EMPLOYEES); }
-export function saveEmployee(e: Employee) { upsert(EMP_KEY, SEED_EMPLOYEES, e); }
-export function deleteEmployee(id: string) { del(EMP_KEY, SEED_EMPLOYEES, id); }
+export async function loadEmployees(): Promise<Employee[]> { return readList<Employee>(EMP_KEY, SEED_EMPLOYEES); }
+export async function saveEmployee(e: Employee): Promise<void> { await upsertStore<Employee>(EMP_KEY, SEED_EMPLOYEES, e); }
+export async function deleteEmployee(id: string): Promise<void> { await deleteStore(EMP_KEY, SEED_EMPLOYEES, id); }
 
 // ---------------------------------------------------------------------------
 // Attendance summary — one row per employee per month
@@ -111,8 +99,8 @@ export const SEED_ATTENDANCE: AttendanceRow[] = [
   { id: 'att-018', employeeId: 'emp-018', period: '2026-09', workingDays: 26, present: 26, paidLeave: 0, unpaidLeave: 0, sickLeave: 0, weekOff: 4, latePunches: 0, fieldDays: 6 },
 ];
 
-export function loadAttendance(): AttendanceRow[] { return read(ATT_KEY, SEED_ATTENDANCE); }
-export function saveAttendance(a: AttendanceRow) { upsert(ATT_KEY, SEED_ATTENDANCE, a); }
+export async function loadAttendance(): Promise<AttendanceRow[]> { return readList<AttendanceRow>(ATT_KEY, SEED_ATTENDANCE); }
+export async function saveAttendance(a: AttendanceRow): Promise<void> { await upsertStore<AttendanceRow>(ATT_KEY, SEED_ATTENDANCE, a); }
 
 // ---------------------------------------------------------------------------
 // Leave applications
@@ -149,5 +137,5 @@ export const SEED_LEAVES: LeaveApplication[] = [
   { id: 'lv-007', employeeId: 'emp-010', type: 'earned',   from: '2026-11-04', to: '2026-11-08', days: 4, reason: 'Wedding travel',        status: 'pending',  appliedAt: '2026-09-17', balanceBefore: 12, balanceAfter: 8 },
 ];
 
-export function loadLeaves(): LeaveApplication[] { return read(LV_KEY, SEED_LEAVES); }
-export function saveLeave(l: LeaveApplication) { upsert(LV_KEY, SEED_LEAVES, l); }
+export async function loadLeaves(): Promise<LeaveApplication[]> { return readList<LeaveApplication>(LV_KEY, SEED_LEAVES); }
+export async function saveLeave(l: LeaveApplication): Promise<void> { await upsertStore<LeaveApplication>(LV_KEY, SEED_LEAVES, l); }

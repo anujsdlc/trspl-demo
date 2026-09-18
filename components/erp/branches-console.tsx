@@ -14,8 +14,8 @@ const TYPES: BranchType[] = ['HO', 'branch', 'sub-branch'];
 export function BranchesConsole() {
   const [rows, setRows] = useState<Branch[]>(SEED_BRANCHES);
   const [hydrated, setHydrated] = useState(false);
-  useEffect(() => { setRows(loadBranches()); setHydrated(true); }, []);
-  function refresh() { setRows(loadBranches()); }
+  useEffect(() => { loadBranches().then(setRows); setHydrated(true); }, []);
+  function refresh() { loadBranches().then(setRows); }
 
   const [q, setQ] = useState('');
   const [typeFilter, setTypeFilter] = useState<BranchType | 'all'>('all');

@@ -5,10 +5,12 @@ import {
   BarChart3, TrendingUp, Package, Receipt, ShoppingCart, FileText, Download,
   Layers, Wallet, MapPin, Trophy,
 } from 'lucide-react';
-import { loadPOs, loadSOs, loadSuppliers, loadCustomers, SEED_POS, SEED_SOS, SEED_SUPPLIERS, SEED_CUSTOMERS } from '@/lib/erp/phase2';
-import { loadBookMaster, loadBranches, loadGST, SEED_BOOK_MASTER, SEED_BRANCHES, SEED_GST } from '@/lib/erp/foundations';
+import { loadPOs, loadSOs, loadSuppliers, loadCustomers, SEED_POS, SEED_SOS, SEED_SUPPLIERS, SEED_CUSTOMERS,
+  type PurchaseOrder, type SalesOrder, type Supplier, type Customer } from '@/lib/erp/phase2';
+import { loadBookMaster, loadBranches, loadGST, SEED_BOOK_MASTER, SEED_BRANCHES, SEED_GST,
+  type BookMaster, type Branch, type GSTRegistration } from '@/lib/erp/foundations';
 import { loadJVs, loadCoA, computeBalances, summariseByType, SEED_JVS, SEED_COA } from '@/lib/erp/phase3';
-import { loadExhibitions, SEED_EXHIBITIONS } from '@/lib/erp/phase4';
+import { loadExhibitions, SEED_EXHIBITIONS, type ExhibitionEvent } from '@/lib/erp/phase4';
 import { inr } from '@/lib/utils';
 import { KPI, Th, StatusPill } from './ui';
 
@@ -28,16 +30,16 @@ export function ReportsConsole() {
   const [gstRegs, setGstRegs] = useState(SEED_GST);
 
   useEffect(() => {
-    setPOs(loadPOs());
-    setSOs(loadSOs());
-    setSuppliers(loadSuppliers());
-    setCustomers(loadCustomers());
-    setBooks(loadBookMaster());
-    setBranches(loadBranches());
-    setJVs(loadJVs());
-    setCoA(loadCoA());
-    setExhibitions(loadExhibitions());
-    setGstRegs(loadGST());
+    loadPOs().then(setPOs);
+    loadSOs().then(setSOs);
+    loadSuppliers().then(setSuppliers);
+    loadCustomers().then(setCustomers);
+    loadBookMaster().then(setBooks);
+    loadBranches().then(setBranches);
+    loadJVs().then(setJVs);
+    loadCoA().then(setCoA);
+    loadExhibitions().then(setExhibitions);
+    loadGST().then(setGstRegs);
   }, []);
 
   const balances = useMemo(() => computeBalances(coa, jvs), [coa, jvs]);
@@ -106,9 +108,9 @@ export function ReportsConsole() {
 // ============================================================================
 
 function ManagementTab({ sos, pos, branches, customers, balances }: {
-  sos: ReturnType<typeof loadSOs>; pos: ReturnType<typeof loadPOs>;
-  branches: ReturnType<typeof loadBranches>;
-  customers: ReturnType<typeof loadCustomers>;
+  sos: SalesOrder[]; pos: PurchaseOrder[];
+  branches: Branch[];
+  customers: Customer[];
   balances: ReturnType<typeof computeBalances>;
 }) {
   const salesByBranch = useMemo(() => {
@@ -223,7 +225,7 @@ function ManagementTab({ sos, pos, branches, customers, balances }: {
 
 // ============================================================================
 
-function SalesTab({ sos, customers }: { sos: ReturnType<typeof loadSOs>; customers: ReturnType<typeof loadCustomers> }) {
+function SalesTab({ sos, customers }: { sos: SalesOrder[]; customers: Customer[] }) {
   const custById = useMemo(() => new Map(customers.map(c => [c.id, c])), [customers]);
   const topTitles = useMemo(() => {
     const map = new Map<string, { title: string; qty: number; value: number }>();
@@ -324,7 +326,7 @@ function SalesTab({ sos, customers }: { sos: ReturnType<typeof loadSOs>; custome
 
 // ============================================================================
 
-function PurchaseTab({ pos, suppliers }: { pos: ReturnType<typeof loadPOs>; suppliers: ReturnType<typeof loadSuppliers> }) {
+function PurchaseTab({ pos, suppliers }: { pos: PurchaseOrder[]; suppliers: Supplier[] }) {
   const supById = useMemo(() => new Map(suppliers.map(s => [s.id, s])), [suppliers]);
   const topSuppliers = useMemo(() => {
     const map = new Map<string, number>();
@@ -390,7 +392,7 @@ function PurchaseTab({ pos, suppliers }: { pos: ReturnType<typeof loadPOs>; supp
 
 // ============================================================================
 
-function StockTab({ books, branches }: { books: ReturnType<typeof loadBookMaster>; branches: ReturnType<typeof loadBranches> }) {
+function StockTab({ books, branches }: { books: BookMaster[]; branches: Branch[] }) {
   const stockValue = books.reduce((s, b) => s + (b.mrp * 45), 0); // seed avg stock 45 per title
   const byBoard = useMemo(() => {
     const map = new Map<string, { count: number; value: number }>();
@@ -467,7 +469,7 @@ function StockTab({ books, branches }: { books: ReturnType<typeof loadBookMaster
 
 // ============================================================================
 
-function GSTTab({ sos, gstRegs }: { sos: ReturnType<typeof loadSOs>; gstRegs: ReturnType<typeof loadGST> }) {
+function GSTTab({ sos, gstRegs }: { sos: SalesOrder[]; gstRegs: GSTRegistration[] }) {
   const byState = useMemo(() => {
     const map = new Map<string, { invoices: number; taxable: number; gst: number; total: number }>();
     for (const so of sos) {
@@ -516,7 +518,7 @@ function GSTTab({ sos, gstRegs }: { sos: ReturnType<typeof loadSOs>; gstRegs: Re
 
 // ============================================================================
 
-function ExhibitionsTab({ exhibitions }: { exhibitions: ReturnType<typeof loadExhibitions> }) {
+function ExhibitionsTab({ exhibitions }: { exhibitions: ExhibitionEvent[] }) {
   return (
     <div className="bg-white rounded-lg border border-[color:var(--color-line)] overflow-hidden">
       <div className="px-4 py-3 border-b border-[color:var(--color-line)] text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)]">Event performance</div>

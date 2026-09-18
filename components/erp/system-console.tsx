@@ -24,9 +24,9 @@ export function SystemConsole() {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    setCompany(loadCompany());
-    setBackups(loadBackups());
-    setAlerts(loadAlerts());
+    loadCompany().then(setCompany);
+    loadBackups().then(setBackups);
+    loadAlerts().then(setAlerts);
     setHydrated(true);
   }, []);
 
@@ -62,7 +62,7 @@ export function SystemConsole() {
       {tab === 'company' && <CompanyTab company={company} onChange={setCompany} onSave={() => saveCompany(company)} hydrated={hydrated} />}
       {tab === 'formats' && <FormatsTab />}
       {tab === 'backups' && <BackupsTab backups={backups} />}
-      {tab === 'monitoring' && <MonitoringTab alerts={alerts} onResolve={a => { saveAlert({ ...a, resolved: true }); setAlerts(loadAlerts()); }} />}
+      {tab === 'monitoring' && <MonitoringTab alerts={alerts} onResolve={a => { saveAlert({ ...a, resolved: true }); loadAlerts().then(setAlerts); }} />}
     </div>
   );
 }

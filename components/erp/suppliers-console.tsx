@@ -16,8 +16,8 @@ const TYPES: SupplierType[] = ['publisher', 'distributor', 'wholesaler', 'author
 export function SuppliersConsole() {
   const [rows, setRows] = useState<Supplier[]>(SEED_SUPPLIERS);
   const [hydrated, setHydrated] = useState(false);
-  useEffect(() => { setRows(loadSuppliers()); setHydrated(true); }, []);
-  function refresh() { setRows(loadSuppliers()); }
+  useEffect(() => { loadSuppliers().then(setRows); setHydrated(true); }, []);
+  function refresh() { loadSuppliers().then(setRows); }
 
   const [q, setQ] = useState('');
   const [typeFilter, setTypeFilter] = useState<SupplierType | 'all'>('all');

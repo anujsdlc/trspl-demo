@@ -14,8 +14,8 @@ const BUCKETS: GSTRegistration['turnoverBucket'][] = ['below-5cr', '5-20cr', '20
 export function GSTConsole() {
   const [rows, setRows] = useState<GSTRegistration[]>(SEED_GST);
   const [hydrated, setHydrated] = useState(false);
-  useEffect(() => { setRows(loadGST()); setHydrated(true); }, []);
-  function refresh() { setRows(loadGST()); }
+  useEffect(() => { loadGST().then(setRows); setHydrated(true); }, []);
+  function refresh() { loadGST().then(setRows); }
 
   const [q, setQ] = useState('');
   const [creating, setCreating] = useState(false);

@@ -17,8 +17,8 @@ const BINDINGS: Binding[] = ['paperback', 'hardcover', 'spiral', 'ebook'];
 export function BookMasterConsole() {
   const [rows, setRows] = useState<BookMaster[]>(SEED_BOOK_MASTER);
   const [hydrated, setHydrated] = useState(false);
-  useEffect(() => { setRows(loadBookMaster()); setHydrated(true); }, []);
-  function refresh() { setRows(loadBookMaster()); }
+  useEffect(() => { loadBookMaster().then(setRows); setHydrated(true); }, []);
+  function refresh() { loadBookMaster().then(setRows); }
 
   const [q, setQ] = useState('');
   const [board, setBoard] = useState<Board | 'all'>('all');

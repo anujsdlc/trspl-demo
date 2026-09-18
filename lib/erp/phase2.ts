@@ -1,3 +1,5 @@
+import { readList, writeList, upsertRow as upsertStore, deleteRow as deleteStore, readSingle, writeSingle } from './store';
+
 // ERP Phase 2 — Buy → Sell data layer.
 // Suppliers, Customers, Purchase Orders (+ GRN), Sales Orders (+ Invoices).
 
@@ -5,33 +7,7 @@
 // Common helpers
 // ---------------------------------------------------------------------------
 
-function isBrowser() { return typeof window !== 'undefined'; }
 
-function read<T>(key: string, fallback: T[]): T[] {
-  if (!isBrowser()) return fallback;
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as T[]) : fallback;
-  } catch { return fallback; }
-}
-
-function write<T>(key: string, rows: T[]) {
-  if (!isBrowser()) return;
-  localStorage.setItem(key, JSON.stringify(rows));
-}
-
-function upsertRow<T extends { id: string }>(key: string, seed: T[], row: T) {
-  const rows = read<T>(key, seed);
-  const idx = rows.findIndex(r => r.id === row.id);
-  if (idx >= 0) rows[idx] = row;
-  else rows.unshift(row);
-  write(key, rows);
-}
-
-function deleteRow<T extends { id: string }>(key: string, seed: T[], id: string) {
-  const rows = read<T>(key, seed);
-  write(key, rows.filter(r => r.id !== id));
-}
 
 // ---------------------------------------------------------------------------
 // Suppliers
@@ -80,9 +56,9 @@ export const SEED_SUPPLIERS: Supplier[] = [
   { id: 'sup-010', code: 'SUP-VKGB',   name: 'VK Global Publications', type: 'distributor',        contactName: 'Vinit Kumar',     phone: '+91 11 2743 4522', email: 'vk@vkglobal.in',          address: '15/1 Old Rohtak Rd',       city: 'New Delhi', state: 'Delhi',       pincode: '110035', gstin: '07AABCV8901T1Z3', creditDays: 30, creditLimit: 1200000, currentOutstanding: 0,       defaultDiscount: 35, rating: 3, status: 'active', since: '2023-01-08' },
 ];
 
-export function loadSuppliers(): Supplier[] { return read(SUPPLIER_KEY, SEED_SUPPLIERS); }
-export function saveSupplier(s: Supplier) { upsertRow(SUPPLIER_KEY, SEED_SUPPLIERS, s); }
-export function deleteSupplier(id: string) { deleteRow(SUPPLIER_KEY, SEED_SUPPLIERS, id); }
+export async function loadSuppliers(): Promise<Supplier[]> { return readList<Supplier>(SUPPLIER_KEY, SEED_SUPPLIERS); }
+export async function saveSupplier(s: Supplier): Promise<void> { await upsertStore<Supplier>(SUPPLIER_KEY, SEED_SUPPLIERS, s); }
+export async function deleteSupplier(id: string): Promise<void> { await deleteStore(SUPPLIER_KEY, SEED_SUPPLIERS, id); }
 
 // ---------------------------------------------------------------------------
 // Customers
@@ -126,9 +102,9 @@ export const SEED_CUSTOMERS: Customer[] = [
   { id: 'cust-008', code: 'RTL-WALK',      name: 'Walk-in Retail (Cash)',                  type: 'retail',      contactName: '—',              phone: '—',              email: '—',                          address: '—',                       city: '—',         state: '—',           pincode: '—',      creditDays: 0,  creditLimit: 0,       currentOutstanding: 0,       discountSlab: 0,  since: '2018-04-01', status: 'active', ordersCount: 8420, ytdRevenue: 12400000 },
 ];
 
-export function loadCustomers(): Customer[] { return read(CUSTOMER_KEY, SEED_CUSTOMERS); }
-export function saveCustomer(c: Customer) { upsertRow(CUSTOMER_KEY, SEED_CUSTOMERS, c); }
-export function deleteCustomer(id: string) { deleteRow(CUSTOMER_KEY, SEED_CUSTOMERS, id); }
+export async function loadCustomers(): Promise<Customer[]> { return readList<Customer>(CUSTOMER_KEY, SEED_CUSTOMERS); }
+export async function saveCustomer(c: Customer): Promise<void> { await upsertStore<Customer>(CUSTOMER_KEY, SEED_CUSTOMERS, c); }
+export async function deleteCustomer(id: string): Promise<void> { await deleteStore(CUSTOMER_KEY, SEED_CUSTOMERS, id); }
 
 // ---------------------------------------------------------------------------
 // Purchase Orders + GRN + Bills
@@ -234,9 +210,9 @@ export const SEED_POS: PurchaseOrder[] = [
   },
 ];
 
-export function loadPOs(): PurchaseOrder[] { return read(PO_KEY, SEED_POS); }
-export function savePO(p: PurchaseOrder) { upsertRow(PO_KEY, SEED_POS, p); }
-export function deletePO(id: string) { deleteRow(PO_KEY, SEED_POS, id); }
+export async function loadPOs(): Promise<PurchaseOrder[]> { return readList<PurchaseOrder>(PO_KEY, SEED_POS); }
+export async function savePO(p: PurchaseOrder): Promise<void> { await upsertStore<PurchaseOrder>(PO_KEY, SEED_POS, p); }
+export async function deletePO(id: string): Promise<void> { await deleteStore(PO_KEY, SEED_POS, id); }
 
 // ---------------------------------------------------------------------------
 // Sales Orders / Invoices
@@ -346,6 +322,6 @@ export const SEED_SOS: SalesOrder[] = [
   },
 ];
 
-export function loadSOs(): SalesOrder[] { return read(SO_KEY, SEED_SOS); }
-export function saveSO(s: SalesOrder) { upsertRow(SO_KEY, SEED_SOS, s); }
-export function deleteSO(id: string) { deleteRow(SO_KEY, SEED_SOS, id); }
+export async function loadSOs(): Promise<SalesOrder[]> { return readList<SalesOrder>(SO_KEY, SEED_SOS); }
+export async function saveSO(s: SalesOrder): Promise<void> { await upsertStore<SalesOrder>(SO_KEY, SEED_SOS, s); }
+export async function deleteSO(id: string): Promise<void> { await deleteStore(SO_KEY, SEED_SOS, id); }

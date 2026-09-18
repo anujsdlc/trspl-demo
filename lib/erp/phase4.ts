@@ -1,21 +1,9 @@
+import { readList, writeList, upsertRow as upsertStore, deleteRow as deleteStore, readSingle, writeSingle } from './store';
+
 // ERP Phase 4 — Field Ops data layer.
 // Exhibitions & Fairs, Offline Billing App, CRM & Leads.
 
-function isBrowser() { return typeof window !== 'undefined'; }
-function read<T>(key: string, fallback: T[]): T[] {
-  if (!isBrowser()) return fallback;
-  try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) as T[] : fallback; } catch { return fallback; }
-}
-function write<T>(key: string, rows: T[]) { if (isBrowser()) localStorage.setItem(key, JSON.stringify(rows)); }
-function upsert<T extends { id: string }>(key: string, seed: T[], row: T) {
-  const rows = read<T>(key, seed);
-  const idx = rows.findIndex(r => r.id === row.id);
-  if (idx >= 0) rows[idx] = row; else rows.unshift(row);
-  write(key, rows);
-}
-function del<T extends { id: string }>(key: string, seed: T[], id: string) {
-  write(key, read<T>(key, seed).filter(r => r.id !== id));
-}
+
 
 // ---------------------------------------------------------------------------
 // Exhibitions & Fairs
@@ -140,9 +128,9 @@ export const SEED_EXHIBITIONS: ExhibitionEvent[] = [
   },
 ];
 
-export function loadExhibitions(): ExhibitionEvent[] { return read(EX_KEY, SEED_EXHIBITIONS); }
-export function saveExhibition(e: ExhibitionEvent) { upsert(EX_KEY, SEED_EXHIBITIONS, e); }
-export function deleteExhibition(id: string) { del(EX_KEY, SEED_EXHIBITIONS, id); }
+export async function loadExhibitions(): Promise<ExhibitionEvent[]> { return readList<ExhibitionEvent>(EX_KEY, SEED_EXHIBITIONS); }
+export async function saveExhibition(e: ExhibitionEvent): Promise<void> { await upsertStore<ExhibitionEvent>(EX_KEY, SEED_EXHIBITIONS, e); }
+export async function deleteExhibition(id: string): Promise<void> { await deleteStore(EX_KEY, SEED_EXHIBITIONS, id); }
 
 // ---------------------------------------------------------------------------
 // Offline Billing App — devices + sync queue
@@ -180,9 +168,9 @@ export const SEED_DEVICES: OfflineDevice[] = [
   { id: 'dev-008', code: 'DEV-CCU-EXPO-01', name: 'Boi Mela Booth Phone', type: 'phone', assignedTo: 'B. Chatterjee', branchId: 'br-007', os: 'Android 15', appVersion: '2.3.9', lastSyncAt: '2026-09-14 22:12', pendingTransactions: 24, pendingConflicts: 3, status: 'blocked', storageUsedMB: 62, masterDataAgeDays: 3 },
 ];
 
-export function loadDevices(): OfflineDevice[] { return read(DEV_KEY, SEED_DEVICES); }
-export function saveDevice(d: OfflineDevice) { upsert(DEV_KEY, SEED_DEVICES, d); }
-export function deleteDevice(id: string) { del(DEV_KEY, SEED_DEVICES, id); }
+export async function loadDevices(): Promise<OfflineDevice[]> { return readList<OfflineDevice>(DEV_KEY, SEED_DEVICES); }
+export async function saveDevice(d: OfflineDevice): Promise<void> { await upsertStore<OfflineDevice>(DEV_KEY, SEED_DEVICES, d); }
+export async function deleteDevice(id: string): Promise<void> { await deleteStore(DEV_KEY, SEED_DEVICES, id); }
 
 export interface OfflineTxn {
   id: string;
@@ -210,8 +198,8 @@ export const SEED_OFFLINE_TXNS: OfflineTxn[] = [
   { id: 'otxn-007', deviceId: 'dev-002', refNumber: 'DEV-DEL-EXPO-02/OFF/0040', createdAtOffline: '2026-09-16 17:48', customer: 'DPS Rohini', itemsCount: 12, amount: 14820, paymentMethod: 'card', status: 'synced', syncedAt: '2026-09-16 21:30' },
 ];
 
-export function loadOfflineTxns(): OfflineTxn[] { return read(TXN_KEY, SEED_OFFLINE_TXNS); }
-export function saveOfflineTxn(t: OfflineTxn) { upsert(TXN_KEY, SEED_OFFLINE_TXNS, t); }
+export async function loadOfflineTxns(): Promise<OfflineTxn[]> { return readList<OfflineTxn>(TXN_KEY, SEED_OFFLINE_TXNS); }
+export async function saveOfflineTxn(t: OfflineTxn): Promise<void> { await upsertStore<OfflineTxn>(TXN_KEY, SEED_OFFLINE_TXNS, t); }
 
 // ---------------------------------------------------------------------------
 // CRM & Leads
@@ -356,6 +344,6 @@ export const SEED_LEADS: Lead[] = [
   },
 ];
 
-export function loadLeads(): Lead[] { return read(LEAD_KEY, SEED_LEADS); }
-export function saveLead(l: Lead) { upsert(LEAD_KEY, SEED_LEADS, l); }
-export function deleteLead(id: string) { del(LEAD_KEY, SEED_LEADS, id); }
+export async function loadLeads(): Promise<Lead[]> { return readList<Lead>(LEAD_KEY, SEED_LEADS); }
+export async function saveLead(l: Lead): Promise<void> { await upsertStore<Lead>(LEAD_KEY, SEED_LEADS, l); }
+export async function deleteLead(id: string): Promise<void> { await deleteStore(LEAD_KEY, SEED_LEADS, id); }

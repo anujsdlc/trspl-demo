@@ -11,7 +11,7 @@ import {
   loadAudit, SEED_AUDIT,
   type User, type UserStatus, type Role, type AuditEvent,
 } from '@/lib/erp/phase6';
-import { loadBranches, SEED_BRANCHES } from '@/lib/erp/foundations';
+import { loadBranches, SEED_BRANCHES, type Branch } from '@/lib/erp/foundations';
 import { KPI, Th, StatusPill } from './ui';
 
 type Tab = 'users' | 'roles' | 'audit' | 'policy';
@@ -29,13 +29,13 @@ export function SecurityConsole() {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    setUsers(loadUsers());
-    setRoles(loadRoles());
-    setAudit(loadAudit());
-    setBranches(loadBranches());
+    loadUsers().then(setUsers);
+    loadRoles().then(setRoles);
+    loadAudit().then(setAudit);
+    loadBranches().then(setBranches);
     setHydrated(true);
   }, []);
-  function refresh() { setUsers(loadUsers()); setRoles(loadRoles()); }
+  function refresh() { loadUsers().then(setUsers); loadRoles().then(setRoles); }
 
   const kpi = useMemo(() => ({
     total: users.length,
@@ -89,7 +89,7 @@ export function SecurityConsole() {
 }
 
 function UsersTab({ users, roles, branches, hydrated, onSave, onDelete }: {
-  users: User[]; roles: Role[]; branches: ReturnType<typeof loadBranches>;
+  users: User[]; roles: Role[]; branches: Branch[];
   hydrated: boolean;
   onSave: (u: User) => void; onDelete: (id: string) => void;
 }) {

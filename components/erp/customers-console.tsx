@@ -21,8 +21,8 @@ const TYPE_ICON: Record<CustomerType, React.ElementType> = {
 export function CustomersConsole() {
   const [rows, setRows] = useState<Customer[]>(SEED_CUSTOMERS);
   const [hydrated, setHydrated] = useState(false);
-  useEffect(() => { setRows(loadCustomers()); setHydrated(true); }, []);
-  function refresh() { setRows(loadCustomers()); }
+  useEffect(() => { loadCustomers().then(setRows); setHydrated(true); }, []);
+  function refresh() { loadCustomers().then(setRows); }
 
   const [q, setQ] = useState('');
   const [typeFilter, setTypeFilter] = useState<CustomerType | 'all'>('all');

@@ -9,7 +9,7 @@ import {
 import {
   loadPOs, savePO, deletePO, SEED_POS,
   loadSuppliers, SEED_SUPPLIERS,
-  type PurchaseOrder, type POStatus,
+  type PurchaseOrder, type POStatus, type Supplier,
 } from '@/lib/erp/phase2';
 import { inr } from '@/lib/utils';
 import { KPI, Th, StatusPill } from './ui';
@@ -28,11 +28,15 @@ const STATUSES: POStatus[] = ['draft', 'placed', 'partial', 'received', 'billed'
 
 export function PurchaseOrdersConsole() {
   const [rows, setRows] = useState<PurchaseOrder[]>(SEED_POS);
+  const [suppliers, setSuppliers] = useState<Supplier[]>(SEED_SUPPLIERS);
   const [hydrated, setHydrated] = useState(false);
-  useEffect(() => { setRows(loadPOs()); setHydrated(true); }, []);
-  function refresh() { setRows(loadPOs()); }
+  useEffect(() => {
+    loadPOs().then(setRows);
+    loadSuppliers().then(setSuppliers);
+    setHydrated(true);
+  }, []);
+  function refresh() { loadPOs().then(setRows); }
 
-  const suppliers = useMemo(() => loadSuppliers(), [hydrated]);
   const supplierById = useMemo(() => new Map(suppliers.map(s => [s.id, s])), [suppliers]);
 
   const [q, setQ] = useState('');
@@ -165,6 +169,7 @@ export function PurchaseOrdersConsole() {
       {drawer && (
         <PODrawer
           po={drawer}
+          suppliers={suppliers}
           onClose={() => setDrawer(null)}
           onAdvance={advanced => { savePO(advanced); refresh(); setDrawer(advanced); }}
         />
@@ -182,8 +187,7 @@ function MatchDot({ ok, label }: { ok?: boolean; label: string }) {
   );
 }
 
-function PODrawer({ po, onClose, onAdvance }: { po: PurchaseOrder; onClose: () => void; onAdvance: (p: PurchaseOrder) => void }) {
-  const suppliers = loadSuppliers();
+function PODrawer({ po, suppliers, onClose, onAdvance }: { po: PurchaseOrder; suppliers: Supplier[]; onClose: () => void; onAdvance: (p: PurchaseOrder) => void }) {
   const supplier = suppliers.find(s => s.id === po.supplierId);
 
   function receiveGoods() {

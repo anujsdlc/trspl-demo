@@ -20,9 +20,9 @@ export function BankReconConsole() {
   const [journals, setJournals] = useState<JournalEntry[]>(SEED_JVS);
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => {
-    setEntries(loadBankEntries());
-    setLedgers(loadCoA());
-    setJournals(loadJVs());
+    loadBankEntries().then(setEntries);
+    loadCoA().then(setLedgers);
+    loadJVs().then(setJournals);
     setHydrated(true);
   }, []);
 
@@ -97,7 +97,7 @@ export function BankReconConsole() {
       return jv ? { ...e, matchStatus: 'matched' as const, matchedJvId: jv.id } : e;
     });
     next.forEach(saveBankEntry);
-    setEntries(loadBankEntries());
+    loadBankEntries().then(setEntries);
   }
 
   function toggle(id: string) {
@@ -107,7 +107,7 @@ export function BankReconConsole() {
       ? { ...e, matchStatus: 'unmatched', matchedJvId: undefined }
       : { ...e, matchStatus: 'matched', matchedJvId: e.matchedJvId ?? 'manual' };
     saveBankEntry(next);
-    setEntries(loadBankEntries());
+    loadBankEntries().then(setEntries);
   }
 
   return (

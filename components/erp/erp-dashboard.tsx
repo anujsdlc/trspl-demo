@@ -62,32 +62,43 @@ export function ERPDashboard() {
   });
   const [netIncome, setNetIncome] = useState(0);
   useEffect(() => {
-    const coa = loadCoA();
-    const jvs = loadJVs();
-    const balances = computeBalances(coa, jvs);
-    const s = summariseByType(balances);
-    setNetIncome(s.income - s.expense);
-    setCounts({
-      branches: loadBranches().length,
-      warehouses: loadWarehouses().length,
-      gst: loadGST().length,
-      books: loadBookMaster().length,
-      suppliers: loadSuppliers().length,
-      customers: loadCustomers().length,
-      pos: loadPOs().length,
-      sos: loadSOs().length,
-      ledgers: coa.length,
-      journals: jvs.length,
-      bank: loadBankEntries().length,
-      exhibitions: loadExhibitions().length,
-      devices: loadDevices().length,
-      leads: loadLeads().length,
-      employees: loadEmployees().length,
-      leavesPending: loadLeaves().filter(l => l.status === 'pending').length,
-      migrations: loadMigrations().length,
-      users: loadUsers().length,
-      activeAlerts: loadAlerts().filter(a => !a.resolved).length,
-    });
+    (async () => {
+      const [
+        branches, warehouses, gst, books, suppliers, customers, pos, sos,
+        coa, jvs, bank, exhibitions, devices, leads, employees, leaves,
+        migrations, users, alerts,
+      ] = await Promise.all([
+        loadBranches(), loadWarehouses(), loadGST(), loadBookMaster(),
+        loadSuppliers(), loadCustomers(), loadPOs(), loadSOs(),
+        loadCoA(), loadJVs(), loadBankEntries(), loadExhibitions(),
+        loadDevices(), loadLeads(), loadEmployees(), loadLeaves(),
+        loadMigrations(), loadUsers(), loadAlerts(),
+      ]);
+      const balances = computeBalances(coa, jvs);
+      const s = summariseByType(balances);
+      setNetIncome(s.income - s.expense);
+      setCounts({
+        branches: branches.length,
+        warehouses: warehouses.length,
+        gst: gst.length,
+        books: books.length,
+        suppliers: suppliers.length,
+        customers: customers.length,
+        pos: pos.length,
+        sos: sos.length,
+        ledgers: coa.length,
+        journals: jvs.length,
+        bank: bank.length,
+        exhibitions: exhibitions.length,
+        devices: devices.length,
+        leads: leads.length,
+        employees: employees.length,
+        leavesPending: leaves.filter(l => l.status === 'pending').length,
+        migrations: migrations.length,
+        users: users.length,
+        activeAlerts: alerts.filter(a => !a.resolved).length,
+      });
+    })();
   }, []);
 
   const phase1 = ERP_MODULES.filter(m => m.phase === 1 && m.key !== 'dashboard');

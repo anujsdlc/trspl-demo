@@ -22,8 +22,8 @@ export function AccountsConsole() {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    setLedgers(loadCoA());
-    setJournals(loadJVs());
+    loadCoA().then(setLedgers);
+    loadJVs().then(setJournals);
     setHydrated(true);
   }, []);
 

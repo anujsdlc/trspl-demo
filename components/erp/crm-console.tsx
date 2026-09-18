@@ -26,8 +26,8 @@ const SOURCE_ICON: Record<LeadSource, React.ElementType> = {
 export function CRMConsole() {
   const [rows, setRows] = useState<Lead[]>(SEED_LEADS);
   const [hydrated, setHydrated] = useState(false);
-  useEffect(() => { setRows(loadLeads()); setHydrated(true); }, []);
-  function refresh() { setRows(loadLeads()); }
+  useEffect(() => { loadLeads().then(setRows); setHydrated(true); }, []);
+  function refresh() { loadLeads().then(setRows); }
 
   const [q, setQ] = useState('');
   const [stageFilter, setStageFilter] = useState<LeadStage | 'all'>('all');

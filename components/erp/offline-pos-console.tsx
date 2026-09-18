@@ -24,13 +24,13 @@ export function OfflinePOSConsole() {
   const [txns, setTxns] = useState<OfflineTxn[]>(SEED_OFFLINE_TXNS);
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => {
-    setDevices(loadDevices());
-    setTxns(loadOfflineTxns());
+    loadDevices().then(setDevices);
+    loadOfflineTxns().then(setTxns);
     setHydrated(true);
   }, []);
   function refresh() {
-    setDevices(loadDevices());
-    setTxns(loadOfflineTxns());
+    loadDevices().then(setDevices);
+    loadOfflineTxns().then(setTxns);
   }
 
   const [tab, setTab] = useState<'devices' | 'sync' | 'conflicts'>('devices');

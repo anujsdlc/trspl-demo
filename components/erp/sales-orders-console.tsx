@@ -8,7 +8,7 @@ import {
 import {
   loadSOs, saveSO, deleteSO, SEED_SOS,
   loadCustomers, SEED_CUSTOMERS,
-  type SalesOrder, type SOStatus,
+  type SalesOrder, type SOStatus, type Customer,
 } from '@/lib/erp/phase2';
 import { inr } from '@/lib/utils';
 import { KPI, Th, StatusPill } from './ui';
@@ -27,11 +27,15 @@ const STATUSES: SOStatus[] = ['quotation', 'confirmed', 'picked', 'invoiced', 'd
 
 export function SalesOrdersConsole() {
   const [rows, setRows] = useState<SalesOrder[]>(SEED_SOS);
+  const [customers, setCustomers] = useState<Customer[]>(SEED_CUSTOMERS);
   const [hydrated, setHydrated] = useState(false);
-  useEffect(() => { setRows(loadSOs()); setHydrated(true); }, []);
-  function refresh() { setRows(loadSOs()); }
+  useEffect(() => {
+    loadSOs().then(setRows);
+    loadCustomers().then(setCustomers);
+    setHydrated(true);
+  }, []);
+  function refresh() { loadSOs().then(setRows); }
 
-  const customers = useMemo(() => loadCustomers(), [hydrated]);
   const customerById = useMemo(() => new Map(customers.map(c => [c.id, c])), [customers]);
 
   const [q, setQ] = useState('');
@@ -168,6 +172,7 @@ export function SalesOrdersConsole() {
       {drawer && (
         <SODrawer
           so={drawer}
+          customers={customers}
           onClose={() => setDrawer(null)}
           onAdvance={next => { saveSO(next); refresh(); setDrawer(next); }}
         />
@@ -185,8 +190,7 @@ function StageDot({ ok, label }: { ok?: boolean; label: string }) {
   );
 }
 
-function SODrawer({ so, onClose, onAdvance }: { so: SalesOrder; onClose: () => void; onAdvance: (s: SalesOrder) => void }) {
-  const customers = loadCustomers();
+function SODrawer({ so, customers, onClose, onAdvance }: { so: SalesOrder; customers: Customer[]; onClose: () => void; onAdvance: (s: SalesOrder) => void }) {
   const customer = customers.find(c => c.id === so.customerId);
 
   function confirmOrder() { onAdvance({ ...so, status: 'confirmed' }); }

@@ -31,8 +31,8 @@ const STATUS_TONE: Record<MigrationStatus, 'muted' | 'info' | 'warning' | 'succe
 export function TallyMigrationConsole() {
   const [rows, setRows] = useState<TallyMigrationJob[]>(SEED_MIGRATIONS);
   const [hydrated, setHydrated] = useState(false);
-  useEffect(() => { setRows(loadMigrations()); setHydrated(true); }, []);
-  function refresh() { setRows(loadMigrations()); }
+  useEffect(() => { loadMigrations().then(setRows); setHydrated(true); }, []);
+  function refresh() { loadMigrations().then(setRows); }
 
   const kpi = useMemo(() => ({
     reconciled: rows.filter(r => r.status === 'reconciled').length,

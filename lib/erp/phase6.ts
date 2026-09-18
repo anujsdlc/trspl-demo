@@ -1,22 +1,10 @@
+import { readList, writeList, upsertRow as upsertStore, deleteRow as deleteStore, readSingle, writeSingle } from './store';
+
 // ERP Phase 6 — Admin data layer.
 // Tally migration jobs, Security (users, roles, audit trail), System (company,
 // backups, alerts).
 
-function isBrowser() { return typeof window !== 'undefined'; }
-function read<T>(key: string, fallback: T[]): T[] {
-  if (!isBrowser()) return fallback;
-  try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) as T[] : fallback; } catch { return fallback; }
-}
-function write<T>(key: string, rows: T[]) { if (isBrowser()) localStorage.setItem(key, JSON.stringify(rows)); }
-function upsert<T extends { id: string }>(key: string, seed: T[], row: T) {
-  const rows = read<T>(key, seed);
-  const idx = rows.findIndex(r => r.id === row.id);
-  if (idx >= 0) rows[idx] = row; else rows.unshift(row);
-  write(key, rows);
-}
-function del<T extends { id: string }>(key: string, seed: T[], id: string) {
-  write(key, read<T>(key, seed).filter(r => r.id !== id));
-}
+
 
 // ---------------------------------------------------------------------------
 // Tally migration
@@ -61,9 +49,9 @@ export const SEED_MIGRATIONS: TallyMigrationJob[] = [
   { id: 'mig-010', entity: 'opening-stock',     fileName: 'tally-godown-transfer-in.xlsx',       uploadedBy: 'Sunil Sharma',    uploadedAt: '2026-09-14 16:22', rowCount: 240, successCount: 236, warningCount: 4, errorCount: 0, tallyTotal: 1200000,  erpTotal: 1198420, diff: -1580, status: 'ready', notes: 'Awaiting warehouse manager sign-off' },
 ];
 
-export function loadMigrations(): TallyMigrationJob[] { return read(MIG_KEY, SEED_MIGRATIONS); }
-export function saveMigration(m: TallyMigrationJob) { upsert(MIG_KEY, SEED_MIGRATIONS, m); }
-export function deleteMigration(id: string) { del(MIG_KEY, SEED_MIGRATIONS, id); }
+export async function loadMigrations(): Promise<TallyMigrationJob[]> { return readList<TallyMigrationJob>(MIG_KEY, SEED_MIGRATIONS); }
+export async function saveMigration(m: TallyMigrationJob): Promise<void> { await upsertStore<TallyMigrationJob>(MIG_KEY, SEED_MIGRATIONS, m); }
+export async function deleteMigration(id: string): Promise<void> { await deleteStore(MIG_KEY, SEED_MIGRATIONS, id); }
 
 // ---------------------------------------------------------------------------
 // Security — users, roles, audit
@@ -153,12 +141,12 @@ export const SEED_AUDIT: AuditEvent[] = [
   { id: 'evt-013', at: '2026-09-16 20:14', userId: 'usr-012', action: 'login',  module: 'auth',      ip: '203.0.113.71' },
 ];
 
-export function loadRoles(): Role[] { return read(ROLE_KEY, SEED_ROLES); }
-export function saveRole(r: Role) { upsert(ROLE_KEY, SEED_ROLES, r); }
-export function loadUsers(): User[] { return read(USER_KEY, SEED_USERS); }
-export function saveUser(u: User) { upsert(USER_KEY, SEED_USERS, u); }
-export function deleteUser(id: string) { del(USER_KEY, SEED_USERS, id); }
-export function loadAudit(): AuditEvent[] { return read(AUDIT_KEY, SEED_AUDIT); }
+export async function loadRoles(): Promise<Role[]> { return readList<Role>(ROLE_KEY, SEED_ROLES); }
+export async function saveRole(r: Role): Promise<void> { await upsertStore<Role>(ROLE_KEY, SEED_ROLES, r); }
+export async function loadUsers(): Promise<User[]> { return readList<User>(USER_KEY, SEED_USERS); }
+export async function saveUser(u: User): Promise<void> { await upsertStore<User>(USER_KEY, SEED_USERS, u); }
+export async function deleteUser(id: string): Promise<void> { await deleteStore(USER_KEY, SEED_USERS, id); }
+export async function loadAudit(): Promise<AuditEvent[]> { return readList<AuditEvent>(AUDIT_KEY, SEED_AUDIT); }
 
 // ---------------------------------------------------------------------------
 // System — company config + backups + alerts
@@ -194,11 +182,8 @@ export const DEFAULT_COMPANY: Company = {
 
 const COMP_KEY = 'trs.erp.company.v1';
 
-export function loadCompany(): Company {
-  if (!isBrowser()) return DEFAULT_COMPANY;
-  try { const raw = localStorage.getItem(COMP_KEY); return raw ? JSON.parse(raw) as Company : DEFAULT_COMPANY; } catch { return DEFAULT_COMPANY; }
-}
-export function saveCompany(c: Company) { if (isBrowser()) localStorage.setItem(COMP_KEY, JSON.stringify(c)); }
+export async function loadCompany(): Promise<Company> { return readSingle<Company>(COMP_KEY, DEFAULT_COMPANY); }
+export async function saveCompany(c: Company): Promise<void> { await writeSingle<Company>(COMP_KEY, c); }
 
 export interface Backup {
   id: string;
@@ -223,7 +208,7 @@ export const SEED_BACKUPS: Backup[] = [
 ];
 
 const BKP_KEY = 'trs.erp.backups.v1';
-export function loadBackups(): Backup[] { return read(BKP_KEY, SEED_BACKUPS); }
+export async function loadBackups(): Promise<Backup[]> { return readList<Backup>(BKP_KEY, SEED_BACKUPS); }
 
 export interface SystemAlert {
   id: string;
@@ -242,5 +227,5 @@ export const SEED_ALERTS: SystemAlert[] = [
   { id: 'alt-004', at: '2026-09-17 08:22', level: 'warning', category: 'Certificate',  message: 'SSL cert for api.trs.co.in expires in 21 days', resolved: false },
   { id: 'alt-005', at: '2026-09-17 10:11', level: 'info',    category: 'Deployment',   message: 'Blue-green cutover complete — build 2.4.1 · 0 errors post-deploy', resolved: true },
 ];
-export function loadAlerts(): SystemAlert[] { return read(ALT_KEY, SEED_ALERTS); }
-export function saveAlert(a: SystemAlert) { upsert(ALT_KEY, SEED_ALERTS, a); }
+export async function loadAlerts(): Promise<SystemAlert[]> { return readList<SystemAlert>(ALT_KEY, SEED_ALERTS); }
+export async function saveAlert(a: SystemAlert): Promise<void> { await upsertStore<SystemAlert>(ALT_KEY, SEED_ALERTS, a); }

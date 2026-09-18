@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { BagProvider } from './bag-provider';
 
 interface FavCtx {
   favs: Set<string>;
@@ -41,7 +42,7 @@ export function FavouritesProvider({ children }: { children: React.ReactNode }) 
 
   return (
     <Ctx.Provider value={{ favs, toggle, isFav, count: favs.size }}>
-      {children}
+      <BagProvider>{children}</BagProvider>
     </Ctx.Provider>
   );
 }

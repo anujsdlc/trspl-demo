@@ -3,24 +3,35 @@
 import { useState } from 'react';
 import { Heart, ShoppingBag, Check } from 'lucide-react';
 import { useFavourites } from './favourites';
+import { useBag } from './bag-provider';
 import type { Product } from '@/lib/products';
 
 export function ProductActions({ product }: { product: Product }) {
   const { toggle, isFav } = useFavourites();
+  const { add } = useBag();
   const fav = isFav(product.id);
   const [added, setAdded] = useState(false);
+
+  function handleAdd() {
+    add(product.id, 1);
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1800);
+  }
 
   return (
     <div className="mt-6 flex gap-3">
       <button
-        onClick={() => { setAdded(true); setTimeout(() => setAdded(false), 1600); }}
+        onClick={handleAdd}
         className={`flex-1 h-14 rounded-full font-medium text-sm inline-flex items-center justify-center gap-2 transition ${
           added
             ? 'bg-[color:var(--color-success)] text-white'
-            : 'bg-[color:var(--color-ink)] text-[color:var(--color-cream)] hover:bg-[color:var(--color-crimson)]'
+            : 'bg-[color:var(--color-crimson)] text-white hover:bg-[color:var(--color-crimson-deep)]'
         }`}
       >
-        {added ? <><Check className="w-4 h-4" /> Added — reserved at BLR T2-A</> : <><ShoppingBag className="w-4 h-4" /> Add to bag</>}
+        {added
+          ? <><Check className="w-4 h-4" /> Added — reserved at your nearest store</>
+          : <><ShoppingBag className="w-4 h-4" /> Add to bag</>
+        }
       </button>
       <button
         onClick={() => toggle(product.id)}

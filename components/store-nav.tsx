@@ -8,6 +8,8 @@ import {
   LayoutGrid, Award,
 } from 'lucide-react';
 import { useFavourites } from './favourites';
+import { useBag } from './bag-provider';
+import { BagDrawer } from './bag-drawer';
 import { RelayLogo } from './relay-logo';
 import { SearchOverlay } from './search-overlay';
 
@@ -18,8 +20,10 @@ import { SearchOverlay } from './search-overlay';
    ========================================================================= */
 export function StoreNav() {
   const { count } = useFavourites();
+  const { count: bagCount } = useBag();
   const [open, setOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [bagOpen, setBagOpen] = useState(false);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -91,8 +95,17 @@ export function StoreNav() {
                 <User className="w-3.5 h-3.5" />
                 Admin
               </Link>
-              <button className="relative w-10 h-10 flex items-center justify-center bg-white text-[color:var(--color-crimson)] rounded-full hover:bg-[color:var(--color-cream)] transition" aria-label="Bag">
+              <button
+                onClick={() => setBagOpen(true)}
+                className="relative w-10 h-10 flex items-center justify-center bg-white text-[color:var(--color-crimson)] rounded-full hover:bg-[color:var(--color-cream)] transition"
+                aria-label="Bag"
+              >
                 <ShoppingBag className="w-5 h-5" strokeWidth={2} />
+                {bagCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-[color:var(--color-ink)] text-white text-[10px] rounded-full flex items-center justify-center font-bold leading-none">
+                    {bagCount}
+                  </span>
+                )}
               </button>
               <button className="lg:hidden p-2 text-white" onClick={() => setOpen(!open)} aria-label="Menu">
                 {open ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -157,7 +170,10 @@ export function StoreNav() {
       </header>
 
       {/* Persistent bottom nav for mobile — always visible on <md viewports */}
-      <MobileBottomNav />
+      <MobileBottomNav bagCount={bagCount} onOpenBag={() => setBagOpen(true)} />
+
+      {/* Bag drawer */}
+      <BagDrawer open={bagOpen} onClose={() => setBagOpen(false)} />
     </>
   );
 }
@@ -165,13 +181,17 @@ export function StoreNav() {
 /* =========================================================================
    Mobile bottom nav — Amazon/Zomato-style persistent bar on mobile.
    ========================================================================= */
-function MobileBottomNav() {
+function MobileBottomNav({ bagCount, onOpenBag }: { bagCount: number; onOpenBag: () => void }) {
   const path = usePathname();
   const { count } = useFavourites();
-  const items = [
+  const items: {
+    label: string; icon: React.ElementType;
+    match: (p: string) => boolean;
+    href?: string; onClick?: () => void; badge?: number;
+  }[] = [
     { href: '/',            label: 'Home',       icon: Home,        match: (p: string) => p === '/' },
     { href: '/browse',      label: 'Shop',       icon: LayoutGrid,  match: (p: string) => p.startsWith('/browse') || p.startsWith('/product') },
-    { href: '/loyalty',     label: 'Skyline',    icon: Award,       match: (p: string) => p.startsWith('/loyalty') },
+    {                       label: 'Bag',        icon: ShoppingBag, match: () => false, onClick: onOpenBag, badge: bagCount },
     { href: '/favourites',  label: 'Saved',      icon: Heart,       match: (p: string) => p.startsWith('/favourites'), badge: count },
     { href: '/admin/login', label: 'Account',    icon: User,        match: (p: string) => p.startsWith('/admin') },
   ];
@@ -186,31 +206,35 @@ function MobileBottomNav() {
           {items.map(item => {
             const active = item.match(path);
             const Icon = item.icon;
+            const inner = (
+              <div className={`h-full w-full flex flex-col items-center justify-center gap-1 relative ${
+                active ? 'text-[color:var(--color-crimson)]' : 'text-[color:var(--color-ink-muted)]'
+              }`}>
+                <div className="relative w-6 h-6 flex items-center justify-center">
+                  <Icon
+                    className="w-5 h-5"
+                    strokeWidth={active ? 2.4 : 2}
+                    fill={item.label === 'Saved' && item.badge && item.badge > 0 ? 'currentColor' : 'none'}
+                  />
+                  {item.badge && item.badge > 0 && (
+                    <span className="absolute -top-1 -right-2 min-w-[16px] h-[16px] px-1 bg-[color:var(--color-crimson)] text-white text-[9px] rounded-full flex items-center justify-center font-bold leading-none">
+                      {item.badge}
+                    </span>
+                  )}
+                </div>
+                <span className={`text-[10px] uppercase tracking-wider ${active ? 'font-semibold' : ''}`}>{item.label}</span>
+                {active && (
+                  <span className="absolute top-0 inset-x-4 h-0.5 bg-[color:var(--color-crimson)] rounded-full" />
+                )}
+              </div>
+            );
             return (
               <li key={item.label}>
-                <Link
-                  href={item.href}
-                  className={`h-full flex flex-col items-center justify-center gap-1 relative ${
-                    active ? 'text-[color:var(--color-crimson)]' : 'text-[color:var(--color-ink-muted)]'
-                  }`}
-                >
-                  <div className="relative w-6 h-6 flex items-center justify-center">
-                    <Icon
-                      className="w-5 h-5"
-                      strokeWidth={active ? 2.4 : 2}
-                      fill={item.label === 'Saved' && item.badge && item.badge > 0 ? 'currentColor' : 'none'}
-                    />
-                    {item.badge && item.badge > 0 && (
-                      <span className="absolute -top-1 -right-2 min-w-[16px] h-[16px] px-1 bg-[color:var(--color-crimson)] text-white text-[9px] rounded-full flex items-center justify-center font-bold leading-none">
-                        {item.badge}
-                      </span>
-                    )}
-                  </div>
-                  <span className={`text-[10px] uppercase tracking-wider ${active ? 'font-semibold' : ''}`}>{item.label}</span>
-                  {active && (
-                    <span className="absolute top-0 inset-x-4 h-0.5 bg-[color:var(--color-crimson)] rounded-full" />
-                  )}
-                </Link>
+                {item.href ? (
+                  <Link href={item.href} className="h-full block">{inner}</Link>
+                ) : (
+                  <button onClick={item.onClick} className="h-full w-full">{inner}</button>
+                )}
               </li>
             );
           })}

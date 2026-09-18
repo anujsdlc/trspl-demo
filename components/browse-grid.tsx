@@ -1,7 +1,8 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { ALL_PRODUCTS, type Category } from '@/lib/products';
+import { useEffect, useMemo, useState } from 'react';
+import { ALL_PRODUCTS, type Category, type Product } from '@/lib/products';
+import { loadUploadedProducts } from '@/lib/inventory-store';
 import { BRAND_META, type StoreBrand } from '@/lib/stores';
 import { BookCard } from './book-card';
 import { Filter, X, SlidersHorizontal } from 'lucide-react';
@@ -47,8 +48,14 @@ export function BrowseGrid({ initialCat, initialBrand }: { initialCat: string; i
   const [inStock, setInStock] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  // Include products added via bulk upload alongside the seed catalog.
+  const [uploaded, setUploaded] = useState<Product[]>([]);
+  useEffect(() => { setUploaded(loadUploadedProducts()); }, []);
+
+  const catalog = useMemo(() => [...uploaded, ...ALL_PRODUCTS], [uploaded]);
+
   const filtered = useMemo(() => {
-    let arr = [...ALL_PRODUCTS];
+    let arr = [...catalog];
     if (cat !== 'all') arr = arr.filter(p => p.category === cat);
     if (brand !== 'all') arr = arr.filter(p => p.brand === brand);
     arr = arr.filter(p => p.price <= priceMax);
@@ -60,19 +67,19 @@ export function BrowseGrid({ initialCat, initialBrand }: { initialCat: string; i
         arr.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
     }
     return arr;
-  }, [cat, brand, sort, priceMax]);
+  }, [catalog, cat, brand, sort, priceMax]);
 
   const facetCategoryCounts = useMemo(() => {
     const map = new Map<string, number>();
-    for (const p of ALL_PRODUCTS) map.set(p.category, (map.get(p.category) || 0) + 1);
+    for (const p of catalog) map.set(p.category, (map.get(p.category) || 0) + 1);
     return map;
-  }, []);
+  }, [catalog]);
 
   const facetBrandCounts = useMemo(() => {
     const map = new Map<string, number>();
-    for (const p of ALL_PRODUCTS) map.set(p.brand, (map.get(p.brand) || 0) + 1);
+    for (const p of catalog) map.set(p.brand, (map.get(p.brand) || 0) + 1);
     return map;
-  }, []);
+  }, [catalog]);
 
   return (
     <div className="grid md:grid-cols-[240px_1fr] gap-8 md:gap-16">

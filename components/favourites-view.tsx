@@ -1,14 +1,18 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import { useFavourites } from './favourites';
-import { ALL_PRODUCTS } from '@/lib/products';
+import { ALL_PRODUCTS, type Product } from '@/lib/products';
+import { loadUploadedProducts } from '@/lib/inventory-store';
 import { BookCard } from './book-card';
 import { Heart, ArrowUpRight } from 'lucide-react';
 
 export function FavouritesView() {
   const { favs } = useFavourites();
-  const items = ALL_PRODUCTS.filter(p => favs.has(p.id));
+  const [uploaded, setUploaded] = useState<Product[]>([]);
+  useEffect(() => { setUploaded(loadUploadedProducts()); }, []);
+  const items = [...uploaded, ...ALL_PRODUCTS].filter(p => favs.has(p.id));
 
   return (
     <div className="container-editorial py-12 md:py-20">

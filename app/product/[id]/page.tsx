@@ -1,9 +1,9 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
 import { FavouritesProvider } from '@/components/favourites';
 import { StoreNav, StoreFooter } from '@/components/store-nav';
 import { ProductActions } from '@/components/product-actions';
+import { UploadedProductFallback } from '@/components/uploaded-product-fallback';
 import { getProduct, ALL_PRODUCTS, stockFor, totalStock } from '@/lib/products';
 import { STORES, BOOK_STORES, BRAND_META } from '@/lib/stores';
 import { CATEGORY_MULTIPLIER, TIERS } from '@/lib/loyalty';
@@ -17,7 +17,17 @@ export function generateStaticParams() {
 export default async function ProductPage({ params }: PageProps<'/product/[id]'>) {
   const { id } = await params;
   const product = getProduct(id);
-  if (!product) notFound();
+  if (!product) {
+    // Might be a product added via the bulk-upload wizard — persisted in
+    // localStorage. Hand off to a client fallback that checks there.
+    return (
+      <FavouritesProvider>
+        <StoreNav />
+        <UploadedProductFallback id={id} />
+        <StoreFooter />
+      </FavouritesProvider>
+    );
+  }
 
   const relevantStores = product.brand === 'RLY' ? BOOK_STORES : STORES.filter(s => s.brand === product.brand);
   const storeStock = relevantStores.map(s => ({ store: s, qty: stockFor(product.id, s.id) })).sort((a, b) => b.qty - a.qty);

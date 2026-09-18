@@ -81,19 +81,18 @@ export function StoreNav() {
               <button onClick={() => setSearchOpen(true)} className="md:hidden p-2 hover:bg-white/15 rounded-full transition text-white" aria-label="Search">
                 <Search className="w-5 h-5" />
               </button>
-              <Link href="/favourites" className="p-2.5 hover:bg-white/15 rounded-full transition relative text-white" aria-label="Favourites">
-                <Heart className="w-5 h-5" />
+              <Link href="/favourites" className="relative w-10 h-10 flex items-center justify-center hover:bg-white/15 rounded-full transition text-white" aria-label="Favourites">
+                <Heart className="w-5 h-5" strokeWidth={2} />
                 {count > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-white text-[color:var(--color-crimson)] text-[10px] rounded-full flex items-center justify-center font-bold heart-pop">{count}</span>
+                  <span className="absolute top-0 right-0 min-w-[18px] h-[18px] px-1 bg-white text-[color:var(--color-crimson)] text-[10px] rounded-full flex items-center justify-center font-bold heart-pop leading-none">{count}</span>
                 )}
               </Link>
               <Link href="/admin" className="hidden md:flex items-center gap-2 px-3 h-10 text-xs rounded-full border border-white/40 hover:bg-white hover:text-[color:var(--color-crimson)] transition">
                 <User className="w-3.5 h-3.5" />
                 Admin
               </Link>
-              <button className="relative p-2.5 bg-white text-[color:var(--color-crimson)] rounded-full hover:bg-[color:var(--color-cream)] transition" aria-label="Bag">
-                <ShoppingBag className="w-5 h-5" />
-                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-[color:var(--color-ink)] text-white text-[10px] rounded-full flex items-center justify-center font-bold">0</span>
+              <button className="relative w-10 h-10 flex items-center justify-center bg-white text-[color:var(--color-crimson)] rounded-full hover:bg-[color:var(--color-cream)] transition" aria-label="Bag">
+                <ShoppingBag className="w-5 h-5" strokeWidth={2} />
               </button>
               <button className="lg:hidden p-2 text-white" onClick={() => setOpen(!open)} aria-label="Menu">
                 {open ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -195,14 +194,14 @@ function MobileBottomNav() {
                     active ? 'text-[color:var(--color-crimson)]' : 'text-[color:var(--color-ink-muted)]'
                   }`}
                 >
-                  <div className="relative">
+                  <div className="relative w-6 h-6 flex items-center justify-center">
                     <Icon
                       className="w-5 h-5"
                       strokeWidth={active ? 2.4 : 2}
                       fill={item.label === 'Saved' && item.badge && item.badge > 0 ? 'currentColor' : 'none'}
                     />
                     {item.badge && item.badge > 0 && (
-                      <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 bg-[color:var(--color-crimson)] text-white text-[9px] rounded-full flex items-center justify-center font-bold">
+                      <span className="absolute -top-1 -right-2 min-w-[16px] h-[16px] px-1 bg-[color:var(--color-crimson)] text-white text-[9px] rounded-full flex items-center justify-center font-bold leading-none">
                         {item.badge}
                       </span>
                     )}

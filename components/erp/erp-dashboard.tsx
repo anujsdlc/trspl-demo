@@ -19,6 +19,10 @@ import {
   loadCoA, loadJVs, loadBankEntries, computeBalances, summariseByType,
   SEED_COA, SEED_JVS, SEED_BANK_ENTRIES,
 } from '@/lib/erp/phase3';
+import {
+  loadExhibitions, loadDevices, loadLeads,
+  SEED_EXHIBITIONS, SEED_DEVICES, SEED_LEADS,
+} from '@/lib/erp/phase4';
 
 const ICONS: Record<string, React.ElementType> = {
   LayoutDashboard, Building2, Warehouse, Landmark, BookOpenText, ShoppingCart,
@@ -39,6 +43,9 @@ export function ERPDashboard() {
     ledgers: SEED_COA.length,
     journals: SEED_JVS.length,
     bank: SEED_BANK_ENTRIES.length,
+    exhibitions: SEED_EXHIBITIONS.length,
+    devices: SEED_DEVICES.length,
+    leads: SEED_LEADS.length,
   });
   const [netIncome, setNetIncome] = useState(0);
   useEffect(() => {
@@ -59,12 +66,16 @@ export function ERPDashboard() {
       ledgers: coa.length,
       journals: jvs.length,
       bank: loadBankEntries().length,
+      exhibitions: loadExhibitions().length,
+      devices: loadDevices().length,
+      leads: loadLeads().length,
     });
   }, []);
 
   const phase1 = ERP_MODULES.filter(m => m.phase === 1 && m.key !== 'dashboard');
   const phase2 = ERP_MODULES.filter(m => m.phase === 2 && m.status === 'live');
   const phase3 = ERP_MODULES.filter(m => m.phase === 3 && m.status === 'live');
+  const phase4 = ERP_MODULES.filter(m => m.phase === 4 && m.status === 'live');
   const coming = ERP_MODULES.filter(m => m.status === 'coming-soon');
 
   return (
@@ -195,12 +206,50 @@ export function ERPDashboard() {
         </div>
       </div>
 
+      {/* Phase 4 — Field Ops */}
+      <div className="mb-10">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-crimson)] mb-1 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 bg-[color:var(--color-crimson)] rounded-full pulse-dot" /> Phase 4 · Live
+            </div>
+            <h2 className="font-serif text-2xl">Field Ops</h2>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {phase4.map(m => {
+            const Icon = ICONS[m.icon];
+            const count = m.key === 'exhibitions' ? counts.exhibitions
+                       : m.key === 'offline-pos' ? counts.devices
+                       : m.key === 'crm' ? counts.leads
+                       : 0;
+            return (
+              <Link key={m.key} href={m.href} className="group bg-white rounded-xl border border-[color:var(--color-line)] p-5 hover:border-[color:var(--color-ink)] hover:shadow-md transition">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="w-10 h-10 bg-[color:var(--color-paper)] rounded-md flex items-center justify-center">
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-[color:var(--color-ink-muted)] group-hover:text-[color:var(--color-crimson)] group-hover:translate-x-1 transition" />
+                </div>
+                <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)]">{m.label}</div>
+                <div className="editorial-num text-4xl mt-1">{count.toLocaleString('en-IN')}</div>
+                <div className="text-[11px] text-[color:var(--color-ink-muted)] mt-1">
+                  {m.key === 'exhibitions' && 'Events · issue notes · settlements'}
+                  {m.key === 'offline-pos' && 'Registered devices with sync queue'}
+                  {m.key === 'crm' && 'Leads across the pipeline'}
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Coming soon roadmap */}
       <div>
         <div className="flex items-center justify-between mb-4">
           <div>
             <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)] mb-1">Roadmap</div>
-            <h2 className="font-serif text-2xl">Coming in Phases 4 – 6</h2>
+            <h2 className="font-serif text-2xl">Coming in Phases 5 – 6</h2>
           </div>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Package, MapPin, Award, ShoppingCart, TrendingUp, Users, Settings, Search, Bell, Command } from 'lucide-react';
+import { LayoutDashboard, Package, MapPin, Award, ShoppingCart, TrendingUp, Users, Settings, Search, Bell, Command, Building2 } from 'lucide-react';
 
 const NAV = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
@@ -10,6 +10,7 @@ const NAV = [
   { href: '/admin/stores', label: 'Stores', icon: MapPin, badge: '51' },
   { href: '/admin/orders', label: 'Orders', icon: ShoppingCart, badge: '47' },
   { href: '/admin/loyalty', label: 'Loyalty', icon: Award },
+  { href: '/admin/erp', label: 'ERP', icon: Building2, badge: 'P1' },
   { href: '/admin/analytics', label: 'Analytics', icon: TrendingUp },
   { href: '/admin/customers', label: 'Customers', icon: Users },
 ];

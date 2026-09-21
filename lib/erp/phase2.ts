@@ -1,17 +1,4 @@
-import { readList, writeList, upsertRow as upsertStore, deleteRow as deleteStore, readSingle, writeSingle } from './store';
-
-// ERP Phase 2 — Buy → Sell data layer.
-// Suppliers, Customers, Purchase Orders (+ GRN), Sales Orders (+ Invoices).
-
-// ---------------------------------------------------------------------------
-// Common helpers
-// ---------------------------------------------------------------------------
-
-
-
-// ---------------------------------------------------------------------------
-// Suppliers
-// ---------------------------------------------------------------------------
+import { readList, upsertRow as upsertStore, deleteRow as deleteStore } from './store';
 
 export type SupplierType = 'publisher' | 'distributor' | 'wholesaler' | 'author-direct' | 'importer';
 
@@ -32,10 +19,10 @@ export interface Supplier {
   bankName?: string;
   bankAccount?: string;
   bankIfsc?: string;
-  creditDays: number;         // net credit days (30/45/60/90)
-  creditLimit: number;        // INR
-  currentOutstanding: number; // INR
-  defaultDiscount: number;    // % on MRP
+  creditDays: number;
+  creditLimit: number;
+  currentOutstanding: number;
+  defaultDiscount: number;
   rating: 1 | 2 | 3 | 4 | 5;
   status: 'active' | 'blocked' | 'hold';
   since: string;
@@ -60,10 +47,6 @@ export async function loadSuppliers(): Promise<Supplier[]> { return readList<Sup
 export async function saveSupplier(s: Supplier): Promise<void> { await upsertStore<Supplier>(SUPPLIER_KEY, SEED_SUPPLIERS, s); }
 export async function deleteSupplier(id: string): Promise<void> { await deleteStore(SUPPLIER_KEY, SEED_SUPPLIERS, id); }
 
-// ---------------------------------------------------------------------------
-// Customers
-// ---------------------------------------------------------------------------
-
 export type CustomerType = 'school' | 'dealer' | 'distributor' | 'retail' | 'institution';
 
 export interface Customer {
@@ -82,7 +65,7 @@ export interface Customer {
   creditDays: number;
   creditLimit: number;
   currentOutstanding: number;
-  discountSlab: number;   // % standard discount
+  discountSlab: number;
   since: string;
   status: 'active' | 'hold' | 'blocked';
   ordersCount: number;
@@ -106,17 +89,13 @@ export async function loadCustomers(): Promise<Customer[]> { return readList<Cus
 export async function saveCustomer(c: Customer): Promise<void> { await upsertStore<Customer>(CUSTOMER_KEY, SEED_CUSTOMERS, c); }
 export async function deleteCustomer(id: string): Promise<void> { await deleteStore(CUSTOMER_KEY, SEED_CUSTOMERS, id); }
 
-// ---------------------------------------------------------------------------
-// Purchase Orders + GRN + Bills
-// ---------------------------------------------------------------------------
-
 export interface POLine {
   isbn?: string;
   title: string;
   qty: number;
   unitPrice: number;
-  discount: number;   // % on unit price
-  gstRate: number;    // %
+  discount: number;
+  gstRate: number;
 }
 
 export type POStatus = 'draft' | 'placed' | 'partial' | 'received' | 'billed' | 'closed' | 'cancelled';
@@ -214,17 +193,13 @@ export async function loadPOs(): Promise<PurchaseOrder[]> { return readList<Purc
 export async function savePO(p: PurchaseOrder): Promise<void> { await upsertStore<PurchaseOrder>(PO_KEY, SEED_POS, p); }
 export async function deletePO(id: string): Promise<void> { await deleteStore(PO_KEY, SEED_POS, id); }
 
-// ---------------------------------------------------------------------------
-// Sales Orders / Invoices
-// ---------------------------------------------------------------------------
-
 export interface SOLine {
   isbn?: string;
   title: string;
   qty: number;
-  unitPrice: number;    // MRP
-  discount: number;     // %
-  gstRate: number;      // %
+  unitPrice: number;
+  discount: number;
+  gstRate: number;
 }
 
 export type SOStatus = 'quotation' | 'confirmed' | 'picked' | 'invoiced' | 'delivered' | 'paid' | 'cancelled';

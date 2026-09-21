@@ -1,11 +1,13 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { ALL_PRODUCTS, type Category, type Product } from '@/lib/products';
+import { ALL_PRODUCTS, type Product } from '@/lib/products';
 import { loadClientCatalog } from '@/lib/catalog.client';
-import { BRAND_META, type StoreBrand } from '@/lib/stores';
+import { loadMoves } from '@/lib/stock-ledger.client';
+import { deltaIndex, onHand, onHandAcross } from '@/lib/stock-ledger';
+import { BRAND_META, STORES } from '@/lib/stores';
 import { BookCard } from './book-card';
-import { Filter, X, SlidersHorizontal } from 'lucide-react';
+import { X, SlidersHorizontal } from 'lucide-react';
 import { inr } from '@/lib/utils';
 
 const CATEGORIES: { key: string; label: string }[] = [
@@ -35,37 +37,101 @@ const BRANDS: { key: string; label: string; color?: string }[] = [
 
 const SORTS = [
   { key: 'featured', label: 'Featured' },
+  { key: 'bestseller', label: 'Bestsellers' },
+  { key: 'new', label: 'New arrivals' },
   { key: 'price-asc', label: 'Price: Low → High' },
   { key: 'price-desc', label: 'Price: High → Low' },
   { key: 'name', label: 'A → Z' },
 ];
 
-export function BrowseGrid({ initialCat, initialBrand }: { initialCat: string; initialBrand: string }) {
+const OFFERS = [
+  { key: 'all', label: 'Everything' },
+  { key: 'bogo', label: 'Buy 1 Get 1 Free' },
+  { key: 'reduced', label: 'Reduced price' },
+];
+
+const PAGE_SIZE = 60;
+const ALL_STORE_IDS = STORES.map(s => s.id);
+
+export interface BrowseGridProps {
+  initialCat: string;
+  initialBrand: string;
+  initialQuery?: string;
+  initialSort?: string;
+  initialOffer?: string;
+  initialStore?: string;
+}
+
+export function BrowseGrid({
+  initialCat, initialBrand, initialQuery = '', initialSort = 'featured',
+  initialOffer = 'all', initialStore = 'all',
+}: BrowseGridProps) {
   const [cat, setCat] = useState(initialCat);
   const [brand, setBrand] = useState(initialBrand);
-  const [sort, setSort] = useState('featured');
+  const [sort, setSort] = useState(SORTS.some(s => s.key === initialSort) ? initialSort : 'featured');
+  const [query, setQuery] = useState(initialQuery);
+  const [offer, setOffer] = useState(OFFERS.some(o => o.key === initialOffer) ? initialOffer : 'all');
+  const [store, setStore] = useState(STORES.some(s => s.id === initialStore) ? initialStore : 'all');
   const [priceMax, setPriceMax] = useState<number>(50000);
-  const [inStock, setInStock] = useState(true);
+  const [inStock, setInStock] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [page, setPage] = useState(1);
 
-  // Full merged catalog: bulk-uploaded + ERP book master + bundled seed.
   const [catalog, setCatalog] = useState<Product[]>(ALL_PRODUCTS);
   useEffect(() => { loadClientCatalog().then(setCatalog); }, []);
+
+  const [stockIndex, setStockIndex] = useState<Map<string, number>>(new Map());
+  useEffect(() => { loadMoves().then(moves => setStockIndex(deltaIndex(moves))); }, []);
 
   const filtered = useMemo(() => {
     let arr = [...catalog];
     if (cat !== 'all') arr = arr.filter(p => p.category === cat);
     if (brand !== 'all') arr = arr.filter(p => p.brand === brand);
     arr = arr.filter(p => p.price <= priceMax);
+
+    const q = query.trim().toLowerCase();
+    if (q) {
+      arr = arr.filter(p =>
+        p.title.toLowerCase().includes(q) ||
+        (p.subtitle ?? '').toLowerCase().includes(q) ||
+        p.sku.toLowerCase().includes(q) ||
+        (p.tags ?? []).some(t => t.toLowerCase().includes(q)),
+      );
+    }
+
+    if (offer === 'bogo') arr = arr.filter(p => p.bogo);
+    else if (offer === 'reduced') arr = arr.filter(p => p.compare != null && p.compare > p.price);
+
+    if (inStock) {
+      arr = store === 'all'
+        ? arr.filter(p => onHandAcross(p.id, ALL_STORE_IDS, stockIndex) > 0)
+        : arr.filter(p => onHand(p.id, store, stockIndex) > 0);
+    } else if (store !== 'all') {
+      arr = arr.filter(p => onHand(p.id, store, stockIndex) > 0);
+    }
+
     switch (sort) {
       case 'price-asc': arr.sort((a, b) => a.price - b.price); break;
       case 'price-desc': arr.sort((a, b) => b.price - a.price); break;
       case 'name': arr.sort((a, b) => a.title.localeCompare(b.title)); break;
+      case 'bestseller': arr.sort((a, b) => (b.bestseller ? 1 : 0) - (a.bestseller ? 1 : 0)); break;
+      case 'new': arr.sort((a, b) => (b.newArrival ? 1 : 0) - (a.newArrival ? 1 : 0)); break;
       default:
         arr.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
     }
     return arr;
-  }, [catalog, cat, brand, sort, priceMax]);
+  }, [catalog, cat, brand, sort, priceMax, query, offer, store, inStock, stockIndex]);
+
+  const filterSignature = `${cat}|${brand}|${sort}|${priceMax}|${query}|${offer}|${store}|${inStock}`;
+  const [lastSignature, setLastSignature] = useState(filterSignature);
+  if (filterSignature !== lastSignature) {
+    setLastSignature(filterSignature);
+    setPage(1);
+  }
+
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  const visible = filtered.slice(0, currentPage * PAGE_SIZE);
 
   const facetCategoryCounts = useMemo(() => {
     const map = new Map<string, number>();
@@ -81,7 +147,6 @@ export function BrowseGrid({ initialCat, initialBrand }: { initialCat: string; i
 
   return (
     <div className="grid md:grid-cols-[240px_1fr] gap-8 md:gap-16">
-      {/* Sidebar filters */}
       <aside className={`${mobileOpen ? 'fixed inset-0 z-50 bg-[color:var(--color-cream)] p-6 overflow-auto' : 'hidden md:block'} md:sticky md:top-32 md:h-fit`}>
         {mobileOpen && (
           <div className="flex justify-between items-center mb-8">
@@ -116,25 +181,58 @@ export function BrowseGrid({ initialCat, initialBrand }: { initialCat: string; i
           </div>
         </FacetGroup>
 
+        <FacetGroup title="Offer">
+          {OFFERS.map(o => (
+            <FacetRow key={o.key} active={offer === o.key} onClick={() => setOffer(o.key)}>
+              {o.label}
+            </FacetRow>
+          ))}
+        </FacetGroup>
+
+        <FacetGroup title="Store">
+          <select
+            value={store}
+            onChange={e => setStore(e.target.value)}
+            className="w-full bg-transparent border-b border-[color:var(--color-ink)] py-1 text-sm focus:outline-none"
+          >
+            <option value="all">Any store</option>
+            {STORES.map(s => <option key={s.id} value={s.id}>{s.code} · {s.location}</option>)}
+          </select>
+        </FacetGroup>
+
         <FacetGroup title="Availability">
           <label className="flex items-center gap-2 text-sm cursor-pointer">
             <input type="checkbox" checked={inStock} onChange={e => setInStock(e.target.checked)} className="accent-[color:var(--color-crimson)]" />
-            In stock at any store
+            {store === 'all' ? 'In stock at any store' : 'In stock at this store'}
           </label>
         </FacetGroup>
 
-        <button onClick={() => { setCat('all'); setBrand('all'); setPriceMax(50000); setSort('featured'); }} className="mt-6 text-xs underline text-[color:var(--color-ink-muted)]">
+        <button
+          onClick={() => {
+            setCat('all'); setBrand('all'); setPriceMax(50000); setSort('featured');
+            setQuery(''); setOffer('all'); setStore('all'); setInStock(false);
+          }}
+          className="mt-6 text-xs underline text-[color:var(--color-ink-muted)]"
+        >
           Reset all
         </button>
       </aside>
 
       <main>
-        {/* Sort + count bar */}
         <div className="flex items-center justify-between mb-8 pb-4 border-b border-[color:var(--color-line)] flex-wrap gap-3">
           <div className="text-sm text-[color:var(--color-ink-muted)] font-mono">
             {filtered.length.toLocaleString()} results
+            {query.trim() && <> for <span className="text-[color:var(--color-ink)]">“{query.trim()}”</span></>}
           </div>
           <div className="flex items-center gap-3">
+            <input
+              type="search"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Search this shelf"
+              aria-label="Search the catalog"
+              className="h-9 px-3 w-44 md:w-56 bg-transparent border-b border-[color:var(--color-ink)] text-sm focus:outline-none"
+            />
             <button onClick={() => setMobileOpen(true)} className="md:hidden inline-flex items-center gap-2 h-9 px-4 border border-[color:var(--color-ink)] rounded-full text-xs">
               <SlidersHorizontal className="w-3.5 h-3.5" /> Filters
             </button>
@@ -147,9 +245,8 @@ export function BrowseGrid({ initialCat, initialBrand }: { initialCat: string; i
           </div>
         </div>
 
-        {/* Grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
-          {filtered.slice(0, 60).map(p => (
+          {visible.map(p => (
             <BookCard key={p.id} product={p} storeCount={((p.id.length * 7) % 22) + 4} />
           ))}
         </div>
@@ -160,9 +257,19 @@ export function BrowseGrid({ initialCat, initialBrand }: { initialCat: string; i
             <div className="text-[color:var(--color-ink-muted)]">Try loosening a filter.</div>
           </div>
         )}
-        {filtered.length > 60 && (
-          <div className="mt-12 text-center text-sm text-[color:var(--color-ink-muted)] font-mono">
-            Showing 60 of {filtered.length.toLocaleString()} — pagination coming soon
+        {filtered.length > 0 && (
+          <div className="mt-12 flex flex-col items-center gap-4">
+            <div className="text-sm text-[color:var(--color-ink-muted)] font-mono">
+              Showing {visible.length.toLocaleString()} of {filtered.length.toLocaleString()}
+            </div>
+            {visible.length < filtered.length && (
+              <button
+                onClick={() => setPage(p => p + 1)}
+                className="h-10 px-6 border border-[color:var(--color-ink)] rounded-full text-sm hover:bg-[color:var(--color-ink)] hover:text-[color:var(--color-cream)] transition"
+              >
+                Load {Math.min(PAGE_SIZE, filtered.length - visible.length)} more
+              </button>
+            )}
           </div>
         )}
       </main>

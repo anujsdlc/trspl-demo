@@ -2,13 +2,27 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Receipt, Plus, Search, X, ArrowRight, ClipboardList, FileText, CheckCircle2,
-  Truck, Wallet, Ban,
+  Receipt,
+  Plus,
+  Search,
+  X,
+  ArrowRight,
+  ClipboardList,
+  FileText,
+  CheckCircle2,
+  Truck,
+  Wallet,
+  Ban,
 } from 'lucide-react';
 import {
-  loadSOs, saveSO, deleteSO, SEED_SOS,
-  loadCustomers, SEED_CUSTOMERS,
-  type SalesOrder, type SOStatus, type Customer,
+  loadSOs,
+  saveSO,
+  SEED_SOS,
+  loadCustomers,
+  SEED_CUSTOMERS,
+  type SalesOrder,
+  type SOStatus,
+  type Customer,
 } from '@/lib/erp/phase2';
 import { inr } from '@/lib/utils';
 import { KPI, Th, StatusPill } from './ui';
@@ -286,7 +300,6 @@ function SODrawer({ so, customers, onClose, onAdvance }: { so: SalesOrder; custo
             </div>
           </div>
 
-          {/* Actions */}
           <div className="bg-white rounded-lg border border-[color:var(--color-line)] p-4">
             <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)] mb-3">Advance the SO</div>
             <div className="grid grid-cols-3 gap-2 text-sm">

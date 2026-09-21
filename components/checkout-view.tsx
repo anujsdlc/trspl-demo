@@ -2,17 +2,31 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
-  ShoppingBag, Store, Truck, MapPin, CreditCard, Smartphone, Banknote,
-  ArrowRight, ShieldCheck, Check, Sparkles, ArrowLeft,
+  ShoppingBag,
+  Store,
+  Truck,
+  CreditCard,
+  Smartphone,
+  Banknote,
+  ArrowRight,
+  ShieldCheck,
+  Check,
+  Sparkles,
+  ArrowLeft,
 } from 'lucide-react';
 import { useBag } from './bag-provider';
 import { SafeImage } from './safe-image';
-import { saveOrder, newOrderId, type OrderLine, type Order } from '@/lib/bag';
+import { saveOrder, publishOrder, saleMoves, newOrderId, type OrderLine, type Order } from '@/lib/bag';
+import { appendMoves } from '@/lib/stock-ledger.client';
+import { computeOrderTax } from '@/lib/order-tax';
+import { gstRateFor } from '@/lib/gst-rates';
+import { loadGST, SEED_GST, type GSTRegistration } from '@/lib/erp/foundations';
 import { STORES } from '@/lib/stores';
 import { inr } from '@/lib/utils';
 
+const RELAY_STORES = STORES.filter(s => s.brand === 'RLY').slice(0, 12);
 const FREE_DELIVERY_THRESHOLD = 599;
 const DELIVERY_FEE = 49;
 
@@ -24,7 +38,7 @@ export function CheckoutView() {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('+91 ');
   const [method, setMethod] = useState<'pickup' | 'ship'>('pickup');
-  const [storeCode, setStoreCode] = useState('RLY-BLR-04');
+  const [storeCode, setStoreCode] = useState(RELAY_STORES[0].code);
   const [address, setAddress] = useState('');
   const [pincode, setPincode] = useState('');
   const [city, setCity] = useState('Bangalore');
@@ -32,6 +46,9 @@ export function CheckoutView() {
   const [cardNumber, setCardNumber] = useState('');
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState('');
+
+  const [registrations, setRegistrations] = useState<GSTRegistration[]>(SEED_GST);
+  useEffect(() => { loadGST().then(setRegistrations); }, []);
 
   const delivery = method === 'pickup' ? 0 : subtotal >= FREE_DELIVERY_THRESHOLD ? 0 : DELIVERY_FEE;
   const total = subtotal + delivery;
@@ -72,6 +89,7 @@ export function CheckoutView() {
       return {
         productId: p.id, title: p.title, sku: p.sku, image: p.image,
         qty: item.qty, unitPrice: p.price, lineTotal: p.price * item.qty,
+        hsn: p.hsn, gstRate: gstRateFor(p.category), uqc: 'NOS',
       };
     });
 
@@ -92,14 +110,22 @@ export function CheckoutView() {
       status: 'placed',
     };
 
+    order.tax = computeOrderTax(
+      order,
+      registrations,
+      id => productFor(id)?.category,
+      storeCode,
+    );
+
     setTimeout(() => {
       saveOrder(order);
+      void publishOrder(order);
+      const moves = saleMoves(order, code => STORES.find(s => s.code === code)?.id);
+      if (moves.length > 0) void appendMoves(moves).catch(() => {});
       clear();
       router.push(`/orders/${id}`);
     }, 900);
   }
-
-  const relayStores = STORES.filter(s => s.brand === 'RLY').slice(0, 12);
 
   return (
     <div className="container-editorial py-8 md:py-12">
@@ -110,7 +136,6 @@ export function CheckoutView() {
 
       <form onSubmit={place} className="grid lg:grid-cols-[1fr_400px] gap-8">
         <div className="space-y-8">
-          {/* Contact */}
           <Section title="Your details" icon={ShieldCheck}>
             <div className="grid md:grid-cols-2 gap-3">
               <Field label="Full name"><input value={name} onChange={e => setName(e.target.value)} required className="w-full h-11 px-3 border border-[color:var(--color-line)] rounded-md bg-white text-sm" /></Field>
@@ -119,7 +144,6 @@ export function CheckoutView() {
             <Field label="Email"><input type="email" value={email} onChange={e => setEmail(e.target.value)} required className="w-full h-11 px-3 border border-[color:var(--color-line)] rounded-md bg-white text-sm" /></Field>
           </Section>
 
-          {/* Delivery method */}
           <Section title="Delivery" icon={Truck}>
             <div className="grid grid-cols-2 gap-3">
               <MethodTile active={method === 'pickup'} onClick={() => setMethod('pickup')} icon={Store} title="Pick up at store" hint="Reserve now, collect at your gate. Free.">
@@ -133,7 +157,7 @@ export function CheckoutView() {
             {method === 'pickup' && (
               <Field label="Pick-up store">
                 <select value={storeCode} onChange={e => setStoreCode(e.target.value)} className="w-full h-11 px-3 border border-[color:var(--color-line)] rounded-md bg-white text-sm">
-                  {relayStores.map(s => <option key={s.id} value={s.code}>{s.code} · {s.location}</option>)}
+                  {RELAY_STORES.map(s => <option key={s.id} value={s.code}>{s.code} · {s.location}</option>)}
                 </select>
               </Field>
             )}
@@ -149,7 +173,6 @@ export function CheckoutView() {
             )}
           </Section>
 
-          {/* Payment */}
           <Section title="Payment" icon={CreditCard}>
             <div className="grid grid-cols-3 gap-3">
               <PayTile active={payment === 'card'} onClick={() => setPayment('card')} icon={CreditCard} label="Card" />
@@ -191,7 +214,6 @@ export function CheckoutView() {
           </Section>
         </div>
 
-        {/* Summary */}
         <aside className="lg:sticky lg:top-32 self-start">
           <div className="bg-white rounded-xl border border-[color:var(--color-line)] p-5 space-y-4">
             <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)]">Order summary</div>

@@ -21,12 +21,10 @@ export function ERPShell({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   return (
     <div className="min-h-screen flex bg-[color:var(--color-paper)]">
-      {/* Desktop sidebar */}
       <aside className="hidden lg:block w-64 shrink-0 border-r border-[color:var(--color-line)] bg-white h-screen sticky top-0 overflow-y-auto">
         <Sidebar />
       </aside>
 
-      {/* Mobile sidebar sheet */}
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex" onClick={() => setMobileOpen(false)}>
           <div className="absolute inset-0 bg-black/40" />
@@ -38,7 +36,6 @@ export function ERPShell({ children }: { children: React.ReactNode }) {
       )}
 
       <main className="flex-1 min-w-0">
-        {/* Top bar */}
         <div className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-[color:var(--color-line)]">
           <div className="flex items-center gap-3 h-14 px-4 lg:px-6">
             <button className="lg:hidden p-2 hover:bg-[color:var(--color-paper)] rounded" onClick={() => setMobileOpen(true)}>
@@ -50,7 +47,7 @@ export function ERPShell({ children }: { children: React.ReactNode }) {
             <ERPBreadcrumb />
             <div className="ml-auto text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)] font-mono flex items-center gap-2">
               <span className="w-1.5 h-1.5 bg-[color:var(--color-success)] rounded-full pulse-dot" />
-              TRS ERP · Phase 1
+              TRS ERP · {ERP_MODULES.length} modules
             </div>
           </div>
         </div>
@@ -119,8 +116,8 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       </nav>
 
       <div className="mt-8 p-3 rounded-md bg-[color:var(--color-crimson-soft)] text-xs">
-        <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-crimson)] mb-1">Phase 1 · Live</div>
-        <div className="text-[color:var(--color-ink-soft)]">Foundations shipped. Purchase and Sales up next in Phase 2.</div>
+        <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-crimson)] mb-1">All phases live</div>
+        <div className="text-[color:var(--color-ink-soft)]">Foundations through Admin — {ERP_MODULES.length} modules across six phases.</div>
       </div>
     </div>
   );

@@ -1,22 +1,79 @@
 import Link from 'next/link';
 import { STORES, BRAND_META } from '@/lib/stores';
-import { ALL_PRODUCTS, stockFor, PRODUCTS_BY_BRAND } from '@/lib/products';
+import { PRODUCTS_BY_BRAND } from '@/lib/products';
+import { getServerStockIndex } from '@/lib/stock-ledger.server';
+import { onHand } from '@/lib/stock-ledger';
+import { storeGet } from '@/lib/server-store';
+import { ensureTradingHistory } from '@/lib/demo-bootstrap';
+import { ORDERS_STORE_KEY, type Order } from '@/lib/bag';
+import { reorderLevel } from '@/lib/replenishment';
 import { inr } from '@/lib/utils';
-import { TrendingUp, TrendingDown, AlertCircle, Package, Zap, MapPin, Award, ArrowUpRight, ShoppingCart, Users, Sparkles } from 'lucide-react';
+import { TrendingUp, TrendingDown, AlertCircle, Award, ArrowUpRight, ShoppingCart } from 'lucide-react';
 
-export default function AdminDashboard() {
-  // Deterministic KPI computation
+export default async function AdminDashboard() {
+  const stockIndex = await getServerStockIndex();
   const totalStock = STORES.reduce((sum, s) => {
-    return sum + PRODUCTS_BY_BRAND[s.brand].slice(0, 40).reduce((ss, p) => ss + stockFor(p.id, s.id), 0);
+    return sum + PRODUCTS_BY_BRAND[s.brand].slice(0, 40).reduce((ss, p) => ss + onHand(p.id, s.id, stockIndex), 0);
   }, 0);
-  const lowStockAlerts = 18;
-  const openOrders = 47;
-  const todaysRevenue = 187420;
-  const monthRevenue = 4823000;
+
+  await ensureTradingHistory();
+  const orders = ((await storeGet<Order[]>(ORDERS_STORE_KEY)) ?? []).filter(o => o.status !== 'cancelled');
+  const now = new Date();
+  const today = now.toISOString().slice(0, 10);
+  const month = now.toISOString().slice(0, 7);
+
+  const todaysRevenue = orders
+    .filter(o => o.placedAt.slice(0, 10) === today)
+    .reduce((sum, o) => sum + o.total, 0);
+  const monthRevenue = orders
+    .filter(o => o.placedAt.slice(0, 7) === month)
+    .reduce((sum, o) => sum + o.total, 0);
+  const openOrders = orders.filter(o => o.status === 'placed' || o.status === 'packing').length;
+
+  let lowStockAlerts = 0;
+  const shortages: { title: string; store: string; qty: number }[] = [];
+  for (const s of STORES) {
+    for (const p of PRODUCTS_BY_BRAND[s.brand].slice(0, 40)) {
+      const qty = onHand(p.id, s.id, stockIndex);
+      if (qty <= reorderLevel(p.id)) {
+        lowStockAlerts++;
+        shortages.push({ title: p.title, store: s.code, qty });
+      }
+    }
+  }
+  shortages.sort((a, b) => a.qty - b.qty);
+  const alerts = shortages.slice(0, 5);
+
+  const needingAction = orders
+    .filter(o => o.status === 'placed' || o.status === 'packing')
+    .sort((a, b) => b.placedAt.localeCompare(a.placedAt))
+    .slice(0, 5);
+
+  const trend: { day: string; value: number }[] = [];
+  for (let back = 13; back >= 0; back--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - back);
+    const key = d.toISOString().slice(0, 10);
+    trend.push({
+      day: key,
+      value: orders.filter(o => o.placedAt.slice(0, 10) === key).reduce((sum, o) => sum + o.total, 0),
+    });
+  }
+
+  const weekAgo = new Date(now);
+  weekAgo.setDate(weekAgo.getDate() - 7);
+  const brandRevenue = new Map<string, number>();
+  for (const o of orders) {
+    if (o.delivery.method !== 'pickup' || !o.delivery.storeCode) continue;
+    if (new Date(o.placedAt) < weekAgo) continue;
+    const store = STORES.find(st => st.code === o.delivery.storeCode);
+    if (!store) continue;
+    brandRevenue.set(store.brand, (brandRevenue.get(store.brand) ?? 0) + o.total);
+  }
+  const brandTop = Math.max(1, ...brandRevenue.values());
 
   return (
     <div className="px-6 py-8 max-w-[1600px]">
-      {/* Header */}
       <div className="flex items-end justify-between mb-8 flex-wrap gap-4">
         <div>
           <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)] mb-1">Head Office · Overview</div>
@@ -27,25 +84,21 @@ export default function AdminDashboard() {
             <span className="w-1.5 h-1.5 bg-[color:var(--color-success)] rounded-full inline-block pulse-dot mr-1.5" />
             All 51 stores online · last sync 12s ago
           </div>
-          <button className="h-9 px-4 bg-[color:var(--color-ink)] text-[color:var(--color-cream)] rounded-md text-xs font-medium hover:bg-[color:var(--color-crimson)] transition">
+          <Link href="/admin/inventory/bulk" className="h-9 px-4 bg-[color:var(--color-ink)] text-[color:var(--color-cream)] rounded-md text-xs font-medium hover:bg-[color:var(--color-crimson)] transition inline-flex items-center">
             + Add product
-          </button>
+          </Link>
         </div>
       </div>
 
-      {/* KPI grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <KPI label="Today's revenue" value={inr(todaysRevenue)} delta="+12.4%" positive icon={TrendingUp} spark="up" />
-        <KPI label="Month to date" value={inr(monthRevenue)} delta="+8.1%" positive icon={TrendingUp} spark="up" />
-        <KPI label="Open orders" value={openOrders.toString()} delta="12 need routing" icon={ShoppingCart} spark="flat" />
-        <KPI label="Low-stock alerts" value={lowStockAlerts.toString()} delta="6 critical" negative icon={AlertCircle} spark="down" />
+        <KPI label="Today's revenue" value={inr(todaysRevenue)} delta={`${orders.filter(o => o.placedAt.slice(0, 10) === today).length} orders`} positive icon={TrendingUp} spark="up" />
+        <KPI label="Month to date" value={inr(monthRevenue)} delta={`${orders.filter(o => o.placedAt.slice(0, 7) === month).length} orders`} positive icon={TrendingUp} spark="up" />
+        <KPI label="Open orders" value={openOrders.toString()} delta="placed or packing" icon={ShoppingCart} spark="flat" />
+        <KPI label="Below reorder point" value={lowStockAlerts.toLocaleString()} delta="across every store" negative icon={AlertCircle} spark="down" />
       </div>
 
-      {/* Two-column layout */}
       <div className="grid md:grid-cols-3 gap-6">
-        {/* Left: Store health */}
         <div className="md:col-span-2 space-y-6">
-          {/* Store sync status */}
           <div className="bg-white rounded-xl border border-[color:var(--color-line)] p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
@@ -75,7 +128,6 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Revenue chart */}
           <div className="bg-white rounded-xl border border-[color:var(--color-line)] p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
@@ -84,10 +136,9 @@ export default function AdminDashboard() {
               </div>
               <div className="text-xs text-[color:var(--color-ink-muted)]">Online + In-store combined</div>
             </div>
-            <RevenueSparkline />
+            <RevenueSparkline trend={trend} />
           </div>
 
-          {/* Recent orders */}
           <div className="bg-white rounded-xl border border-[color:var(--color-line)] overflow-hidden">
             <div className="p-6 flex items-center justify-between">
               <div>
@@ -100,51 +151,48 @@ export default function AdminDashboard() {
               <div className="grid grid-cols-[100px_1fr_120px_100px_80px] gap-4 px-6 py-2.5 border-b border-[color:var(--color-line)] text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)]">
                 <div>Order</div><div>Customer / Items</div><div>Route to</div><div>Value</div><div>Status</div>
               </div>
-              {[
-                ['#TRS-4821', 'A. Krishnan · 2 items', 'BLR T2-A', 1849, 'awaiting'],
-                ['#TRS-4820', 'R. Mehta · 1 item', 'DEL T3-Intl', 899, 'awaiting'],
-                ['#TRS-4819', 'S. Iyer · 4 items', 'BOM T2', 3240, 'packing'],
-                ['#TRS-4818', 'P. Sharma · 1 item', 'HYD T1-A', 14999, 'dispatched'],
-                ['#TRS-4817', 'K. Nair · 3 items', 'COK T3', 2100, 'delivered'],
-              ].map(([id, cust, route, val, status]) => (
-                <div key={id as string} className="grid grid-cols-[100px_1fr_120px_100px_80px] gap-4 px-6 py-3 border-b border-[color:var(--color-line)] last:border-0 hover:bg-[color:var(--color-paper)]/50 transition items-center">
-                  <div className="font-mono">{id}</div>
-                  <div>{cust}</div>
-                  <div className="font-mono text-[color:var(--color-ink-muted)]">{route}</div>
-                  <div className="font-mono">{inr(val as number)}</div>
+              {needingAction.map(o => (
+                <div key={o.id} className="grid grid-cols-[100px_1fr_120px_100px_80px] gap-4 px-6 py-3 border-b border-[color:var(--color-line)] last:border-0 hover:bg-[color:var(--color-paper)]/50 transition items-center">
+                  <div className="font-mono">{o.id}</div>
+                  <div>{o.customer.name} · {o.lines.length} {o.lines.length === 1 ? 'item' : 'items'}</div>
+                  <div className="font-mono text-[color:var(--color-ink-muted)]">
+                    {o.delivery.method === 'pickup' ? o.delivery.storeCode : o.delivery.city}
+                  </div>
+                  <div className="font-mono">{inr(o.total)}</div>
                   <div>
                     <span className={`text-[10px] uppercase tracking-widest px-2 py-1 rounded ${
-                      status === 'awaiting' ? 'bg-[color:var(--color-warning)]/20 text-[color:var(--color-warning)]' :
-                      status === 'packing' ? 'bg-[color:var(--color-cobalt)]/20 text-[color:var(--color-cobalt)]' :
-                      status === 'dispatched' ? 'bg-[color:var(--color-mint)] text-[color:var(--color-ink)]' :
-                      'bg-[color:var(--color-success)]/20 text-[color:var(--color-success)]'
-                    }`}>{status as string}</span>
+                      o.status === 'placed'
+                        ? 'bg-[color:var(--color-warning)]/20 text-[color:var(--color-warning)]'
+                        : 'bg-[color:var(--color-cobalt)]/20 text-[color:var(--color-cobalt)]'
+                    }`}>{o.status}</span>
                   </div>
                 </div>
               ))}
+              {needingAction.length === 0 && (
+                <div className="px-6 py-10 text-center text-[color:var(--color-ink-muted)]">
+                  Nothing is waiting. Every order has been dealt with.
+                </div>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Right: Alerts + brands */}
         <div className="space-y-6">
-          {/* Alerts */}
           <div className="bg-white rounded-xl border border-[color:var(--color-line)] p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)] flex items-center gap-1">
                 <AlertCircle className="w-3 h-3 text-[color:var(--color-crimson)]" />
                 Alerts
               </div>
-              <span className="text-xs font-mono bg-[color:var(--color-crimson)] text-white px-2 py-0.5 rounded-full">6</span>
+              <span className="text-xs font-mono bg-[color:var(--color-crimson)] text-white px-2 py-0.5 rounded-full">{lowStockAlerts.toLocaleString()}</span>
             </div>
             <div className="space-y-3">
-              {[
-                { t: 'Ferrero Rocher T24 · below reorder threshold at 4 stores', s: 'critical' },
-                { t: 'One Piece Vol 105 · out of stock at BLR T2-A', s: 'critical' },
-                { t: 'Kaju Katli · batch KJ2612 expires in 21 days', s: 'warning' },
-                { t: 'DEL T3-Intl · sync delayed by 2 min', s: 'info' },
-                { t: 'Milka Whole Hazelnut · low at 8 stores', s: 'warning' },
-              ].map((a, i) => (
+              {alerts.map(a => ({
+                t: a.qty === 0
+                  ? `${a.title} · out of stock at ${a.store}`
+                  : `${a.title} · ${a.qty} left at ${a.store}`,
+                s: a.qty === 0 ? 'critical' : 'warning',
+              })).map((a, i) => (
                 <div key={i} className="flex gap-3 pb-3 border-b border-[color:var(--color-line)] last:border-0">
                   <div className={`w-1 rounded-full ${
                     a.s === 'critical' ? 'bg-[color:var(--color-danger)]' : a.s === 'warning' ? 'bg-[color:var(--color-warning)]' : 'bg-[color:var(--color-cobalt)]'
@@ -155,13 +203,12 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Brand performance */}
           <div className="bg-white rounded-xl border border-[color:var(--color-line)] p-6">
-            <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)] mb-4">Brand performance today</div>
+            <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)] mb-4">Brand performance · counter sales, last 7 days</div>
             <div className="space-y-3">
               {Object.entries(BRAND_META).map(([code, meta]) => {
-                const rev = ((code.charCodeAt(0) * 7) % 30 + 10) * 1000 + 5000;
-                const pct = ((code.charCodeAt(0) * 3) % 100);
+                const rev = brandRevenue.get(code) ?? 0;
+                const pct = Math.round((rev / brandTop) * 100);
                 return (
                   <div key={code}>
                     <div className="flex items-center justify-between text-xs mb-1">
@@ -180,7 +227,6 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Loyalty snapshot */}
           <div className="bg-[color:var(--color-ink)] text-white rounded-xl p-6 relative overflow-hidden">
             <div className="absolute inset-0 bg-grid opacity-20" />
             <div className="relative">
@@ -242,10 +288,9 @@ function SyncPill({ status, label, count }: { status: 'live' | 'sync' | 'offline
   );
 }
 
-function RevenueSparkline() {
-  // Deterministic mock data
-  const bars = [42, 55, 48, 62, 70, 58, 68, 75, 82, 71, 88, 92, 79, 95];
-  const max = Math.max(...bars);
+function RevenueSparkline({ trend }: { trend: { day: string; value: number }[] }) {
+  const bars = trend.map(t => t.value);
+  const max = Math.max(1, ...bars);
   return (
     <div>
       <div className="flex items-end gap-1.5 h-32">

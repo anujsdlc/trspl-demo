@@ -1,4 +1,3 @@
-import { AdminNav } from '@/components/admin-nav';
 import { AdminGuard } from '@/components/admin-guard';
 import { AdminChrome } from '@/components/admin-chrome';
 

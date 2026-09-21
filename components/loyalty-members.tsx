@@ -4,14 +4,40 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
-  ArrowLeft, Users, Plus, Search, Download, Upload, X, Filter, ArrowUpDown,
-  Sparkles, TrendingUp, Award, Plane, Trash2, Edit2, ChevronLeft, ChevronRight,
-  MoreHorizontal, Send, Wallet, CheckCircle2, Phone, Mail, MapPin, Calendar,
+  ArrowLeft,
+  Users,
+  Plus,
+  Search,
+  Download,
+  X,
+  ArrowUpDown,
+  Sparkles,
+  TrendingUp,
+  Award,
+  Plane,
+  Trash2,
+  Edit2,
+  ChevronLeft,
+  ChevronRight,
+  MoreHorizontal,
+  Send,
+  Wallet,
+  CheckCircle2,
+  Phone,
+  Mail,
+  MapPin,
+  Calendar,
 } from 'lucide-react';
 import { TIERS, tierFor, type TierKey } from '@/lib/loyalty';
 import {
-  BASE_MEMBERS, TOTAL_MEMBERS, loadMembers, saveMember, updateMember, deleteMember,
-  newMemberId, suggestedPnr, tierMeta,
+  BASE_MEMBERS,
+  loadMembers,
+  saveMember,
+  updateMember,
+  deleteMember,
+  newMemberId,
+  suggestedPnr,
+  tierMeta,
   type Member,
 } from '@/lib/members';
 import { inr } from '@/lib/utils';
@@ -27,7 +53,6 @@ export function LoyaltyMembersConsole() {
   const router = useRouter();
   const initialId = searchParams.get('id');
 
-  // Hydrate members from localStorage on client.
   const [members, setMembers] = useState<Member[]>(BASE_MEMBERS);
   const [hydrated, setHydrated] = useState(false);
 
@@ -131,7 +156,6 @@ export function LoyaltyMembersConsole() {
     URL.revokeObjectURL(url);
   }
 
-  // Sync activeMemberId to URL for shareable links.
   useEffect(() => {
     const current = searchParams.get('id') || null;
     if (current === activeMemberId) return;
@@ -143,7 +167,6 @@ export function LoyaltyMembersConsole() {
 
   return (
     <div className="px-6 py-6 max-w-[1800px]">
-      {/* Header */}
       <div className="mb-6">
         <Link href="/admin/loyalty" className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)] mb-3 inline-flex items-center gap-1 hover:text-[color:var(--color-crimson)]">
           <ArrowLeft className="w-3 h-3" /> Loyalty Console
@@ -155,15 +178,12 @@ export function LoyaltyMembersConsole() {
             </div>
             <h1 className="font-serif text-4xl leading-tight tracking-tight">All Members</h1>
             <p className="mt-2 text-sm text-[color:var(--color-ink-muted)]">
-              {members.length.toLocaleString('en-IN')} on file · {TOTAL_MEMBERS.toLocaleString('en-IN')} programme-wide
+              {members.length.toLocaleString('en-IN')} on file
             </p>
           </div>
           <div className="flex items-center gap-2">
             <button onClick={exportCsv} className="h-9 px-3 border border-[color:var(--color-line)] rounded-md text-xs inline-flex items-center gap-1.5 hover:bg-[color:var(--color-paper)]">
               <Download className="w-3.5 h-3.5" /> Export {filtered.length !== members.length ? 'filtered' : 'all'}
-            </button>
-            <button className="h-9 px-3 border border-[color:var(--color-line)] rounded-md text-xs inline-flex items-center gap-1.5 hover:bg-[color:var(--color-paper)]">
-              <Upload className="w-3.5 h-3.5" /> Import CSV
             </button>
             <button onClick={() => setAddOpen(true)} className="h-9 px-4 bg-[color:var(--color-ink)] text-[color:var(--color-cream)] rounded-md text-xs font-medium hover:bg-[color:var(--color-crimson)] inline-flex items-center gap-1.5">
               <Plus className="w-3.5 h-3.5" /> Add member
@@ -172,7 +192,6 @@ export function LoyaltyMembersConsole() {
         </div>
       </div>
 
-      {/* Tier chips */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         {TIERS.map(t => (
           <button
@@ -190,7 +209,6 @@ export function LoyaltyMembersConsole() {
         ))}
       </div>
 
-      {/* Filter bar */}
       <div className="bg-white rounded-lg border border-[color:var(--color-line)] p-3 mb-4 flex items-center gap-2 flex-wrap">
         <div className="flex items-center gap-2 h-9 px-3 bg-[color:var(--color-paper)] rounded-md border border-[color:var(--color-line)] min-w-[280px] flex-1 max-w-md">
           <Search className="w-3.5 h-3.5 text-[color:var(--color-ink-muted)]" />
@@ -226,7 +244,6 @@ export function LoyaltyMembersConsole() {
         </div>
       </div>
 
-      {/* Members table */}
       <div className="bg-white rounded-lg border border-[color:var(--color-line)] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -300,7 +317,6 @@ export function LoyaltyMembersConsole() {
           </table>
         </div>
 
-        {/* Pagination */}
         <div className="p-3 border-t border-[color:var(--color-line)] flex items-center justify-between text-xs">
           <div className="text-[color:var(--color-ink-muted)] font-mono">
             {hydrated ? `${page * PAGE_SIZE + 1}–${Math.min((page + 1) * PAGE_SIZE, filtered.length)} of ${filtered.length}` : 'loading…'}
@@ -338,7 +354,6 @@ export function LoyaltyMembersConsole() {
   );
 }
 
-// === Sort head ===
 function SortHead({ label, active, dir, onClick, align, className }: {
   label: string; active: boolean; dir: SortDir; onClick: () => void; align?: 'right'; className?: string;
 }) {
@@ -352,7 +367,6 @@ function SortHead({ label, active, dir, onClick, align, className }: {
   );
 }
 
-// === Avatar (initials on tier gradient) ===
 function Avatar({ name, tier }: { name: string; tier: TierKey }) {
   const t = tierMeta(tier);
   const initials = name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
@@ -363,7 +377,6 @@ function Avatar({ name, tier }: { name: string; tier: TierKey }) {
   );
 }
 
-// === Add member modal ===
 function AddMemberModal({ onClose, onSave, existing }: { onClose: () => void; onSave: (m: Member) => void; existing: Member[] }) {
   const existingIds = useMemo(() => new Set(existing.map(m => m.id)), [existing]);
   const [name, setName] = useState('');
@@ -371,7 +384,7 @@ function AddMemberModal({ onClose, onSave, existing }: { onClose: () => void; on
   const [phone, setPhone] = useState('+91 ');
   const [city, setCity] = useState('Bangalore');
   const [tier, setTier] = useState<TierKey>('SILVER');
-  const [initialPoints, setInitialPoints] = useState(250); // welcome bonus
+  const [initialPoints, setInitialPoints] = useState(250);
   const [initialSpend, setInitialSpend] = useState(0);
   const [linkPnr, setLinkPnr] = useState(false);
   const [pnr, setPnr] = useState('');
@@ -540,7 +553,6 @@ function Label({ children }: { children: React.ReactNode }) {
   return <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)] mb-1.5">{children}</div>;
 }
 
-// === Detail drawer ===
 function MemberDetailDrawer({ member, onClose, onUpdate, onDelete }: {
   member: Member;
   onClose: () => void;
@@ -573,10 +585,8 @@ function MemberDetailDrawer({ member, onClose, onUpdate, onDelete }: {
         </div>
 
         <div className="p-6 space-y-6">
-          {/* Card visual */}
           <MemberCard member={member} />
 
-          {/* Balance + tier progress */}
           <div className="grid grid-cols-3 gap-3">
             <StatBlock label="Points balance" value={member.points.toLocaleString('en-IN')} sub={`= ${inr(Math.floor(member.points * 0.5))} redeemable`} accent />
             <StatBlock label="YTD spend" value={inr(member.ytdSpend)} sub={`Tier: ${tier.name}`} />
@@ -603,7 +613,6 @@ function MemberDetailDrawer({ member, onClose, onUpdate, onDelete }: {
             </div>
           )}
 
-          {/* Point / spend controls */}
           <div className="grid grid-cols-2 gap-2">
             <button onClick={() => setAdjustOpen('add')} className="h-10 border border-[color:var(--color-line)] rounded-md text-sm font-medium hover:bg-white inline-flex items-center justify-center gap-1.5">
               <Plus className="w-3.5 h-3.5" /> Add points
@@ -622,7 +631,6 @@ function MemberDetailDrawer({ member, onClose, onUpdate, onDelete }: {
             />
           )}
 
-          {/* Editable profile */}
           <div className="bg-white rounded-lg border border-[color:var(--color-line)]">
             <div className="px-5 py-3 border-b border-[color:var(--color-line)] flex items-center justify-between">
               <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)]">Profile</div>
@@ -645,7 +653,6 @@ function MemberDetailDrawer({ member, onClose, onUpdate, onDelete }: {
             </div>
           </div>
 
-          {/* Tier perks */}
           <div className="bg-white rounded-lg border border-[color:var(--color-line)] p-5">
             <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)] mb-3 flex items-center gap-2">
               <Sparkles className="w-3 h-3" /> {tier.name} perks
@@ -660,7 +667,6 @@ function MemberDetailDrawer({ member, onClose, onUpdate, onDelete }: {
             </ul>
           </div>
 
-          {/* Mock activity */}
           <div className="bg-white rounded-lg border border-[color:var(--color-line)] p-5">
             <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)] mb-3">Recent activity</div>
             <ActivityFeed member={member} />
@@ -764,7 +770,6 @@ function AdjustPointsPanel({ member, mode, onCancel, onApply }: {
 }
 
 function ActivityFeed({ member }: { member: Member }) {
-  // Deterministic activity list seeded by member id.
   const seed = member.id.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
   const rng = () => { const t = Math.sin(seed) * 10000; return t - Math.floor(t); };
   const items = [
@@ -790,7 +795,6 @@ function ActivityFeed({ member }: { member: Member }) {
   );
 }
 
-// Member card visual — variant of LoyaltyCardPreview parametrised for any member.
 function MemberCard({ member }: { member: Member }) {
   const tier = tierMeta(member.tier);
   return (

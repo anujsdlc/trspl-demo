@@ -2,15 +2,31 @@
 
 import { useEffect, useState } from 'react';
 import {
-  Settings2, Building, Save, Database, Activity, HardDrive, CheckCircle2,
-  XCircle, RefreshCw, Globe, Calendar, Palette, Bell, AlertTriangle,
+  Settings2,
+  Building,
+  Save,
+  Database,
+  Activity,
+  CheckCircle2,
+  XCircle,
+  RefreshCw,
+  Palette,
+  Bell,
+  AlertTriangle,
   Info,
 } from 'lucide-react';
 import {
-  loadCompany, saveCompany, DEFAULT_COMPANY,
-  loadBackups, SEED_BACKUPS,
-  loadAlerts, saveAlert, SEED_ALERTS,
-  type Company, type Backup, type SystemAlert,
+  loadCompany,
+  saveCompany,
+  DEFAULT_COMPANY,
+  loadBackups,
+  SEED_BACKUPS,
+  loadAlerts,
+  saveAlert,
+  SEED_ALERTS,
+  type Company,
+  type Backup,
+  type SystemAlert,
 } from '@/lib/erp/phase6';
 import { KPI, Field, StatusPill } from './ui';
 
@@ -67,8 +83,6 @@ export function SystemConsole() {
   );
 }
 
-// ============================================================================
-
 function CompanyTab({ company, onChange, onSave, hydrated }: {
   company: Company;
   onChange: (c: Company) => void;
@@ -123,8 +137,6 @@ function CompanyTab({ company, onChange, onSave, hydrated }: {
   );
 }
 
-// ============================================================================
-
 function FormatsTab() {
   const templates = [
     { id: 'invoice',      label: 'Tax invoice',       lastUpdated: '2026-08-14', status: 'Active' },
@@ -173,8 +185,6 @@ function FormatsTab() {
     </div>
   );
 }
-
-// ============================================================================
 
 function BackupsTab({ backups }: { backups: Backup[] }) {
   const latestPrimary = backups.find(b => b.location === 'primary' && b.status === 'success');
@@ -228,8 +238,6 @@ function BackupsTab({ backups }: { backups: Backup[] }) {
     </div>
   );
 }
-
-// ============================================================================
 
 function MonitoringTab({ alerts, onResolve }: { alerts: SystemAlert[]; onResolve: (a: SystemAlert) => void }) {
   const active = alerts.filter(a => !a.resolved);

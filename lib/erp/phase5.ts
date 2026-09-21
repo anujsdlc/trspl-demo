@@ -1,13 +1,4 @@
-import { readList, writeList, upsertRow as upsertStore, deleteRow as deleteStore, readSingle, writeSingle } from './store';
-
-// ERP Phase 5 — Insight data layer (HR + Attendance only; Reports aggregate
-// live from Phase 2/3/4 data).
-
-
-
-// ---------------------------------------------------------------------------
-// Employees
-// ---------------------------------------------------------------------------
+import { readList, upsertRow as upsertStore, deleteRow as deleteStore } from './store';
 
 export type EmployeeType = 'permanent' | 'contract' | 'consultant' | 'intern';
 
@@ -58,14 +49,10 @@ export async function loadEmployees(): Promise<Employee[]> { return readList<Emp
 export async function saveEmployee(e: Employee): Promise<void> { await upsertStore<Employee>(EMP_KEY, SEED_EMPLOYEES, e); }
 export async function deleteEmployee(id: string): Promise<void> { await deleteStore(EMP_KEY, SEED_EMPLOYEES, id); }
 
-// ---------------------------------------------------------------------------
-// Attendance summary — one row per employee per month
-// ---------------------------------------------------------------------------
-
 export interface AttendanceRow {
   id: string;
   employeeId: string;
-  period: string; // YYYY-MM
+  period: string;
   workingDays: number;
   present: number;
   paidLeave: number;
@@ -101,10 +88,6 @@ export const SEED_ATTENDANCE: AttendanceRow[] = [
 
 export async function loadAttendance(): Promise<AttendanceRow[]> { return readList<AttendanceRow>(ATT_KEY, SEED_ATTENDANCE); }
 export async function saveAttendance(a: AttendanceRow): Promise<void> { await upsertStore<AttendanceRow>(ATT_KEY, SEED_ATTENDANCE, a); }
-
-// ---------------------------------------------------------------------------
-// Leave applications
-// ---------------------------------------------------------------------------
 
 export type LeaveType = 'casual' | 'sick' | 'earned' | 'unpaid' | 'maternity' | 'paternity';
 export type LeaveStatus = 'pending' | 'approved' | 'rejected' | 'cancelled';

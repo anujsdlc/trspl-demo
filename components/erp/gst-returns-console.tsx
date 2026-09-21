@@ -3,13 +3,18 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
-  FileText, Download, ArrowLeft, CheckCircle2, Send, AlertTriangle,
+  FileText,
+  Download,
+  ArrowLeft,
+  CheckCircle2,
+  Send,
+  AlertTriangle,
 } from 'lucide-react';
-import { loadSOs, SEED_SOS, loadCustomers, SEED_CUSTOMERS, type SalesOrder } from '@/lib/erp/phase2';
+import { loadSOs, SEED_SOS, type SalesOrder } from '@/lib/erp/phase2';
 import { loadGST, SEED_GST } from '@/lib/erp/foundations';
 import { computeGSTR1 } from '@/lib/erp/phase3';
 import { inr } from '@/lib/utils';
-import { KPI, Th, StatusPill } from './ui';
+import { KPI, Th } from './ui';
 
 export function GSTReturnsConsole() {
   const [sos, setSOs] = useState<SalesOrder[]>(SEED_SOS);
@@ -36,6 +41,17 @@ export function GSTReturnsConsole() {
   }), [gstr1]);
 
   const totalGST = totals.cgst + totals.sgst + totals.igst;
+
+  const downloadJson = () => {
+    const payload = { gstin: gst.map(g => g.gstin), fp: period.replace('-', ''), rows: gstr1, totals };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `gstr1-${period}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="px-6 py-6 max-w-[1600px]">
@@ -75,7 +91,6 @@ export function GSTReturnsConsole() {
         <KPI label="Grand total" value={inr(totals.grand)} accent="success" />
       </div>
 
-      {/* GSTR-1 tab */}
       <div className="bg-white rounded-lg border border-[color:var(--color-line)] overflow-hidden mb-6">
         <div className="px-5 py-4 border-b border-[color:var(--color-line)] flex items-center justify-between">
           <div>
@@ -146,7 +161,6 @@ export function GSTReturnsConsole() {
         </div>
       </div>
 
-      {/* GSTR-3B summary */}
       <div className="bg-white rounded-lg border border-[color:var(--color-line)] overflow-hidden">
         <div className="px-5 py-4 border-b border-[color:var(--color-line)] flex items-center justify-between">
           <div>
@@ -179,14 +193,9 @@ export function GSTReturnsConsole() {
             <AlertTriangle className="w-3.5 h-3.5" />
             Purchase-side ITC not yet posted for this period — verify Phase 3 accounts before filing.
           </div>
-          <div className="flex items-center gap-2">
-            <button className="h-10 px-4 border border-[color:var(--color-line)] rounded-md text-xs inline-flex items-center gap-1.5 hover:bg-[color:var(--color-paper)]">
-              <Download className="w-3.5 h-3.5" /> Download JSON
-            </button>
-            <button className="h-10 px-4 bg-[color:var(--color-ink)] text-[color:var(--color-cream)] rounded-md text-xs font-medium hover:bg-[color:var(--color-crimson)] inline-flex items-center gap-1.5">
-              <Send className="w-3.5 h-3.5" /> Submit to portal
-            </button>
-          </div>
+          <button onClick={downloadJson} className="h-10 px-4 border border-[color:var(--color-line)] rounded-md text-xs inline-flex items-center gap-1.5 hover:bg-[color:var(--color-paper)]">
+            <Download className="w-3.5 h-3.5" /> Download JSON
+          </button>
         </div>
       </div>
     </div>

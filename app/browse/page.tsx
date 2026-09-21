@@ -7,8 +7,14 @@ export const dynamic = 'force-dynamic';
 
 export default async function BrowsePage({ searchParams }: PageProps<'/browse'>) {
   const params = await searchParams;
-  const initialCat = (params.cat as string) || 'all';
-  const initialBrand = (params.brand as string) || 'all';
+  const one = (v: string | string[] | undefined, fallback: string) =>
+    (Array.isArray(v) ? v[0] : v) || fallback;
+  const initialCat = one(params.cat, 'all');
+  const initialBrand = one(params.brand, 'all');
+  const initialQuery = one(params.q, '');
+  const initialSort = one(params.sort, 'featured');
+  const initialOffer = one(params.offer, 'all');
+  const initialStore = one(params.store, 'all');
   const catalog = await getServerCatalog();
 
   return (
@@ -24,7 +30,14 @@ export default async function BrowsePage({ searchParams }: PageProps<'/browse'>)
             {catalog.length.toLocaleString()} products across 7 sub-brands. Live inventory across 51 stores.
           </p>
         </div>
-        <BrowseGrid initialCat={initialCat} initialBrand={initialBrand} />
+        <BrowseGrid
+          initialCat={initialCat}
+          initialBrand={initialBrand}
+          initialQuery={initialQuery}
+          initialSort={initialSort}
+          initialOffer={initialOffer}
+          initialStore={initialStore}
+        />
       </div>
       <StoreFooter />
     </FavouritesProvider>

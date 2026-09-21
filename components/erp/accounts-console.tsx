@@ -3,12 +3,26 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
-  BookMinus, Landmark, FileText, Scale, TrendingUp, TrendingDown,
-  ArrowRight, ArrowUpDown, Layers, Wallet, BadgeDollarSign,
+  BookMinus,
+  Landmark,
+  FileText,
+  Scale,
+  TrendingUp,
+  TrendingDown,
+  Layers,
+  Wallet,
+  BadgeIndianRupee,
 } from 'lucide-react';
 import {
-  loadCoA, loadJVs, computeBalances, summariseByType, SEED_COA, SEED_JVS,
-  type Ledger, type JournalEntry, type LedgerBalance,
+  loadCoA,
+  loadJVs,
+  computeBalances,
+  summariseByType,
+  SEED_COA,
+  SEED_JVS,
+  type Ledger,
+  type JournalEntry,
+  type LedgerBalance,
 } from '@/lib/erp/phase3';
 import { inr } from '@/lib/utils';
 import { KPI, Th, StatusPill } from './ui';
@@ -63,7 +77,6 @@ export function AccountsConsole() {
         </div>
       </div>
 
-      {/* KPI band */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
         <KPI label="Total assets" value={inr(totals.assets)} accent="success" />
         <KPI label="Total liabilities" value={inr(totals.liabilities)} accent="crimson" />
@@ -72,14 +85,13 @@ export function AccountsConsole() {
         <KPI label="BS check" value={totals.bsCheck < 1 ? 'Balanced' : `Δ ${inr(totals.bsCheck)}`} accent={totals.bsCheck < 1 ? 'success' : 'warn'} />
       </div>
 
-      {/* Tabs */}
       <div className="flex items-center gap-1 border-b border-[color:var(--color-line)] mb-6 overflow-x-auto">
         {([
           ['overview', 'Overview', Layers],
           ['coa', 'Chart of Accounts', BookMinus],
           ['journals', 'Journal Entries', FileText],
           ['tb', 'Trial Balance', Scale],
-          ['pl', 'P & L', BadgeDollarSign],
+          ['pl', 'P & L', BadgeIndianRupee],
           ['bs', 'Balance Sheet', Wallet],
         ] as [TabKey, string, React.ElementType][]).map(([k, label, Icon]) => (
           <button
@@ -105,8 +117,6 @@ export function AccountsConsole() {
     </div>
   );
 }
-
-// ============================================================================
 
 function OverviewTab({ balances, journals, totals }: { balances: LedgerBalance[]; journals: JournalEntry[]; totals: { income: number; expense: number; profit: number; assets: number; liabilities: number; equity: number } }) {
   const bank = balances.filter(b => b.ledger.isBank);
@@ -211,8 +221,6 @@ function OverviewTab({ balances, journals, totals }: { balances: LedgerBalance[]
   );
 }
 
-// ============================================================================
-
 function CoATab({ ledgers, balances, hydrated }: { ledgers: Ledger[]; balances: LedgerBalance[]; hydrated: boolean }) {
   const balanceById = useMemo(() => new Map(balances.map(b => [b.ledger.id, b])), [balances]);
   const byGroup = useMemo(() => {
@@ -273,8 +281,6 @@ function CoATab({ ledgers, balances, hydrated }: { ledgers: Ledger[]; balances: 
   );
 }
 
-// ============================================================================
-
 function JournalsTab({ journals, ledgers }: { journals: JournalEntry[]; ledgers: Ledger[] }) {
   const ledgerById = useMemo(() => new Map(ledgers.map(l => [l.id, l])), [ledgers]);
   return (
@@ -328,8 +334,6 @@ function JournalsTab({ journals, ledgers }: { journals: JournalEntry[]; ledgers:
   );
 }
 
-// ============================================================================
-
 function TrialBalanceTab({ balances }: { balances: LedgerBalance[] }) {
   const totalDr = balances.reduce((s, b) => s + b.totalDebit, 0);
   const totalCr = balances.reduce((s, b) => s + b.totalCredit, 0);
@@ -365,8 +369,6 @@ function TrialBalanceTab({ balances }: { balances: LedgerBalance[] }) {
     </div>
   );
 }
-
-// ============================================================================
 
 function PLTab({ balances }: { balances: LedgerBalance[] }) {
   const income = balances.filter(b => b.ledger.type === 'income');
@@ -431,8 +433,6 @@ function PLTab({ balances }: { balances: LedgerBalance[] }) {
     </div>
   );
 }
-
-// ============================================================================
 
 function BSTab({ balances, profit }: { balances: LedgerBalance[]; profit: number }) {
   const assets = balances.filter(b => b.ledger.type === 'asset');

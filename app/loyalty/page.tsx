@@ -16,7 +16,6 @@ export default function LoyaltyPage() {
     <FavouritesProvider>
       <StoreNav />
 
-      {/* Hero */}
       <section className="container-editorial pt-12 md:pt-20 pb-20">
         <div className="grid md:grid-cols-2 gap-12 md:gap-20 items-center">
           <div>
@@ -31,13 +30,13 @@ export default function LoyaltyPage() {
               A single membership that earns points across all seven Travel Retail brands — Relay, Choco Bay, Mishta, Smilen, Pashma, Glady&apos;s, Motech. In-store or online. Book to boarding.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <button className="inline-flex items-center gap-2 h-12 px-6 bg-[color:var(--color-ink)] text-[color:var(--color-cream)] rounded-full text-sm font-medium hover:bg-[color:var(--color-crimson)] transition group">
-                Join Skyline — get 250 points
+              <Link href="/browse" className="inline-flex items-center gap-2 h-12 px-6 bg-[color:var(--color-ink)] text-[color:var(--color-cream)] rounded-full text-sm font-medium hover:bg-[color:var(--color-crimson)] transition group">
+                Start earning — shop the shelf
                 <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition" />
-              </button>
-              <button className="inline-flex items-center gap-2 h-12 px-6 border border-[color:var(--color-ink)] rounded-full text-sm font-medium hover:bg-[color:var(--color-ink)] hover:text-[color:var(--color-cream)] transition">
-                Already a member? Sign in
-              </button>
+              </Link>
+              <Link href="#calculator" className="inline-flex items-center gap-2 h-12 px-6 border border-[color:var(--color-ink)] rounded-full text-sm font-medium hover:bg-[color:var(--color-ink)] hover:text-[color:var(--color-cream)] transition">
+                Work out your points
+              </Link>
             </div>
           </div>
 
@@ -45,7 +44,6 @@ export default function LoyaltyPage() {
         </div>
       </section>
 
-      {/* Member dashboard preview */}
       <section className="bg-[color:var(--color-paper)] py-16 md:py-24 border-y border-[color:var(--color-line)]">
         <div className="container-editorial">
           <div className="text-[10px] uppercase tracking-[0.3em] text-[color:var(--color-ink-muted)] mb-3">Your Skyline</div>
@@ -82,7 +80,6 @@ export default function LoyaltyPage() {
         </div>
       </section>
 
-      {/* Tiers */}
       <section className="container-editorial py-24 md:py-32">
         <div className="max-w-3xl mb-16">
           <div className="text-[10px] uppercase tracking-[0.3em] text-[color:var(--color-crimson)] mb-3">Four tiers</div>
@@ -92,7 +89,6 @@ export default function LoyaltyPage() {
         <div className="grid md:grid-cols-4 gap-4 md:gap-6">
           {TIERS.map(t => (
             <div key={t.key} className={`group rounded-2xl overflow-hidden border border-[color:var(--color-line)] hover:shadow-2xl transition ${t.key === currentTier.key ? 'ring-2 ring-[color:var(--color-crimson)]' : ''}`}>
-              {/* Header stripe */}
               <div className={`h-32 bg-gradient-to-br ${t.gradient} p-5 relative overflow-hidden`}>
                 <div className={`text-[10px] uppercase tracking-widest font-mono ${t.textOn} opacity-70`}>Tier {TIERS.indexOf(t) + 1}</div>
                 <div className={`font-serif text-2xl mt-1 ${t.textOn}`}>{t.name}</div>
@@ -124,7 +120,6 @@ export default function LoyaltyPage() {
         </div>
       </section>
 
-      {/* Earning engine */}
       <section className="bg-[color:var(--color-ink)] text-[color:var(--color-cream)] py-24 md:py-32 relative overflow-hidden">
         <div className="absolute inset-0 bg-grid opacity-20" />
         <div className="container-editorial relative">
@@ -193,7 +188,6 @@ export default function LoyaltyPage() {
         </div>
       </section>
 
-      {/* Points calculator */}
       <section className="container-editorial py-24 md:py-32">
         <div className="grid md:grid-cols-2 gap-16 items-center">
           <div>
@@ -213,7 +207,6 @@ export default function LoyaltyPage() {
         </div>
       </section>
 
-      {/* Redemption + bonuses grid */}
       <section className="container-editorial pb-24 md:pb-32">
         <div className="grid md:grid-cols-2 gap-6">
           <div className="p-8 md:p-10 bg-[color:var(--color-crimson)] text-white rounded-2xl">

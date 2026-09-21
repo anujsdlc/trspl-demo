@@ -1,17 +1,4 @@
-import { readList, writeList, upsertRow as upsertStore, deleteRow as deleteStore, readSingle, writeSingle } from './store';
-
-// ERP Phase 3 — Finance data layer.
-// Chart of Accounts, Journals, GST returns, Bank reconciliation.
-
-// ---------------------------------------------------------------------------
-// Common helpers
-// ---------------------------------------------------------------------------
-
-
-
-// ---------------------------------------------------------------------------
-// Chart of Accounts
-// ---------------------------------------------------------------------------
+import { readList, upsertRow as upsertStore, deleteRow as deleteStore } from './store';
 
 export type AccountType = 'asset' | 'liability' | 'equity' | 'income' | 'expense';
 export type AccountNature = 'debit' | 'credit';
@@ -21,19 +8,17 @@ export interface Ledger {
   code: string;
   name: string;
   type: AccountType;
-  group: string;              // parent grouping name
-  nature: AccountNature;      // normal side
-  openingBalance: number;     // as of Apr 1
+  group: string;
+  nature: AccountNature;
+  openingBalance: number;
   isBank?: boolean;
-  gstinLinked?: string;       // for state-wise GST payable
+  gstinLinked?: string;
   status: 'active' | 'archived';
 }
 
 const COA_KEY = 'trs.erp.coa.v1';
 
-/** Standard publisher/distributor CoA seeded with realistic groupings. */
 export const SEED_COA: Ledger[] = [
-  // Assets
   { id: 'led-1000', code: '1000', name: 'HDFC Bank — Current Account (Delhi HO)',  type: 'asset',     group: 'Bank Accounts',        nature: 'debit',  openingBalance: 4820000, isBank: true,  status: 'active' },
   { id: 'led-1001', code: '1001', name: 'ICICI Bank — Current Account (Bengaluru)', type: 'asset',    group: 'Bank Accounts',        nature: 'debit',  openingBalance: 1650000, isBank: true,  status: 'active' },
   { id: 'led-1002', code: '1002', name: 'SBI Bank — Current Account (Mumbai)',       type: 'asset',    group: 'Bank Accounts',        nature: 'debit',  openingBalance: 980000,  isBank: true,  status: 'active' },
@@ -49,7 +34,6 @@ export const SEED_COA: Ledger[] = [
   { id: 'led-1501', code: '1501', name: 'Computers & Peripherals',                    type: 'asset',    group: 'Fixed Assets',         nature: 'debit',  openingBalance: 1850000, status: 'active' },
   { id: 'led-1502', code: '1502', name: 'Accumulated Depreciation',                   type: 'asset',    group: 'Fixed Assets',         nature: 'credit', openingBalance: -1620000, status: 'active' },
 
-  // Liabilities
   { id: 'led-2000', code: '2000', name: 'Accounts Payable — Trade',                    type: 'liability', group: 'Current Liabilities', nature: 'credit', openingBalance: 5210000, status: 'active' },
   { id: 'led-2100', code: '2100', name: 'Output GST Payable — CGST',                   type: 'liability', group: 'Tax Liabilities',     nature: 'credit', openingBalance: 380000,  status: 'active' },
   { id: 'led-2101', code: '2101', name: 'Output GST Payable — SGST',                   type: 'liability', group: 'Tax Liabilities',     nature: 'credit', openingBalance: 380000,  status: 'active' },
@@ -58,18 +42,15 @@ export const SEED_COA: Ledger[] = [
   { id: 'led-2120', code: '2120', name: 'Salaries Payable',                            type: 'liability', group: 'Current Liabilities', nature: 'credit', openingBalance: 260000,  status: 'active' },
   { id: 'led-2500', code: '2500', name: 'Long-Term Loan — HDFC Bank',                  type: 'liability', group: 'Long-Term Liabilities', nature: 'credit', openingBalance: 12000000, status: 'active' },
 
-  // Equity
   { id: 'led-3000', code: '3000', name: 'Share Capital',                               type: 'equity',   group: 'Capital',              nature: 'credit', openingBalance: 10000000, status: 'active' },
   { id: 'led-3100', code: '3100', name: 'Retained Earnings',                           type: 'equity',   group: 'Reserves & Surplus',   nature: 'credit', openingBalance: 18240000, status: 'active' },
 
-  // Income
   { id: 'led-4000', code: '4000', name: 'Sales — Books (Zero-rated GST)',              type: 'income',   group: 'Operating Income',     nature: 'credit', openingBalance: 0,        status: 'active' },
   { id: 'led-4010', code: '4010', name: 'Sales — Books (12% GST)',                     type: 'income',   group: 'Operating Income',     nature: 'credit', openingBalance: 0,        status: 'active' },
   { id: 'led-4020', code: '4020', name: 'Sales — Stationery',                          type: 'income',   group: 'Operating Income',     nature: 'credit', openingBalance: 0,        status: 'active' },
   { id: 'led-4100', code: '4100', name: 'Discount Received',                           type: 'income',   group: 'Other Income',         nature: 'credit', openingBalance: 0,        status: 'active' },
   { id: 'led-4200', code: '4200', name: 'Interest Income',                             type: 'income',   group: 'Other Income',         nature: 'credit', openingBalance: 0,        status: 'active' },
 
-  // Expenses
   { id: 'led-5000', code: '5000', name: 'Purchases — Books',                           type: 'expense',  group: 'Cost of Goods Sold',   nature: 'debit',  openingBalance: 0,        status: 'active' },
   { id: 'led-5010', code: '5010', name: 'Freight Inwards',                             type: 'expense',  group: 'Cost of Goods Sold',   nature: 'debit',  openingBalance: 0,        status: 'active' },
   { id: 'led-5020', code: '5020', name: 'Discount Allowed',                            type: 'expense',  group: 'Cost of Goods Sold',   nature: 'debit',  openingBalance: 0,        status: 'active' },
@@ -88,10 +69,6 @@ export async function loadCoA(): Promise<Ledger[]> { return readList<Ledger>(COA
 export async function saveLedger(l: Ledger): Promise<void> { await upsertStore<Ledger>(COA_KEY, SEED_COA, l); }
 export async function deleteLedger(id: string): Promise<void> { await deleteStore(COA_KEY, SEED_COA, id); }
 
-// ---------------------------------------------------------------------------
-// Journal Entries
-// ---------------------------------------------------------------------------
-
 export interface JournalLine {
   ledgerId: string;
   debit: number;
@@ -103,7 +80,7 @@ export interface JournalEntry {
   id: string;
   jvNumber: string;
   date: string;
-  reference?: string;       // linked invoice / bill / receipt
+  reference?: string;
   narration: string;
   branchId: string;
   gstinId: string;
@@ -219,10 +196,6 @@ export async function loadJVs(): Promise<JournalEntry[]> { return readList<Journ
 export async function saveJV(j: JournalEntry): Promise<void> { await upsertStore<JournalEntry>(JV_KEY, SEED_JVS, j); }
 export async function deleteJV(id: string): Promise<void> { await deleteStore(JV_KEY, SEED_JVS, id); }
 
-// ---------------------------------------------------------------------------
-// Bank statement entries + reconciliation
-// ---------------------------------------------------------------------------
-
 export type BankMatchStatus = 'matched' | 'unmatched' | 'partially-matched';
 
 export interface BankEntry {
@@ -231,8 +204,8 @@ export interface BankEntry {
   txnDate: string;
   particulars: string;
   chequeRef?: string;
-  debit: number;      // debit from bank = money out
-  credit: number;     // credit to bank = money in
+  debit: number;
+  credit: number;
   balance: number;
   matchStatus: BankMatchStatus;
   matchedJvId?: string;
@@ -258,15 +231,11 @@ export const SEED_BANK_ENTRIES: BankEntry[] = [
 export async function loadBankEntries(): Promise<BankEntry[]> { return readList<BankEntry>(BANK_KEY, SEED_BANK_ENTRIES); }
 export async function saveBankEntry(e: BankEntry): Promise<void> { await upsertStore<BankEntry>(BANK_KEY, SEED_BANK_ENTRIES, e); }
 
-// ---------------------------------------------------------------------------
-// Derived: trial balance / P&L / balance sheet
-// ---------------------------------------------------------------------------
-
 export interface LedgerBalance {
   ledger: Ledger;
   totalDebit: number;
   totalCredit: number;
-  closingBalance: number;   // signed w.r.t. nature
+  closingBalance: number;
 }
 
 export function computeBalances(ledgers: Ledger[], journals: JournalEntry[]): LedgerBalance[] {
@@ -283,7 +252,6 @@ export function computeBalances(ledgers: Ledger[], journals: JournalEntry[]): Le
   return ledgers.map(l => {
     const d = debits.get(l.id) ?? 0;
     const c = credits.get(l.id) ?? 0;
-    // opening balance is expressed positive on the ledger's natural side.
     const opening = l.openingBalance;
     const closing = l.nature === 'debit'
       ? opening + d - c
@@ -297,10 +265,6 @@ export function summariseByType(balances: LedgerBalance[]) {
   for (const b of balances) bucket[b.ledger.type] += b.closingBalance;
   return bucket;
 }
-
-// ---------------------------------------------------------------------------
-// GST returns — computed from Sales Orders
-// ---------------------------------------------------------------------------
 
 export interface GSTRRow {
   gstin: string;
@@ -338,10 +302,8 @@ export function computeGSTR1(salesOrders: {
     const taxable = so.subtotal - so.discountTotal;
     row.invoices += 1;
     row.taxableValue += taxable;
-    // Assume intra-state if any line's gstRate > 0; state-code split not fully modelled here.
     const anyGst = so.lines.some(l => l.gstRate > 0);
     if (anyGst) {
-      // Simple split: half CGST, half SGST for intra-state; here treat all as intra by default.
       row.cgst += so.gstTotal / 2;
       row.sgst += so.gstTotal / 2;
     }

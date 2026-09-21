@@ -4,8 +4,16 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import {
-  Search, Heart, ShoppingBag, User, MapPin, Menu, X, Plane, Home,
-  LayoutGrid, Award,
+  Search,
+  Heart,
+  ShoppingBag,
+  User,
+  MapPin,
+  Menu,
+  X,
+  Plane,
+  Home,
+  LayoutGrid,
 } from 'lucide-react';
 import { useFavourites } from './favourites';
 import { useBag } from './bag-provider';
@@ -13,11 +21,6 @@ import { BagDrawer } from './bag-drawer';
 import { RelayLogo } from './relay-logo';
 import { SearchOverlay } from './search-overlay';
 
-/* =========================================================================
-   Top nav — red brand header. All rows share the Relay red background so the
-   brand carries over the entire top slab. Content is white with subtle
-   transparency for muted labels.
-   ========================================================================= */
 export function StoreNav() {
   const { count } = useFavourites();
   const { count: bagCount } = useBag();
@@ -38,7 +41,6 @@ export function StoreNav() {
 
   return (
     <>
-      {/* Announcement ticker */}
       <div className="bg-[color:var(--color-crimson-deep)] text-white/90 text-[11px] uppercase tracking-[0.2em] overflow-hidden">
         <div className="flex whitespace-nowrap animate-marquee py-2">
           {Array(2).fill(0).map((_, i) => (
@@ -55,7 +57,6 @@ export function StoreNav() {
       </div>
 
       <header className="sticky top-0 z-40 bg-[color:var(--color-crimson)] text-white shadow-[0_1px_0_rgba(255,255,255,0.12)]">
-        {/* Row 1: Logo · Search · Utility */}
         <div className="border-b border-white/10">
           <div className="container-editorial flex items-center gap-6 h-16 md:h-18">
             <Link href="/" className="flex items-center gap-3 shrink-0">
@@ -114,7 +115,6 @@ export function StoreNav() {
           </div>
         </div>
 
-        {/* Row 2: Categories */}
         <div className="container-editorial h-11 hidden lg:flex items-center justify-between">
           <nav className="flex items-center gap-6 text-[13px] tracking-tight">
             {[
@@ -150,7 +150,6 @@ export function StoreNav() {
 
         <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
 
-        {/* Mobile sheet menu */}
         {open && (
           <div className="lg:hidden border-t border-white/15 bg-[color:var(--color-crimson-deep)]">
             <nav className="container-editorial py-6 flex flex-col gap-4 text-lg font-serif text-white">
@@ -169,18 +168,13 @@ export function StoreNav() {
         )}
       </header>
 
-      {/* Persistent bottom nav for mobile — always visible on <md viewports */}
       <MobileBottomNav bagCount={bagCount} onOpenBag={() => setBagOpen(true)} />
 
-      {/* Bag drawer */}
       <BagDrawer open={bagOpen} onClose={() => setBagOpen(false)} />
     </>
   );
 }
 
-/* =========================================================================
-   Mobile bottom nav — Amazon/Zomato-style persistent bar on mobile.
-   ========================================================================= */
 function MobileBottomNav({ bagCount, onOpenBag }: { bagCount: number; onOpenBag: () => void }) {
   const path = usePathname();
   const { count } = useFavourites();
@@ -240,15 +234,11 @@ function MobileBottomNav({ bagCount, onOpenBag }: { bagCount: number; onOpenBag:
           })}
         </ul>
       </nav>
-      {/* spacer so page content isn't hidden under the fixed bar */}
       <div className="md:hidden h-16" aria-hidden />
     </>
   );
 }
 
-/* =========================================================================
-   Footer — red brand block.
-   ========================================================================= */
 export function StoreFooter() {
   return (
     <footer className="bg-[color:var(--color-crimson)] text-white mt-24 md:mt-32">

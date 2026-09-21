@@ -1,13 +1,4 @@
-import { readList, writeList, upsertRow as upsertStore, deleteRow as deleteStore, readSingle, writeSingle } from './store';
-
-// ERP Phase 4 — Field Ops data layer.
-// Exhibitions & Fairs, Offline Billing App, CRM & Leads.
-
-
-
-// ---------------------------------------------------------------------------
-// Exhibitions & Fairs
-// ---------------------------------------------------------------------------
+import { readList, upsertRow as upsertStore, deleteRow as deleteStore } from './store';
 
 export type ExhibitionStatus = 'draft' | 'approved' | 'live' | 'closed' | 'settled';
 
@@ -132,10 +123,6 @@ export async function loadExhibitions(): Promise<ExhibitionEvent[]> { return rea
 export async function saveExhibition(e: ExhibitionEvent): Promise<void> { await upsertStore<ExhibitionEvent>(EX_KEY, SEED_EXHIBITIONS, e); }
 export async function deleteExhibition(id: string): Promise<void> { await deleteStore(EX_KEY, SEED_EXHIBITIONS, id); }
 
-// ---------------------------------------------------------------------------
-// Offline Billing App — devices + sync queue
-// ---------------------------------------------------------------------------
-
 export type DeviceStatus = 'online' | 'offline' | 'sync-pending' | 'blocked';
 
 export interface OfflineDevice {
@@ -200,10 +187,6 @@ export const SEED_OFFLINE_TXNS: OfflineTxn[] = [
 
 export async function loadOfflineTxns(): Promise<OfflineTxn[]> { return readList<OfflineTxn>(TXN_KEY, SEED_OFFLINE_TXNS); }
 export async function saveOfflineTxn(t: OfflineTxn): Promise<void> { await upsertStore<OfflineTxn>(TXN_KEY, SEED_OFFLINE_TXNS, t); }
-
-// ---------------------------------------------------------------------------
-// CRM & Leads
-// ---------------------------------------------------------------------------
 
 export type LeadSource = 'exhibition' | 'phone' | 'website' | 'referral' | 'walk-in';
 export type LeadStage = 'new' | 'qualified' | 'proposal' | 'negotiation' | 'won' | 'lost';

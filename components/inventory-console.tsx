@@ -3,18 +3,48 @@
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import NextLink from 'next/link';
-import { ALL_PRODUCTS, stockFor, PRODUCTS_BY_BRAND, type Product } from '@/lib/products';
+import { ALL_PRODUCTS, type Product } from '@/lib/products';
 import { STORES, BRAND_META, type StoreBrand } from '@/lib/stores';
 import { inr } from '@/lib/utils';
+import { downloadCSV } from '@/lib/csv';
 import {
-  loadUploadedProducts, loadStockAdjustments, loadPriceChanges,
-  type StockAdjustment, type PriceChange,
+  loadUploadedProducts,
+  loadPriceChanges,
+  type PriceChange,
 } from '@/lib/inventory-store';
+import { loadMoves, appendMoves } from '@/lib/stock-ledger.client';
 import {
-  Search, Download, Upload, Filter, ArrowUpDown, AlertTriangle,
-  Package, MapPin, Zap, TrendingDown, ChevronDown, ChevronRight, X,
-  Plus, Minus, ArrowRightLeft, History, Settings2, RefreshCw, CheckCircle2,
-  Sparkles, PackageX, Boxes, Warehouse, FileText, Barcode
+  deltaIndex,
+  onHand,
+  newMoveId,
+  transferMoves,
+  MOVE_KIND_LABEL,
+  type StockMove,
+} from '@/lib/stock-ledger';
+import {
+  Search,
+  Download,
+  Upload,
+  Filter,
+  ArrowUpDown,
+  AlertTriangle,
+  Package,
+  MapPin,
+  TrendingDown,
+  ChevronDown,
+  ChevronRight,
+  X,
+  Plus,
+  Minus,
+  ArrowRightLeft,
+  History,
+  Settings2,
+  CheckCircle2,
+  Sparkles,
+  PackageX,
+  Boxes,
+  Warehouse,
+  Barcode,
 } from 'lucide-react';
 
 type SortKey = 'title' | 'sku' | 'stock' | 'price' | 'value';
@@ -41,21 +71,29 @@ interface EnrichedProduct extends Product {
 }
 
 export function InventoryConsole() {
-  // Load bulk-uploaded products + adjustments from localStorage on mount.
   const [uploadedProducts, setUploadedProducts] = useState<Product[]>([]);
-  const [stockAdjustments, setStockAdjustments] = useState<StockAdjustment[]>([]);
   const [priceChanges, setPriceChanges] = useState<PriceChange[]>([]);
+  const [moves, setMoves] = useState<StockMove[]>([]);
+  const [ledgerError, setLedgerError] = useState<string | null>(null);
   useEffect(() => {
     loadUploadedProducts().then(setUploadedProducts);
-    setStockAdjustments(loadStockAdjustments());
+    loadMoves().then(setMoves);
     setPriceChanges(loadPriceChanges());
   }, []);
 
-  // Latest price change per SKU wins over the seed price.
+  const stockIndex = useMemo(() => deltaIndex(moves), [moves]);
+
+  const postMoves = async (batch: StockMove[]) => {
+    setLedgerError(null);
+    try {
+      setMoves(await appendMoves(batch));
+    } catch (err) {
+      setLedgerError(err instanceof Error ? err.message : 'The stock ledger refused the write.');
+    }
+  };
+
   const priceOverrides = useMemo(() => {
     const m = new Map<string, number>();
-    // priceChanges is stored newest-first; walk from oldest → newest so the
-    // last entry wins for each SKU.
     for (let i = priceChanges.length - 1; i >= 0; i--) {
       const c = priceChanges[i];
       m.set(c.sku, c.newPrice);
@@ -63,41 +101,10 @@ export function InventoryConsole() {
     return m;
   }, [priceChanges]);
 
-  // Sum of net stock deltas from bulk-upload stock adjustments, keyed by
-  // productId + storeCode. 'set' resets; add/remove accumulate.
-  const stockDeltas = useMemo(() => {
-    const skuToId = new Map(
-      [...ALL_PRODUCTS, ...uploadedProducts].map(p => [p.sku, p.id])
-    );
-    const setValues = new Map<string, number>();      // key = productId::storeCode
-    const additiveDeltas = new Map<string, number>();
-    // Walk oldest → newest so 'set' followed by 'add' composes correctly.
-    for (let i = stockAdjustments.length - 1; i >= 0; i--) {
-      const adj = stockAdjustments[i];
-      const productId = skuToId.get(adj.sku);
-      if (!productId) continue;
-      const store = STORES.find(s => s.code === adj.storeCode || s.id === adj.storeCode);
-      if (!store) continue;
-      const key = `${productId}::${store.id}`;
-      if (adj.action === 'set') {
-        setValues.set(key, adj.quantity);
-        additiveDeltas.set(key, 0);
-      } else if (adj.action === 'add') {
-        additiveDeltas.set(key, (additiveDeltas.get(key) ?? 0) + adj.quantity);
-      } else if (adj.action === 'remove') {
-        additiveDeltas.set(key, (additiveDeltas.get(key) ?? 0) - adj.quantity);
-      }
-    }
-    return { setValues, additiveDeltas };
-  }, [stockAdjustments, uploadedProducts]);
-
   function effectiveStock(productId: string, storeId: string): number {
-    const key = `${productId}::${storeId}`;
-    const base = stockDeltas.setValues.get(key) ?? stockFor(productId, storeId);
-    return Math.max(0, base + (stockDeltas.additiveDeltas.get(key) ?? 0));
+    return onHand(productId, storeId, stockIndex);
   }
 
-  // Enrich static + uploaded products with per-store stock
   const enriched = useMemo<EnrichedProduct[]>(() => {
     const all = [...uploadedProducts, ...ALL_PRODUCTS];
     return all.map(p => {
@@ -126,9 +133,8 @@ export function InventoryConsole() {
         reorderAt,
       };
     });
-  }, [uploadedProducts, priceOverrides, stockDeltas]);
+  }, [uploadedProducts, priceOverrides, stockIndex]);
 
-  // Filters
   const [query, setQuery] = useState('');
   const [brand, setBrand] = useState<StoreBrand | 'all'>('all');
   const [category, setCategory] = useState<string>('all');
@@ -142,7 +148,6 @@ export function InventoryConsole() {
   const [transferModal, setTransferModal] = useState<EnrichedProduct | null>(null);
   const [tab, setTab] = useState<'items' | 'batches' | 'audit' | 'transfers'>('items');
 
-  // Filtered + sorted
   const filtered = useMemo(() => {
     let arr = [...enriched];
     if (query) {
@@ -165,7 +170,6 @@ export function InventoryConsole() {
     return arr;
   }, [enriched, query, brand, category, stockStatus, sortKey, sortDir]);
 
-  // KPIs
   const kpi = useMemo(() => {
     const totalSKU = enriched.length;
     const totalStock = enriched.reduce((s, p) => s + p.totalStock, 0);
@@ -176,6 +180,26 @@ export function InventoryConsole() {
   }, [enriched]);
 
   const categories = useMemo(() => [...new Set(ALL_PRODUCTS.map(p => p.category))], []);
+
+  const exportCsv = () => {
+    downloadCSV(
+      'trs-inventory.csv',
+      ['sku', 'title', 'brand', 'category', 'price', 'on_hand', 'reserved', 'available', 'reorder_at', 'stock_value', 'status'],
+      filtered.map(p => ({
+        sku: p.sku,
+        title: p.title,
+        brand: p.brand,
+        category: p.category,
+        price: String(p.price),
+        on_hand: String(p.totalStock),
+        reserved: String(p.reserved),
+        available: String(p.available),
+        reorder_at: String(p.reorderAt),
+        stock_value: String(p.stockValue),
+        status: p.status,
+      })),
+    );
+  };
 
   function toggleSort(key: SortKey) {
     if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -201,7 +225,6 @@ export function InventoryConsole() {
   return (
     <>
     <div className="px-6 py-6 max-w-[1800px]">
-      {/* Header */}
       <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
         <div>
           <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)] mb-1 flex items-center gap-2">
@@ -214,22 +237,31 @@ export function InventoryConsole() {
           <h1 className="font-serif text-4xl leading-tight tracking-tight">Inventory Console</h1>
         </div>
         <div className="flex items-center gap-2">
-          <button className="h-9 px-3 border border-[color:var(--color-line)] rounded-md text-xs inline-flex items-center gap-1.5 hover:bg-[color:var(--color-paper)]">
+          <button
+            onClick={exportCsv}
+            disabled={filtered.length === 0}
+            className="h-9 px-3 border border-[color:var(--color-line)] rounded-md text-xs inline-flex items-center gap-1.5 hover:bg-[color:var(--color-paper)] disabled:opacity-40"
+          >
             <Download className="w-3.5 h-3.5" /> Export CSV
           </button>
+          <NextLink href="/admin/inventory/replenishment" className="h-9 px-3 border border-[color:var(--color-line)] rounded-md text-xs inline-flex items-center gap-1.5 hover:bg-[color:var(--color-paper)]">
+            <Boxes className="w-3.5 h-3.5" /> Replenishment
+          </NextLink>
+          <NextLink href="/admin/inventory/interstate" className="h-9 px-3 border border-[color:var(--color-line)] rounded-md text-xs inline-flex items-center gap-1.5 hover:bg-[color:var(--color-paper)]">
+            <ArrowRightLeft className="w-3.5 h-3.5" /> Inter-state
+          </NextLink>
+          <NextLink href="/admin/inventory/exhibitions" className="h-9 px-3 border border-[color:var(--color-line)] rounded-md text-xs inline-flex items-center gap-1.5 hover:bg-[color:var(--color-paper)]">
+            <Sparkles className="w-3.5 h-3.5" /> Exhibitions
+          </NextLink>
           <NextLink href="/admin/inventory/bulk" className="h-9 px-3 border border-[color:var(--color-ink)] bg-[color:var(--color-ink)] text-[color:var(--color-cream)] rounded-md text-xs font-medium inline-flex items-center gap-1.5 hover:bg-[color:var(--color-crimson)]">
             <Upload className="w-3.5 h-3.5" /> Bulk upload
           </NextLink>
-          <button className="h-9 px-3 border border-[color:var(--color-line)] rounded-md text-xs inline-flex items-center gap-1.5 hover:bg-[color:var(--color-paper)]">
-            <RefreshCw className="w-3.5 h-3.5" /> Recount
-          </button>
-          <button className="h-9 px-4 bg-[color:var(--color-ink)] text-[color:var(--color-cream)] rounded-md text-xs font-medium hover:bg-[color:var(--color-crimson)] inline-flex items-center gap-1.5">
+          <NextLink href="/admin/inventory/bulk" className="h-9 px-4 bg-[color:var(--color-ink)] text-[color:var(--color-cream)] rounded-md text-xs font-medium hover:bg-[color:var(--color-crimson)] inline-flex items-center gap-1.5">
             <Plus className="w-3.5 h-3.5" /> Add product
-          </button>
+          </NextLink>
         </div>
       </div>
 
-      {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
         <MiniKPI label="Total SKUs" value={kpi.totalSKU.toLocaleString('en-IN')} icon={Package} />
         <MiniKPI label="Units on hand" value={kpi.totalStock.toLocaleString('en-IN')} icon={Boxes} />
@@ -238,7 +270,6 @@ export function InventoryConsole() {
         <MiniKPI label="Out of stock" value={kpi.outStock.toString()} icon={PackageX} danger />
       </div>
 
-      {/* Tabs */}
       <div className="flex items-center gap-6 border-b border-[color:var(--color-line)] mb-4 text-sm">
         {(['items', 'batches', 'audit', 'transfers'] as const).map(t => (
           <button
@@ -254,7 +285,6 @@ export function InventoryConsole() {
 
       {tab === 'items' && (
         <>
-          {/* Filter bar */}
           <div className="bg-white rounded-lg border border-[color:var(--color-line)] p-3 mb-4 flex items-center gap-2 flex-wrap">
             <div className="flex items-center gap-2 h-9 px-3 bg-[color:var(--color-paper)] rounded-md border border-[color:var(--color-line)] min-w-[280px] flex-1 max-w-md">
               <Search className="w-3.5 h-3.5 text-[color:var(--color-ink-muted)]" />
@@ -298,7 +328,6 @@ export function InventoryConsole() {
             </div>
           </div>
 
-          {/* Bulk action bar */}
           {selected.size > 0 && (
             <div className="mb-4 p-3 bg-[color:var(--color-ink)] text-[color:var(--color-cream)] rounded-lg flex items-center justify-between text-sm">
               <div className="flex items-center gap-3">
@@ -314,7 +343,6 @@ export function InventoryConsole() {
             </div>
           )}
 
-          {/* Data table */}
           <div className="bg-white rounded-lg border border-[color:var(--color-line)] overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -410,19 +438,28 @@ export function InventoryConsole() {
       )}
 
       {tab === 'batches' && <BatchesTab enriched={enriched} />}
-      {tab === 'audit' && <AuditTab />}
-      {tab === 'transfers' && <TransfersTab />}
+      {tab === 'audit' && <AuditTab moves={moves} />}
+      {tab === 'transfers' && <TransfersTab moves={moves} />}
     </div>
 
-    {/* Product drawer */}
     {drawerProduct && <ProductDrawer product={drawerProduct} onClose={() => setDrawerProduct(null)} />}
-    {adjustModal && <AdjustStockModal product={adjustModal} onClose={() => setAdjustModal(null)} />}
-    {transferModal && <TransferModal product={transferModal} onClose={() => setTransferModal(null)} />}
+    {adjustModal && (
+      <AdjustStockModal
+        product={adjustModal}
+        onClose={() => setAdjustModal(null)}
+        onPosted={move => postMoves([move])}
+      />
+    )}
+    {transferModal && (
+      <TransferModal
+        product={transferModal}
+        onClose={() => setTransferModal(null)}
+        onCreated={pair => postMoves(pair)}
+      />
+    )}
     </>
   );
 }
-
-// === Sub-components ===
 
 function MiniKPI({ label, value, icon: Icon, accent, warn, danger }: { label: string; value: string; icon: React.ElementType; accent?: boolean; warn?: boolean; danger?: boolean }) {
   const border = accent ? 'border-[color:var(--color-crimson)]' : warn ? 'border-[color:var(--color-warning)]' : danger ? 'border-[color:var(--color-danger)]' : 'border-[color:var(--color-line)]';
@@ -504,8 +541,6 @@ function ExpandedStockDetail({ product }: { product: EnrichedProduct }) {
     </div>
   );
 }
-
-// === Product drawer ===
 
 function ProductDrawer({ product, onClose }: { product: EnrichedProduct; onClose: () => void }) {
   return (
@@ -601,11 +636,43 @@ function ProductDrawer({ product, onClose }: { product: EnrichedProduct; onClose
   );
 }
 
-function AdjustStockModal({ product, onClose }: { product: EnrichedProduct; onClose: () => void }) {
+function AdjustStockModal({ product, onClose, onPosted }: {
+  product: EnrichedProduct;
+  onClose: () => void;
+  onPosted: (move: StockMove) => void;
+}) {
   const [store, setStore] = useState(product.storeStock[0]?.storeId ?? '');
   const [type, setType] = useState<'add' | 'remove' | 'damage' | 'shrinkage'>('add');
   const [qty, setQty] = useState(1);
   const [reason, setReason] = useState('');
+  const [notes, setNotes] = useState('');
+
+  const picked = product.storeStock.find(s => s.storeId === store);
+  const available = picked?.qty ?? 0;
+  const takesStock = type !== 'add';
+  const problem =
+    !picked ? 'Choose a store.'
+    : qty < 1 ? 'Quantity must be at least 1.'
+    : takesStock && qty > available ? `Only ${available} on hand at ${picked.storeCode}.`
+    : null;
+
+  const post = () => {
+    if (!picked || problem) return;
+    const kind = type === 'add' ? 'receipt' : type === 'remove' ? 'adjustment' : type;
+    onPosted({
+      id: newMoveId(),
+      at: new Date().toISOString(),
+      productId: product.id,
+      sku: product.sku,
+      storeId: picked.storeId,
+      storeCode: picked.storeCode,
+      qty: type === 'add' ? qty : -qty,
+      kind,
+      reason: reason || type,
+      notes,
+    });
+    onClose();
+  };
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
       <div className="w-full max-w-lg bg-white rounded-xl shadow-2xl" onClick={e => e.stopPropagation()}>
@@ -652,18 +719,53 @@ function AdjustStockModal({ product, onClose }: { product: EnrichedProduct; onCl
               <option>Expiry write-off</option>
             </select>
           </div>
-          <textarea placeholder="Optional notes for audit trail…" rows={3} className="w-full px-3 py-2 border border-[color:var(--color-line)] rounded-md text-sm" />
+          <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Optional notes for audit trail…" rows={3} className="w-full px-3 py-2 border border-[color:var(--color-line)] rounded-md text-sm" />
+          {problem && <div className="text-xs text-[color:var(--color-danger)]">{problem}</div>}
         </div>
         <div className="px-6 py-4 border-t border-[color:var(--color-line)] flex justify-end gap-2">
           <button onClick={onClose} className="h-10 px-4 border border-[color:var(--color-line)] rounded-md text-sm">Cancel</button>
-          <button onClick={onClose} className="h-10 px-6 bg-[color:var(--color-ink)] text-[color:var(--color-cream)] rounded-md text-sm font-medium hover:bg-[color:var(--color-crimson)]">Post adjustment</button>
+          <button onClick={post} disabled={!!problem} className="h-10 px-6 bg-[color:var(--color-ink)] text-[color:var(--color-cream)] rounded-md text-sm font-medium hover:bg-[color:var(--color-crimson)] disabled:opacity-50">Post adjustment</button>
         </div>
       </div>
     </div>
   );
 }
 
-function TransferModal({ product, onClose }: { product: EnrichedProduct; onClose: () => void }) {
+function TransferModal({ product, onClose, onCreated }: {
+  product: EnrichedProduct;
+  onClose: () => void;
+  onCreated: (pair: StockMove[]) => void;
+}) {
+  const stocked = product.storeStock.filter(s => s.qty > 0);
+  const [from, setFrom] = useState(stocked[0]?.storeCode ?? '');
+  const [to, setTo] = useState(product.storeStock.find(s => s.storeCode !== stocked[0]?.storeCode)?.storeCode ?? '');
+  const [qty, setQty] = useState(5);
+  const [arrival, setArrival] = useState('');
+
+  const available = product.storeStock.find(s => s.storeCode === from)?.qty ?? 0;
+  const problem =
+    !from || !to ? 'Choose both stores.'
+    : from === to ? 'Source and destination must differ.'
+    : qty < 1 ? 'Quantity must be at least 1.'
+    : qty > available ? `Only ${available} on hand at ${from}.`
+    : null;
+
+  const create = () => {
+    if (problem) return;
+    const source = product.storeStock.find(s => s.storeCode === from);
+    const dest = product.storeStock.find(s => s.storeCode === to);
+    if (!source || !dest) return;
+    onCreated(transferMoves({
+      productId: product.id,
+      sku: product.sku,
+      from: { storeId: source.storeId, storeCode: source.storeCode },
+      to: { storeId: dest.storeId, storeCode: dest.storeCode },
+      qty,
+      notes: arrival ? `Expected ${arrival}` : undefined,
+    }));
+    onClose();
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
       <div className="w-full max-w-lg bg-white rounded-xl shadow-2xl" onClick={e => e.stopPropagation()}>
@@ -678,40 +780,40 @@ function TransferModal({ product, onClose }: { product: EnrichedProduct; onClose
           <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-3">
             <div>
               <label className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)] block mb-1.5">From</label>
-              <select className="w-full h-10 px-3 border border-[color:var(--color-line)] rounded-md bg-white text-sm">
-                {product.storeStock.filter(s => s.qty > 0).map(s => <option key={s.storeId}>{s.storeCode} ({s.qty})</option>)}
+              <select value={from} onChange={e => setFrom(e.target.value)} className="w-full h-10 px-3 border border-[color:var(--color-line)] rounded-md bg-white text-sm">
+                {stocked.map(s => <option key={s.storeId} value={s.storeCode}>{s.storeCode} ({s.qty})</option>)}
               </select>
             </div>
             <ArrowRightLeft className="w-4 h-4 text-[color:var(--color-ink-muted)] mb-3" />
             <div>
               <label className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)] block mb-1.5">To</label>
-              <select className="w-full h-10 px-3 border border-[color:var(--color-line)] rounded-md bg-white text-sm">
-                {product.storeStock.map(s => <option key={s.storeId}>{s.storeCode}</option>)}
+              <select value={to} onChange={e => setTo(e.target.value)} className="w-full h-10 px-3 border border-[color:var(--color-line)] rounded-md bg-white text-sm">
+                {product.storeStock.map(s => <option key={s.storeId} value={s.storeCode}>{s.storeCode}</option>)}
               </select>
             </div>
           </div>
           <div>
             <label className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)] block mb-1.5">Quantity to transfer</label>
-            <input type="number" defaultValue={5} min={1} className="w-full h-10 px-3 border border-[color:var(--color-line)] rounded-md text-center font-mono text-sm" />
+            <input type="number" value={qty} onChange={e => setQty(Math.max(1, Number(e.target.value)))} min={1} className="w-full h-10 px-3 border border-[color:var(--color-line)] rounded-md text-center font-mono text-sm" />
           </div>
           <div>
             <label className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)] block mb-1.5">Expected arrival</label>
-            <input type="date" className="w-full h-10 px-3 border border-[color:var(--color-line)] rounded-md text-sm" />
+            <input type="date" value={arrival} onChange={e => setArrival(e.target.value)} className="w-full h-10 px-3 border border-[color:var(--color-line)] rounded-md text-sm" />
           </div>
           <div className="p-3 bg-[color:var(--color-paper)] rounded-md text-xs text-[color:var(--color-ink-muted)]">
-            Transfer note will be printed at source store and receipt confirmation required at destination. Stock in transit reflects immediately.
+            Recorded against the Transfers tab. Stock movement itself posts once the store ledger is in place.
           </div>
+          {problem && <div className="text-xs text-[color:var(--color-danger)]">{problem}</div>}
         </div>
         <div className="px-6 py-4 border-t border-[color:var(--color-line)] flex justify-end gap-2">
           <button onClick={onClose} className="h-10 px-4 border border-[color:var(--color-line)] rounded-md text-sm">Cancel</button>
-          <button onClick={onClose} className="h-10 px-6 bg-[color:var(--color-ink)] text-[color:var(--color-cream)] rounded-md text-sm font-medium hover:bg-[color:var(--color-crimson)]">Create transfer</button>
+          <button onClick={create} disabled={!!problem} className="h-10 px-6 bg-[color:var(--color-ink)] text-[color:var(--color-cream)] rounded-md text-sm font-medium hover:bg-[color:var(--color-crimson)] disabled:opacity-50">Create transfer</button>
         </div>
       </div>
     </div>
   );
 }
 
-// === Batches tab ===
 function BatchesTab({ enriched }: { enriched: EnrichedProduct[] }) {
   const perishable = enriched.filter(p => ['confectionery', 'sweets'].includes(p.category));
   return (
@@ -757,74 +859,100 @@ function BatchesTab({ enriched }: { enriched: EnrichedProduct[] }) {
   );
 }
 
-function AuditTab() {
-  const events = [
-    { time: '14:22', user: 'A. Kapoor', store: 'RLY-BLR-03', action: 'Stock adjustment', detail: 'One Piece Vol 105 · +12 units · Supplier receipt', ip: '10.14.2.18' },
-    { time: '14:15', user: 'S. Iyer', store: 'RLY-DEL-01', action: 'Price change', detail: 'Ferrero Rocher T24 · ₹999 → ₹899', ip: '10.14.2.24' },
-    { time: '13:58', user: 'System', store: 'RLY-BOM-01', action: 'Auto-reserve', detail: '1× Atomic Habits · Order TRS-4821', ip: '—' },
-    { time: '13:42', user: 'R. Mehta', store: 'RLY-BLR-01', action: 'Transfer created', detail: '12× Milka to RLY-BLR-02', ip: '10.14.2.31' },
-    { time: '13:20', user: 'K. Nair', store: 'RLY-COK-01', action: 'Shrinkage recorded', detail: '2× Kit Kat Matcha · Shop-floor damage', ip: '10.14.2.44' },
-    { time: '12:55', user: 'P. Sharma', store: 'CB-DEL-02', action: 'Batch received', detail: 'B4321 · Lindt Excellence · 40 units', ip: '10.14.2.51' },
-    { time: '12:31', user: 'System', store: 'RLY-HYD-01', action: 'Low-stock alert', detail: 'Ikigai below reorder threshold', ip: '—' },
-    { time: '11:48', user: 'M. Krishnan', store: 'MTC-COK-01', action: 'Refund reversal', detail: 'JBL Flip 5 · +1 unit · Return from customer', ip: '10.14.2.62' },
-  ];
+function AuditTab({ moves }: { moves: StockMove[] }) {
+  const exportMoves = () => {
+    downloadCSV(
+      'trs-stock-ledger.csv',
+      ['at', 'sku', 'store', 'kind', 'qty', 'reason', 'ref', 'notes'],
+      moves.map(m => ({
+        at: m.at,
+        sku: m.sku,
+        store: m.storeCode,
+        kind: m.kind,
+        qty: String(m.qty),
+        reason: m.reason ?? '',
+        ref: m.ref ?? '',
+        notes: m.notes ?? '',
+      })),
+    );
+  };
   return (
     <div className="bg-white rounded-lg border border-[color:var(--color-line)] overflow-hidden">
       <div className="p-4 border-b border-[color:var(--color-line)] flex items-center justify-between">
         <div>
           <div className="text-sm font-medium flex items-center gap-2"><History className="w-4 h-4" /> Audit trail</div>
-          <div className="text-xs text-[color:var(--color-ink-muted)]">Every privileged action logged · immutable · exportable for tax audit</div>
+          <div className="text-xs text-[color:var(--color-ink-muted)]">Every stock movement, append-only · {moves.length.toLocaleString()} entries</div>
         </div>
-        <div className="flex items-center gap-2">
-          <select className="h-9 px-3 border border-[color:var(--color-line)] rounded-md text-xs">
-            <option>Today</option><option>Last 7 days</option><option>Last 30 days</option>
-          </select>
-          <button className="h-9 px-3 border border-[color:var(--color-line)] rounded-md text-xs inline-flex items-center gap-1.5"><Download className="w-3.5 h-3.5" /> Export</button>
-        </div>
+        <button onClick={exportMoves} disabled={moves.length === 0} className="h-9 px-3 border border-[color:var(--color-line)] rounded-md text-xs inline-flex items-center gap-1.5 disabled:opacity-40"><Download className="w-3.5 h-3.5" /> Export</button>
       </div>
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-[color:var(--color-line)] bg-[color:var(--color-paper)]/40 text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)]">
-            <th className="text-left px-3 py-2.5">Time</th>
-            <th className="text-left px-3 py-2.5">User</th>
+            <th className="text-left px-3 py-2.5">When</th>
+            <th className="text-left px-3 py-2.5">SKU</th>
             <th className="text-left px-3 py-2.5">Store</th>
-            <th className="text-left px-3 py-2.5">Action</th>
-            <th className="text-left px-3 py-2.5">Detail</th>
-            <th className="text-left px-3 py-2.5">IP</th>
+            <th className="text-left px-3 py-2.5">Movement</th>
+            <th className="text-right px-3 py-2.5">Qty</th>
+            <th className="text-left px-3 py-2.5">Reason</th>
+            <th className="text-left px-3 py-2.5">Reference</th>
           </tr>
         </thead>
         <tbody>
-          {events.map((e, i) => (
-            <tr key={i} className="border-b border-[color:var(--color-line)] hover:bg-[color:var(--color-paper)]/30">
-              <td className="px-3 py-2 font-mono text-xs">{e.time}</td>
-              <td className="px-3 py-2 text-xs">{e.user}</td>
-              <td className="px-3 py-2 font-mono text-xs">{e.store}</td>
-              <td className="px-3 py-2 text-xs font-medium">{e.action}</td>
-              <td className="px-3 py-2 text-xs text-[color:var(--color-ink-soft)]">{e.detail}</td>
-              <td className="px-3 py-2 font-mono text-[10px] text-[color:var(--color-ink-muted)]">{e.ip}</td>
+          {moves.map(m => (
+            <tr key={m.id} className="border-b border-[color:var(--color-line)] hover:bg-[color:var(--color-paper)]/30">
+              <td className="px-3 py-2 font-mono text-xs">{new Date(m.at).toLocaleString('en-IN')}</td>
+              <td className="px-3 py-2 font-mono text-xs">{m.sku}</td>
+              <td className="px-3 py-2 font-mono text-xs">{m.storeCode}</td>
+              <td className="px-3 py-2 text-xs font-medium">{MOVE_KIND_LABEL[m.kind]}</td>
+              <td className={`px-3 py-2 text-right font-mono text-xs ${m.qty < 0 ? 'text-[color:var(--color-danger)]' : 'text-[color:var(--color-success)]'}`}>
+                {m.qty > 0 ? `+${m.qty}` : m.qty}
+              </td>
+              <td className="px-3 py-2 text-xs text-[color:var(--color-ink-soft)]">{m.reason ?? '—'}</td>
+              <td className="px-3 py-2 font-mono text-[10px] text-[color:var(--color-ink-muted)]">{m.ref ?? '—'}</td>
             </tr>
           ))}
         </tbody>
       </table>
+      {moves.length === 0 && (
+        <div className="py-16 text-center text-sm text-[color:var(--color-ink-muted)]">
+          Nothing has moved yet. Post an adjustment or a transfer and it lands here.
+        </div>
+      )}
     </div>
   );
 }
 
-function TransfersTab() {
-  const transfers = [
-    { id: 'TR-2409', from: 'RLY-BLR-01', to: 'RLY-BLR-04', sku: 'Milka Whole Hazelnut × 12', status: 'in-transit', eta: 'Today 18:00' },
-    { id: 'TR-2408', from: 'RLY-BOM-01', to: 'RLY-BOM-02', sku: 'Atomic Habits × 6', status: 'received', eta: 'Delivered 12:15' },
-    { id: 'TR-2407', from: 'CB-DEL-01', to: 'RLY-DEL-01', sku: 'Lindt Excellence × 24', status: 'dispatched', eta: 'Tomorrow 10:00' },
-    { id: 'TR-2406', from: 'RLY-HYD-02', to: 'RLY-HYD-01', sku: 'Ikigai × 8', status: 'in-transit', eta: 'Today 16:30' },
-    { id: 'TR-2405', from: 'MTC-COK-01', to: 'MTC-IDR-01', sku: 'JBL Flip 5 × 4', status: 'dispatched', eta: 'Sep 18' },
-    { id: 'TR-2404', from: 'RLY-DEL-01', to: 'RLY-GGN-01', sku: 'One Piece Vol 105 × 10', status: 'received', eta: 'Delivered Sep 15' },
-  ];
+function TransfersTab({ moves }: { moves: StockMove[] }) {
+  const byRef = new Map<string, { out?: StockMove; in?: StockMove }>();
+  for (const m of moves) {
+    if (m.kind !== 'transfer-out' && m.kind !== 'transfer-in') continue;
+    const ref = m.ref ?? m.id;
+    const pair = byRef.get(ref) ?? {};
+    if (m.kind === 'transfer-out') pair.out = m;
+    else pair.in = m;
+    byRef.set(ref, pair);
+  }
+  const rows = [...byRef.entries()]
+    .filter(([, pair]) => pair.out && pair.in)
+    .map(([ref, pair]) => ({
+      id: ref,
+      from: pair.out!.storeCode,
+      to: pair.in!.storeCode,
+      sku: `${pair.out!.sku} × ${Math.abs(pair.out!.qty)}`,
+      status: 'received',
+      eta: new Date(pair.out!.at).toLocaleDateString('en-IN'),
+    }));
   return (
     <div className="bg-white rounded-lg border border-[color:var(--color-line)] overflow-hidden">
       <div className="p-4 border-b border-[color:var(--color-line)]">
         <div className="text-sm font-medium">Store-to-store transfers</div>
         <div className="text-xs text-[color:var(--color-ink-muted)]">Rebalance stock between stores · confirmation required on receipt</div>
       </div>
+      {rows.length === 0 && (
+        <div className="py-16 text-center text-sm text-[color:var(--color-ink-muted)]">
+          No transfers raised yet. Create one from a product row, or upload a transfer CSV.
+        </div>
+      )}
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-[color:var(--color-line)] bg-[color:var(--color-paper)]/40 text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)]">
@@ -837,7 +965,7 @@ function TransfersTab() {
           </tr>
         </thead>
         <tbody>
-          {transfers.map(t => (
+          {rows.map(t => (
             <tr key={t.id} className="border-b border-[color:var(--color-line)] hover:bg-[color:var(--color-paper)]/30">
               <td className="px-3 py-2 font-mono text-xs font-medium">{t.id}</td>
               <td className="px-3 py-2 font-mono text-xs">{t.from}</td>

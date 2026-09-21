@@ -1,6 +1,3 @@
-// Skyline members — deterministic seed data + localStorage-backed store.
-// Mock demo data: server generates a base list, client persists additions.
-
 import { TIERS, tierFor, type TierKey } from './loyalty';
 
 export interface Member {
@@ -87,7 +84,6 @@ function daysAgoDate(days: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-// Hand-curated top members (also shown on the loyalty admin page).
 const SEED_MEMBERS: Member[] = [
   { id: 'TRS-8827-4413-9021', name: 'Anjali Krishnan', email: 'anjali.k@gmail.com',    phone: '+91 98450 21100', city: 'Bangalore', tier: 'PLATINUM', points: 12480, ytdSpend: 47200,  lifetimeSpend: 184000, joinDate: '2024-04-11', lastVisit: daysAgoDate(2),  visits: 34, favouriteStore: 'BLR T2-A',   boardingPassPnr: '8XZK2P' },
   { id: 'TRS-8827-1902-4711', name: 'Rahul Mehta',      email: 'rahul.mehta@icloud.com',phone: '+91 98110 44210', city: 'Delhi',     tier: 'GOLD',     points: 6220,  ytdSpend: 22400,  lifetimeSpend: 78500,  joinDate: '2024-06-02', lastVisit: daysAgoDate(5),  visits: 19, favouriteStore: 'DEL T3-Intl' },
@@ -108,15 +104,14 @@ function generateMembers(count: number): Member[] {
     const name = `${first} ${last}`;
     const city = pick(rng, CITIES);
     const store = pick(rng, STORE_CODES);
-    // spend follows a long-tail: most silver, some gold, few platinum, rare black
     const roll = rng();
     let ytdSpend: number;
-    if (roll < 0.60) ytdSpend = Math.floor(rng() * 14000 + 300);          // Silver
-    else if (roll < 0.85) ytdSpend = Math.floor(rng() * 24000 + 15000);   // Gold
-    else if (roll < 0.97) ytdSpend = Math.floor(rng() * 55000 + 40000);   // Platinum
-    else ytdSpend = Math.floor(rng() * 220000 + 100000);                  // Black
+    if (roll < 0.60) ytdSpend = Math.floor(rng() * 14000 + 300);
+    else if (roll < 0.85) ytdSpend = Math.floor(rng() * 24000 + 15000);
+    else if (roll < 0.97) ytdSpend = Math.floor(rng() * 55000 + 40000);
+    else ytdSpend = Math.floor(rng() * 220000 + 100000);
     const tier = tierFor(ytdSpend);
-    const lifetimeMult = 1 + rng() * 3; // 1×–4× of YTD
+    const lifetimeMult = 1 + rng() * 3;
     const lifetimeSpend = Math.floor(ytdSpend * lifetimeMult);
     const points = Math.floor(ytdSpend * (tier.earn / 100) * (0.4 + rng() * 0.4));
     const joinDaysAgo = Math.floor(rng() * 900) + 20;
@@ -144,9 +139,6 @@ function generateMembers(count: number): Member[] {
 }
 
 export const BASE_MEMBERS: Member[] = generateMembers(212);
-
-// Total programme size — what the KPI says. Real records only cover a slice.
-export const TOTAL_MEMBERS = 28412;
 
 const STORAGE_KEY = 'trs.loyalty.members.v1';
 const DELETED_KEY = 'trs.loyalty.members.deleted.v1';
@@ -208,7 +200,6 @@ export function updateMember(id: string, patch: Partial<Member>) {
     writeAdded(added);
     return;
   }
-  // If editing a base member, snapshot it into added storage so changes persist.
   const base = BASE_MEMBERS.find(m => m.id === id);
   if (base) {
     added.unshift({ ...base, ...patch });
@@ -223,7 +214,6 @@ export function deleteMember(id: string) {
     writeAdded(filtered);
     return;
   }
-  // Deleting a base member — remember it's hidden.
   const deleted = readDeleted();
   if (!deleted.includes(id)) {
     deleted.push(id);

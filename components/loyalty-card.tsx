@@ -1,11 +1,9 @@
 'use client';
 
 import { Plane, Sparkles } from 'lucide-react';
-import { DEMO_MEMBER, TIERS, tierFor } from '@/lib/loyalty';
+import { DEMO_MEMBER, tierFor } from '@/lib/loyalty';
 
-// Static QR SVG (deterministic pattern)
 function QRPattern({ seed }: { seed: string }) {
-  // Generate a deterministic 21x21 QR-like grid
   const size = 21;
   const cells: boolean[][] = [];
   let hash = 0;
@@ -17,7 +15,6 @@ function QRPattern({ seed }: { seed: string }) {
       cells[y][x] = (hash % 100) > 55;
     }
   }
-  // Force finder patterns at 3 corners
   const finder = [[0,0],[0,size-7],[size-7,0]];
   for (const [oy, ox] of finder) {
     for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
@@ -41,11 +38,9 @@ export function LoyaltyCardPreview() {
 
   return (
     <div className="relative max-w-[440px] mx-auto">
-      {/* Ambient glow */}
       <div className="absolute -inset-8 bg-[color:var(--color-crimson)]/15 blur-3xl rounded-full -z-10" />
 
       <div className="holo aspect-[1.586/1] rounded-[22px] px-7 py-6 md:px-8 md:py-7 text-white shadow-[0_20px_60px_-20px_rgba(196,33,39,0.55)] relative overflow-hidden">
-        {/* Top row — programme + tier */}
         <div className="relative z-10 flex items-start justify-between">
           <div>
             <div className="text-[9px] uppercase tracking-[0.35em] text-white/55 font-mono">Travel Retail Services</div>
@@ -60,14 +55,12 @@ export function LoyaltyCardPreview() {
           </div>
         </div>
 
-        {/* Member identity */}
         <div className="relative z-10 mt-5 md:mt-6">
           <div className="text-[9px] uppercase tracking-[0.25em] text-white/45 font-mono">Member</div>
           <div className="font-serif text-[19px] md:text-[22px] mt-1 leading-tight">{DEMO_MEMBER.name}</div>
           <div className="font-mono text-[11px] mt-1.5 text-white/65 tracking-wider">{DEMO_MEMBER.id}</div>
         </div>
 
-        {/* Bottom row — balance + QR with breathing room */}
         <div className="relative z-10 mt-4 md:mt-5 flex items-end justify-between gap-4">
           <div className="min-w-0">
             <div className="text-[9px] uppercase tracking-[0.25em] text-white/45 font-mono">Points balance</div>
@@ -81,14 +74,11 @@ export function LoyaltyCardPreview() {
           </div>
         </div>
 
-        {/* Plane deco */}
         <Plane className="absolute top-8 right-32 w-8 h-8 text-white/10 rotate-45 pointer-events-none" />
       </div>
 
-      {/* Card back preview (offset shadow) */}
       <div className="absolute -bottom-4 -left-4 -right-4 h-8 bg-black/15 blur-md rounded-full -z-10" />
 
-      {/* Boarding-pass style tab */}
       <div className="mt-3 flex items-center gap-3 justify-between text-[10px] font-mono uppercase tracking-[0.2em] text-[color:var(--color-ink-muted)]">
         <div>Valid across all TRS stores</div>
         <div>Tap to add to Apple Wallet</div>

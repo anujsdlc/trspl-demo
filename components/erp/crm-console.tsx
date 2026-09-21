@@ -2,16 +2,31 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import {
-  HeartHandshake, Plus, Search, X, Phone, Mail, MapPin, ArrowRight, Trash2,
-  UserRound, PhoneCall, Globe, Users2, Tent, CheckCircle2, XCircle,
-  FileText, Calendar,
+  HeartHandshake,
+  Plus,
+  Search,
+  X,
+  Phone,
+  Mail,
+  MapPin,
+  Trash2,
+  UserRound,
+  PhoneCall,
+  Globe,
+  Users2,
+  Tent,
 } from 'lucide-react';
 import {
-  loadLeads, saveLead, deleteLead, SEED_LEADS,
-  type Lead, type LeadStage, type LeadSource,
+  loadLeads,
+  saveLead,
+  deleteLead,
+  SEED_LEADS,
+  type Lead,
+  type LeadStage,
+  type LeadSource,
 } from '@/lib/erp/phase4';
 import { inr } from '@/lib/utils';
-import { KPI, StatusPill } from './ui';
+import { KPI } from './ui';
 
 const STAGES: LeadStage[] = ['new', 'qualified', 'proposal', 'negotiation', 'won', 'lost'];
 
@@ -106,7 +121,6 @@ export function CRMConsole() {
         </div>
       </div>
 
-      {/* Kanban board */}
       <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-3">
         {STAGES.map(stage => {
           const bucket = stageBuckets.get(stage) ?? [];
@@ -179,7 +193,6 @@ function LeadDrawer({ lead, onClose, onSave, onDelete }: { lead: Lead; onClose: 
             <ContactRow icon={UserRound} label="Assigned to" value={lead.assignedTo} />
           </div>
 
-          {/* Deal panel */}
           <div className="p-4 bg-white rounded-lg border border-[color:var(--color-line)]">
             <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)] mb-3">Deal</div>
             <div className="grid grid-cols-3 gap-3 text-sm">
@@ -190,7 +203,6 @@ function LeadDrawer({ lead, onClose, onSave, onDelete }: { lead: Lead; onClose: 
             <div className="mt-3 text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)]">Expected close: <span className="font-mono">{lead.expectedClose}</span></div>
           </div>
 
-          {/* Stage advance */}
           <div className="p-4 bg-white rounded-lg border border-[color:var(--color-line)]">
             <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)] mb-3">Move stage</div>
             <div className="grid grid-cols-3 gap-2">
@@ -211,7 +223,6 @@ function LeadDrawer({ lead, onClose, onSave, onDelete }: { lead: Lead; onClose: 
             </div>
           </div>
 
-          {/* Activity feed */}
           <div className="p-4 bg-white rounded-lg border border-[color:var(--color-line)]">
             <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)] mb-3">Activity log</div>
             <div className="space-y-3">

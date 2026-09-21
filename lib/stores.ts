@@ -1,6 +1,3 @@
-// 51 real TRS store locations from the brand deck
-// Brand codes: RLY (Relay), CB (Choco Bay), MSH (Mishta), SML (Smilen), PSH (Pashma), GLD (Glady's), MTC (Motech)
-
 export type StoreBrand = 'RLY' | 'CB' | 'MSH' | 'SML' | 'PSH' | 'GLD' | 'MTC';
 
 export interface Store {
@@ -8,6 +5,8 @@ export interface Store {
   code: string;
   brand: StoreBrand;
   city: string;
+  state: string;
+  stateCode: string;
   location: string;
   terminal: string;
   type: 'airport' | 'landside';
@@ -19,20 +18,33 @@ export interface Store {
   mgr: string;
 }
 
-const cityMeta: Record<string, { pincode: string; coords: [number, number]; airport: string }> = {
-  Delhi: { pincode: '110037', coords: [28.5562, 77.1000], airport: 'DEL' },
-  Gurgaon: { pincode: '122001', coords: [28.4595, 77.0266], airport: 'DEL' },
-  Bangalore: { pincode: '560300', coords: [13.1986, 77.7066], airport: 'BLR' },
-  Mumbai: { pincode: '400099', coords: [19.0896, 72.8656], airport: 'BOM' },
-  Hyderabad: { pincode: '500409', coords: [17.2403, 78.4294], airport: 'HYD' },
-  Goa: { pincode: '403722', coords: [15.3808, 73.8314], airport: 'GOI' },
-  Chennai: { pincode: '600027', coords: [12.9941, 80.1709], airport: 'MAA' },
-  Pune: { pincode: '411032', coords: [18.5822, 73.9197], airport: 'PNQ' },
-  Kochi: { pincode: '683111', coords: [10.1520, 76.4019], airport: 'COK' },
-  Indore: { pincode: '453112', coords: [22.7218, 75.8011], airport: 'IDR' },
-  Kolkata: { pincode: '700052', coords: [22.6520, 88.4463], airport: 'CCU' },
-  Bhubaneshwar: { pincode: '751020', coords: [20.2521, 85.8175], airport: 'BBI' },
+interface CityMeta {
+  pincode: string;
+  coords: [number, number];
+  airport: string;
+  state: string;
+  stateCode: string;
+}
+
+const cityMeta: Record<string, CityMeta> = {
+  Delhi:        { pincode: '110037', coords: [28.5562, 77.1000], airport: 'DEL', state: 'Delhi',          stateCode: '07' },
+  Gurgaon:      { pincode: '122001', coords: [28.4595, 77.0266], airport: 'DEL', state: 'Haryana',        stateCode: '06' },
+  Bangalore:    { pincode: '560300', coords: [13.1986, 77.7066], airport: 'BLR', state: 'Karnataka',      stateCode: '29' },
+  Mumbai:       { pincode: '400099', coords: [19.0896, 72.8656], airport: 'BOM', state: 'Maharashtra',    stateCode: '27' },
+  Hyderabad:    { pincode: '500409', coords: [17.2403, 78.4294], airport: 'HYD', state: 'Telangana',      stateCode: '36' },
+  Goa:          { pincode: '403722', coords: [15.3808, 73.8314], airport: 'GOI', state: 'Goa',            stateCode: '30' },
+  Chennai:      { pincode: '600027', coords: [12.9941, 80.1709], airport: 'MAA', state: 'Tamil Nadu',     stateCode: '33' },
+  Pune:         { pincode: '411032', coords: [18.5822, 73.9197], airport: 'PNQ', state: 'Maharashtra',    stateCode: '27' },
+  Kochi:        { pincode: '683111', coords: [10.1520, 76.4019], airport: 'COK', state: 'Kerala',         stateCode: '32' },
+  Indore:       { pincode: '453112', coords: [22.7218, 75.8011], airport: 'IDR', state: 'Madhya Pradesh', stateCode: '23' },
+  Kolkata:      { pincode: '700052', coords: [22.6520, 88.4463], airport: 'CCU', state: 'West Bengal',    stateCode: '19' },
+  Bhubaneshwar: { pincode: '751020', coords: [20.2521, 85.8175], airport: 'BBI', state: 'Odisha',         stateCode: '21' },
 };
+
+export function stateForCity(city: string): { state: string; stateCode: string } | undefined {
+  const meta = cityMeta[city.replace(/ \(MOPA\)/, '')];
+  return meta ? { state: meta.state, stateCode: meta.stateCode } : undefined;
+}
 
 const managers = [
   'A. Kapoor', 'R. Mehta', 'S. Iyer', 'P. Sharma', 'K. Nair', 'V. Rao',
@@ -99,6 +111,8 @@ for (const [brand, city, terminals] of allRows) {
       code: `${brand}-${meta.airport}-${idx.toString().padStart(2, '0')}`,
       brand,
       city,
+      state: meta.state,
+      stateCode: meta.stateCode,
       location: `${city} ${t}`,
       terminal: t,
       type: isLandside ? 'landside' : 'airport',
@@ -125,5 +139,4 @@ export const BRAND_META: Record<StoreBrand, { name: string; color: string; categ
 export const CITIES = [...new Set(STORES.map(s => s.city))].sort();
 export const AIRPORTS = [...new Set(STORES.filter(s => s.airportCode).map(s => s.airportCode!))].sort();
 
-// Only Relay stores carry books
 export const BOOK_STORES = STORES.filter(s => s.brand === 'RLY');

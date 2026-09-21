@@ -8,30 +8,41 @@ import { type Product } from '@/lib/products';
 import { getServerCatalog } from '@/lib/catalog.server';
 import { BRAND_META, type StoreBrand } from '@/lib/stores';
 
-// Read the merged storefront catalog fresh on every request so ERP/admin
-// additions surface immediately.
 export const dynamic = 'force-dynamic';
 import {
-  ChocoBayMark, PashmaMark, MotechMark, MishtaMark, SmilenMark, GladysMark,
+  ChocoBayMark,
+  PashmaMark,
+  MotechMark,
+  MishtaMark,
+  SmilenMark,
+  GladysMark,
 } from '@/components/brand-marks';
 import { RelayLogo } from '@/components/relay-logo';
 import {
-  ArrowUpRight, Plane, Sparkles, Award, ChevronRight, Tag, Coffee, Utensils,
-  Smartphone, ShoppingBag, Zap, Gift, BookOpen,
+  ArrowUpRight,
+  Plane,
+  Sparkles,
+  Award,
+  ChevronRight,
+  Tag,
+  Coffee,
+  Utensils,
+  Smartphone,
+  ShoppingBag,
+  Zap,
+  Gift,
+  BookOpen,
 } from 'lucide-react';
 
 export default async function HomePage() {
-  // Pull the live catalog: bundled seed + admin bulk uploads + ERP book master.
   const catalog = await getServerCatalog();
 
   const featured = catalog.filter(p => p.featured);
   const byCategory = groupBy(catalog, p => p.category);
   const byBrand = groupBy(catalog, p => p.brand);
 
-  // === Hero anchor ===
   const heroFeature = featured[0] ?? catalog[0];
 
-  // === Merchandising slices ===
   const bogo = catalog.filter(p => p.bogo);
   const fictionShelf = byCategory.get('fiction') ?? [];
   const newArrivals = [
@@ -50,13 +61,11 @@ export default async function HomePage() {
   const wellness = byCategory.get('personal-care') ?? [];
   const magazines = byCategory.get('magazines') ?? [];
 
-  // Tech from Relay (chargers, cables, power banks, earphones) + Motech premium
   const techShelf = [
     ...(byBrand.get('RLY') ?? []).filter(p => p.category === 'tech'),
     ...(byBrand.get('MTC') ?? []).slice(0, 4),
   ];
 
-  // Gifting = Choco Bay + Mishta + Relay gifts + Smilen + Gladys
   const gifting = [
     ...(byBrand.get('CB') ?? []).slice(0, 4),
     ...(byBrand.get('MSH') ?? []).slice(0, 3),
@@ -65,8 +74,6 @@ export default async function HomePage() {
     ...(byCategory.get('gifts') ?? []).filter(p => p.brand === 'RLY'),
   ];
 
-  // Terminal picks — hardcoded to a signature store; a real app would infer
-  // from GPS/pincode. Mix snacks, drinks, tech, travel — the impulse cart.
   const terminalPicks = [
     ...snacks.slice(0, 2),
     ...drinks.slice(0, 1),
@@ -97,7 +104,6 @@ export default async function HomePage() {
     <FavouritesProvider>
       <StoreNav />
 
-      {/* === HERO === */}
       <section className="relative overflow-hidden noise-bg">
         <div className="container-editorial pt-6 md:pt-10 pb-10 relative">
           <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.3em] text-[color:var(--color-ink-muted)] mb-6">
@@ -168,10 +174,8 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* === DEPARTMENT TILES — quick access carousel === */}
       <CategoryTileRow tiles={departmentTiles} />
 
-      {/* === RELAY RECOMMENDS — editor's picks === */}
       <ProductShelf
         kicker="Editor's picks"
         title="Relay Recommends."
@@ -181,7 +185,6 @@ export default async function HomePage() {
         Icon={Sparkles}
       />
 
-      {/* === BUY 1 GET 1 FREE === */}
       {bogo.length > 0 && (
         <ProductShelf
           kicker="Weekly offers"
@@ -195,7 +198,6 @@ export default async function HomePage() {
         />
       )}
 
-      {/* === TERMINAL PICK === */}
       <TerminalPickShelf
         storeCode="RLY-BLR-04"
         storeLabel="Bangalore Terminal 2 · Gate A"
@@ -203,7 +205,6 @@ export default async function HomePage() {
         picks={terminalPicks}
       />
 
-      {/* === BESTSELLERS === */}
       <ProductShelf
         kicker="Flying off the shelves"
         title="Bestsellers this week."
@@ -213,7 +214,6 @@ export default async function HomePage() {
         Icon={Award}
       />
 
-      {/* === SNACKS === */}
       <ProductShelf
         kicker="Grab & go"
         title="Snack aisle."
@@ -223,7 +223,6 @@ export default async function HomePage() {
         Icon={Utensils}
       />
 
-      {/* === DRINKS === */}
       <ProductShelf
         kicker="Stay hydrated"
         title="Drinks & Refreshments."
@@ -233,7 +232,6 @@ export default async function HomePage() {
         Icon={Coffee}
       />
 
-      {/* === TECH === */}
       <ProductShelf
         kicker="Powered up"
         title="Chargers, buds, powerbanks."
@@ -243,7 +241,6 @@ export default async function HomePage() {
         Icon={Smartphone}
       />
 
-      {/* === TRAVEL ESSENTIALS === */}
       <ProductShelf
         kicker="Boarding-ready"
         title="Travel essentials."
@@ -253,7 +250,6 @@ export default async function HomePage() {
         Icon={Plane}
       />
 
-      {/* === GIFTING === */}
       <ProductShelf
         kicker="Coming home?"
         title="Gifting Ideas."
@@ -263,7 +259,6 @@ export default async function HomePage() {
         Icon={Gift}
       />
 
-      {/* === NEW ARRIVALS === */}
       <ProductShelf
         kicker="Just landed"
         title="New Arrivals."
@@ -273,7 +268,6 @@ export default async function HomePage() {
         Icon={Zap}
       />
 
-      {/* === MAGAZINES === */}
       {magazines.length > 0 && (
         <ProductShelf
           kicker="For the flight"
@@ -285,7 +279,6 @@ export default async function HomePage() {
         />
       )}
 
-      {/* === WELLNESS === */}
       {wellness.length > 0 && (
         <ProductShelf
           kicker="Personal care"
@@ -297,7 +290,6 @@ export default async function HomePage() {
         />
       )}
 
-      {/* === CROSS-BRAND (kept, redesigned) === */}
       <section className="bg-[color:var(--color-paper)] py-20 md:py-32">
         <div className="container-editorial">
           <div className="flex items-end justify-between mb-12 flex-wrap gap-4">
@@ -323,7 +315,6 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* === LOYALTY TEASER === */}
       <section className="container-editorial py-20 md:py-28">
         <div className="grid md:grid-cols-2 gap-12 items-center">
           <div>

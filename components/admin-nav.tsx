@@ -2,21 +2,41 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Package, MapPin, Award, ShoppingCart, TrendingUp, Users, Settings, Search, Bell, Command, Building2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { STORES } from '@/lib/stores';
+import { ORDERS_STORE_KEY, type Order } from '@/lib/bag';
+import { LayoutDashboard, Package, MapPin, Award, ShoppingCart, TrendingUp, Users, Settings, Search, Bell, Command, Building2, Landmark, Receipt } from 'lucide-react';
 
 const NAV = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
   { href: '/admin/inventory', label: 'Inventory', icon: Package },
-  { href: '/admin/stores', label: 'Stores', icon: MapPin, badge: '51' },
-  { href: '/admin/orders', label: 'Orders', icon: ShoppingCart, badge: '47' },
+  { href: '/admin/stores', label: 'Stores', icon: MapPin, badge: String(STORES.length) },
+  { href: '/admin/till', label: 'Till', icon: Receipt },
+  { href: '/admin/orders', label: 'Orders', icon: ShoppingCart, live: 'orders' as const },
+  { href: '/admin/registrations', label: 'GST', icon: Landmark },
   { href: '/admin/loyalty', label: 'Loyalty', icon: Award },
-  { href: '/admin/erp', label: 'ERP', icon: Building2, badge: 'P1' },
+  { href: '/admin/erp', label: 'ERP', icon: Building2 },
   { href: '/admin/analytics', label: 'Analytics', icon: TrendingUp },
   { href: '/admin/customers', label: 'Customers', icon: Users },
 ];
 
 export function AdminNav() {
   const path = usePathname();
+
+  const [openOrders, setOpenOrders] = useState<number | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/erp/${encodeURIComponent(ORDERS_STORE_KEY)}`, { cache: 'no-store' })
+      .then(res => (res.ok ? res.json() : { rows: null }))
+      .then(data => {
+        if (cancelled) return;
+        const rows: Order[] = Array.isArray(data.rows) ? data.rows : [];
+        setOpenOrders(rows.filter(o => o.status === 'placed' || o.status === 'packing').length);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [path]);
+
   return (
     <div className="sticky top-0 z-40 bg-white border-b border-[color:var(--color-line)]">
       <div className="px-6 h-14 flex items-center gap-6">
@@ -33,6 +53,9 @@ export function AdminNav() {
         <nav className="flex items-center gap-1 overflow-x-auto flex-1">
           {NAV.map(n => {
             const active = n.exact ? path === n.href : path.startsWith(n.href);
+            const badge = n.live === 'orders'
+              ? (openOrders && openOrders > 0 ? String(openOrders) : undefined)
+              : n.badge;
             return (
               <Link
                 key={n.href}
@@ -41,8 +64,8 @@ export function AdminNav() {
               >
                 <n.icon className="w-3.5 h-3.5" />
                 {n.label}
-                {n.badge && (
-                  <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] ${active ? 'bg-[color:var(--color-mustard)] text-[color:var(--color-ink)]' : 'bg-[color:var(--color-paper-warm)] text-[color:var(--color-ink)]'}`}>{n.badge}</span>
+                {badge && (
+                  <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] ${active ? 'bg-[color:var(--color-mustard)] text-[color:var(--color-ink)]' : 'bg-[color:var(--color-paper-warm)] text-[color:var(--color-ink)]'}`}>{badge}</span>
                 )}
               </Link>
             );

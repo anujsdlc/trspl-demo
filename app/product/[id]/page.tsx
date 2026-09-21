@@ -4,14 +4,15 @@ import { FavouritesProvider } from '@/components/favourites';
 import { StoreNav, StoreFooter } from '@/components/store-nav';
 import { ProductActions } from '@/components/product-actions';
 import { UploadedProductFallback } from '@/components/uploaded-product-fallback';
-import { ALL_PRODUCTS, stockFor } from '@/lib/products';
+import { ALL_PRODUCTS } from '@/lib/products';
 import { getServerCatalog, getServerProduct } from '@/lib/catalog.server';
+import { getServerStockIndex } from '@/lib/stock-ledger.server';
+import { onHand } from '@/lib/stock-ledger';
 import { STORES, BOOK_STORES, BRAND_META } from '@/lib/stores';
 import { CATEGORY_MULTIPLIER, TIERS } from '@/lib/loyalty';
 import { inr } from '@/lib/utils';
-import { ChevronLeft, ChevronRight, MapPin, Sparkles, Truck, ShieldCheck, Package, RefreshCw } from 'lucide-react';
+import { ChevronRight, MapPin, Sparkles, Truck, ShieldCheck, Package, RefreshCw } from 'lucide-react';
 
-// KV-backed catalog is dynamic; give the detail page the same fresh read.
 export const dynamic = 'force-dynamic';
 
 export function generateStaticParams() {
@@ -22,8 +23,6 @@ export default async function ProductPage({ params }: PageProps<'/product/[id]'>
   const { id } = await params;
   const product = await getServerProduct(id);
   if (!product) {
-    // Might be a product added via the bulk-upload wizard — persisted in
-    // localStorage. Hand off to a client fallback that checks there.
     return (
       <FavouritesProvider>
         <StoreNav />
@@ -34,7 +33,8 @@ export default async function ProductPage({ params }: PageProps<'/product/[id]'>
   }
 
   const relevantStores = product.brand === 'RLY' ? BOOK_STORES : STORES.filter(s => s.brand === product.brand);
-  const storeStock = relevantStores.map(s => ({ store: s, qty: stockFor(product.id, s.id) })).sort((a, b) => b.qty - a.qty);
+  const stockIndex = await getServerStockIndex();
+  const storeStock = relevantStores.map(s => ({ store: s, qty: onHand(product.id, s.id, stockIndex) })).sort((a, b) => b.qty - a.qty);
   const totalQty = storeStock.reduce((s, x) => s + x.qty, 0);
   const inStockStores = storeStock.filter(x => x.qty > 0).length;
   const nearestInStock = storeStock.find(x => x.qty > 0);
@@ -54,7 +54,6 @@ export default async function ProductPage({ params }: PageProps<'/product/[id]'>
       <StoreNav />
 
       <div className="container-editorial py-8 md:py-12">
-        {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-xs text-[color:var(--color-ink-muted)] mb-8">
           <Link href="/" className="hover:text-[color:var(--color-ink)]">Home</Link>
           <ChevronRight className="w-3 h-3" />
@@ -64,7 +63,6 @@ export default async function ProductPage({ params }: PageProps<'/product/[id]'>
         </nav>
 
         <div className="grid md:grid-cols-2 gap-8 md:gap-16">
-          {/* Left: image */}
           <div className="md:sticky md:top-32 md:h-fit">
             <div className="aspect-[3/4] max-h-[720px] bg-gradient-to-br from-[color:var(--color-paper)] to-[color:var(--color-paper-warm)] rounded-xl overflow-hidden relative book-cover">
               <Image src={product.image} alt={product.title} fill className="object-cover" priority sizes="(max-width: 768px) 100vw, 50vw" />
@@ -76,7 +74,6 @@ export default async function ProductPage({ params }: PageProps<'/product/[id]'>
             </div>
           </div>
 
-          {/* Right: details */}
           <div>
             <div className="flex items-center gap-2 mb-4">
               <div className="w-2 h-2 rounded-full" style={{ background: brandMeta.color }} />
@@ -94,7 +91,6 @@ export default async function ProductPage({ params }: PageProps<'/product/[id]'>
               )}
             </div>
 
-            {/* Points earning */}
             <div className="mt-6 p-4 bg-[color:var(--color-paper)] rounded-lg border border-[color:var(--color-line)]">
               <div className="flex items-center gap-2 mb-2">
                 <Sparkles className="w-3.5 h-3.5 text-[color:var(--color-crimson)]" />
@@ -118,7 +114,6 @@ export default async function ProductPage({ params }: PageProps<'/product/[id]'>
               </div>
             </div>
 
-            {/* Availability */}
             <div className="mt-6 flex items-start gap-3">
               <div className="w-2 h-2 rounded-full bg-[color:var(--color-success)] pulse-dot mt-2" />
               <div>
@@ -133,7 +128,6 @@ export default async function ProductPage({ params }: PageProps<'/product/[id]'>
 
             <ProductActions product={product} />
 
-            {/* Delivery */}
             <div className="mt-8 grid grid-cols-2 gap-4">
               {[
                 { icon: Truck, l: 'Delivery', v: 'Tomorrow · from BLR T2-A' },
@@ -151,7 +145,6 @@ export default async function ProductPage({ params }: PageProps<'/product/[id]'>
               ))}
             </div>
 
-            {/* Per-store stock */}
             <div className="mt-10">
               <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)] mb-4 flex items-center gap-2">
                 <MapPin className="w-3 h-3" /> Live stock across {relevantStores.length} stores
@@ -174,7 +167,6 @@ export default async function ProductPage({ params }: PageProps<'/product/[id]'>
               </div>
             </div>
 
-            {/* Meta */}
             <div className="mt-10 pt-10 border-t border-[color:var(--color-line)] grid grid-cols-2 gap-4 text-xs">
               <div><span className="text-[color:var(--color-ink-muted)]">SKU</span> <span className="font-mono">{product.sku}</span></div>
               {product.isbn && <div><span className="text-[color:var(--color-ink-muted)]">ISBN</span> <span className="font-mono">{product.isbn}</span></div>}
@@ -186,7 +178,6 @@ export default async function ProductPage({ params }: PageProps<'/product/[id]'>
           </div>
         </div>
 
-        {/* Related */}
         {related.length > 0 && (
           <section className="mt-24 md:mt-32">
             <h2 className="font-serif text-3xl md:text-4xl leading-tight tracking-tight mb-8">You might also like</h2>

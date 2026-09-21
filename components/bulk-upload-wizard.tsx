@@ -6,51 +6,88 @@ import { ALL_PRODUCTS, type Product } from '@/lib/products';
 import { loadClientCatalog } from '@/lib/catalog.client';
 import { STORES, BRAND_META } from '@/lib/stores';
 import {
-  parseCSV, toCSV, downloadCSV, validate, BULK_MODES, type BulkMode, type ValidatedRow,
+  parseCSV,
+  normaliseRows,
+  toCSV,
+  downloadCSV,
+  validate,
+  BULK_MODES,
+  type BulkMode,
+  type ValidatedRow,
 } from '@/lib/csv';
 import {
-  addUploadedProducts, saveStockAdjustments, savePriceChanges, saveTransfers,
-  rowToProduct, rowToStockAdjustment, rowToPriceChange, rowToTransfer,
+  addUploadedProducts,
+  savePriceChanges,
+  rowToProduct,
+  rowToPriceChange,
 } from '@/lib/inventory-store';
+import { appendMoves, loadMoves } from '@/lib/stock-ledger.client';
+import { deltaIndex, onHand, newMoveId, transferMoves, type StockMove, type MoveKind } from '@/lib/stock-ledger';
 import {
-  Upload, Download, FileText, ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle,
-  XCircle, X, Package, DollarSign, ArrowRightLeft, Boxes, Sparkles, Database, Lock,
-  Circle, ChevronRight, RefreshCw, FolderOpen, Image as ImageIcon, Trash2,
+  Upload,
+  Download,
+  ArrowLeft,
+  ArrowRight,
+  CheckCircle2,
+  AlertTriangle,
+  XCircle,
+  Package,
+  IndianRupee,
+  ArrowRightLeft,
+  Boxes,
+  Sparkles,
+  Database,
+  Lock,
+  Check,
+  ChevronRight,
+  RefreshCw,
+  FolderOpen,
+  Image as ImageIcon,
+  Trash2,
 } from 'lucide-react';
 
 const CATEGORIES = ['manga', 'fiction', 'non-fiction', 'children', 'books', 'stationery', 'toys', 'confectionery', 'sweets', 'tech', 'cashmere', 'travel', 'gifts'];
 
+const STEPS = ['mode', 'upload', 'preview', 'commit'] as const;
+
 const MODE_ICONS: Record<BulkMode, React.ElementType> = {
   products: Package,
   stock: Boxes,
-  price: DollarSign,
+  price: IndianRupee,
   transfer: ArrowRightLeft,
 };
 
 export function BulkUploadWizard() {
   const [mode, setMode] = useState<BulkMode | null>(null);
-  const [step, setStep] = useState<'mode' | 'upload' | 'preview' | 'commit'>('mode');
+  const [step, setStep] = useState<(typeof STEPS)[number]>('mode');
   const [rawText, setRawText] = useState('');
   const [validated, setValidated] = useState<ValidatedRow[]>([]);
+  const [mapped, setMapped] = useState<{ columns: [string, string][]; values: [string, string][] }>({ columns: [], values: [] });
   const [committing, setCommitting] = useState(false);
   const [committed, setCommitted] = useState(false);
+  const [commitError, setCommitError] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [filter, setFilter] = useState<'all' | 'ok' | 'warning' | 'error'>('all');
   const [isDragging, setIsDragging] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const imageFolderInput = useRef<HTMLInputElement>(null);
 
-  // SKU (uppercase) → data URL for the primary product image, populated
-  // from the user's local product-images folder.
   const [images, setImages] = useState<Record<string, string>>({});
   const [processingImages, setProcessingImages] = useState(false);
 
-  // Merge seed + admin-added products so the CSV validator recognises SKUs
-  // that were added in earlier upload sessions or through the ERP.
   const [liveCatalog, setLiveCatalog] = useState<Product[]>(ALL_PRODUCTS);
   useEffect(() => { loadClientCatalog().then(setLiveCatalog); }, []);
   const validSKUs = useMemo(() => new Set(liveCatalog.map(p => p.sku)), [liveCatalog]);
   const validStores = useMemo(() => new Set([...STORES.map(s => s.code), ...STORES.map(s => s.id)]), []);
+
+  const [stockIndex, setStockIndex] = useState<Map<string, number>>(new Map());
+  useEffect(() => { loadMoves().then(m => setStockIndex(deltaIndex(m))); }, []);
+  const onHandFor = useCallback((sku: string, storeCode: string) => {
+    const product = liveCatalog.find(p => p.sku === sku);
+    const store = STORES.find(s => s.code === storeCode || s.id === storeCode);
+    if (!product || !store) return 0;
+    return onHand(product.id, store.id, stockIndex);
+  }, [liveCatalog, stockIndex]);
   const validBrands = useMemo(() => Object.keys(BRAND_META), []);
 
   const summary = useMemo(() => {
@@ -67,17 +104,20 @@ export function BulkUploadWizard() {
     const text = await file.text();
     setRawText(text);
     if (!mode) return;
-    const { rows } = parseCSV(text);
-    const results = validate(rows, {
+    const { headers, rows } = parseCSV(text);
+    const normalised = normaliseRows(headers, rows, mode);
+    setMapped({ columns: normalised.mappedColumns, values: normalised.mappedValues });
+    const results = validate(normalised.rows, {
       mode,
       validSKUs,
       validStores,
       validBrands,
       validCategories: CATEGORIES,
+      onHandFor,
     });
     setValidated(results);
     setStep('preview');
-  }, [mode, validSKUs, validStores, validBrands]);
+  }, [mode, validSKUs, validStores, validBrands, onHandFor]);
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -88,22 +128,29 @@ export function BulkUploadWizard() {
 
   const commit = async () => {
     setCommitting(true);
+    setCommitError(null);
     setProgress(0);
     const commitableRows = validated.filter(v => v.status !== 'error');
     const commitable = commitableRows.length;
 
-    // Persist based on the current mode.
-    if (mode === 'products') {
-      await addUploadedProducts(commitableRows.map(r => rowToProduct(r.raw, images[r.raw.sku?.toUpperCase()])));
-    } else if (mode === 'stock') {
-      saveStockAdjustments(commitableRows.map(r => rowToStockAdjustment(r.raw)));
-    } else if (mode === 'price') {
-      savePriceChanges(commitableRows.map(r => rowToPriceChange(r.raw)));
-    } else if (mode === 'transfer') {
-      saveTransfers(commitableRows.map(r => rowToTransfer(r.raw)));
+    try {
+      if (mode === 'products') {
+        await addUploadedProducts(commitableRows.map(r => rowToProduct(r.raw, images[r.raw.sku?.toUpperCase()])));
+      } else if (mode === 'stock') {
+        const index = deltaIndex(await loadMoves());
+        await appendMoves(commitableRows.flatMap(r => stockRowToMoves(r.raw, liveCatalog, index)));
+      } else if (mode === 'price') {
+        savePriceChanges(commitableRows.map(r => rowToPriceChange(r.raw)));
+      } else if (mode === 'transfer') {
+        await appendMoves(commitableRows.flatMap(r => transferRowToMoves(r.raw, liveCatalog)));
+      }
+    } catch (err) {
+      setCommitError(err instanceof Error ? err.message : 'The upload could not be saved.');
+      setCommitting(false);
+      setProgress(0);
+      return;
     }
 
-    // Animated progress feedback.
     let done = 0;
     const tick = setInterval(() => {
       done += Math.max(1, Math.floor(commitable / 30));
@@ -117,14 +164,11 @@ export function BulkUploadWizard() {
 
   const reset = () => {
     setMode(null); setStep('mode'); setRawText(''); setValidated([]);
-    setCommitted(false); setProgress(0); setFilter('all');
+    setCommitted(false); setCommitError(null); setProgress(0); setFilter('all');
+    setMapped({ columns: [], values: [] });
     setImages({});
   };
 
-  // Parse an entire local folder — files come in with their
-  // `webkitRelativePath` set to "<root>/<SKU>/<filename>". We take the
-  // first image file inside each SKU subfolder, downscale it, and store
-  // as a JPEG data URL keyed by uppercased SKU.
   const handleImageFolder = useCallback(async (fileList: FileList | null) => {
     if (!fileList || fileList.length === 0) return;
     setProcessingImages(true);
@@ -135,9 +179,8 @@ export function BulkUploadWizard() {
       const path: string = (f as any).webkitRelativePath || f.name;
       const parts = path.split('/');
       if (parts.length < 2) continue;
-      // Immediate parent folder name = SKU
       const sku = parts[parts.length - 2].trim().toUpperCase();
-      if (!sku || grouped[sku]) continue; // first image per SKU wins
+      if (!sku || grouped[sku]) continue;
       grouped[sku] = f;
     }
     const dataUrls: Record<string, string> = {};
@@ -145,7 +188,6 @@ export function BulkUploadWizard() {
       try {
         dataUrls[sku] = await downscaleToDataUrl(file, 800, 1000, 0.82);
       } catch {
-        // skip files we can't decode
       }
     }
     setImages(prev => ({ ...prev, ...dataUrls }));
@@ -158,7 +200,6 @@ export function BulkUploadWizard() {
 
   return (
     <div className="px-6 py-6 max-w-[1600px]">
-      {/* Header */}
       <div className="mb-8">
         <Link href="/admin/inventory" className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)] mb-3 inline-flex items-center gap-1 hover:text-[color:var(--color-crimson)]">
           <ArrowLeft className="w-3 h-3" /> Inventory Console
@@ -177,27 +218,31 @@ export function BulkUploadWizard() {
         </div>
       </div>
 
-      {/* Step indicator */}
       <div className="mb-8 flex items-center gap-1 text-xs">
-        {(['mode', 'upload', 'preview', 'commit'] as const).map((s, i) => {
+        {STEPS.map((s, i) => {
           const stepActive = step === s;
-          const stepDone = ['mode', 'upload', 'preview', 'commit'].indexOf(step) > i;
+          const stepDone = STEPS.indexOf(step) > i;
           return (
             <div key={s} className="flex items-center gap-1">
-              <div className={`flex items-center gap-2 px-3 h-9 rounded-full ${
+              <div className={`flex items-center gap-2 pl-1.5 pr-3 h-9 rounded-full ${
                 stepActive ? 'bg-[color:var(--color-ink)] text-[color:var(--color-cream)]' :
                 stepDone ? 'text-[color:var(--color-crimson)]' : 'text-[color:var(--color-ink-muted)]'
               }`}>
-                {stepDone ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Circle className="w-3.5 h-3.5" />}
+                <span className={`w-6 h-6 rounded-full inline-flex items-center justify-center font-mono text-[11px] ${
+                  stepActive ? 'bg-[color:var(--color-cream)]/20' :
+                  stepDone ? 'bg-[color:var(--color-crimson)] text-white' :
+                  'border border-[color:var(--color-line-strong)]'
+                }`}>
+                  {stepDone ? <Check className="w-3 h-3" /> : i + 1}
+                </span>
                 <span className="capitalize">{s}</span>
               </div>
-              {i < 3 && <ChevronRight className="w-3 h-3 text-[color:var(--color-line-strong)]" />}
+              {i < STEPS.length - 1 && <ChevronRight className="w-3 h-3 text-[color:var(--color-line-strong)]" />}
             </div>
           );
         })}
       </div>
 
-      {/* === STEP 1: MODE SELECT === */}
       {step === 'mode' && (
         <div>
           <div className="grid md:grid-cols-2 gap-4">
@@ -230,7 +275,6 @@ export function BulkUploadWizard() {
             })}
           </div>
 
-          {/* Reference tables */}
           <div className="mt-10 grid md:grid-cols-3 gap-4">
             <ReferenceCard title="7 brands available" items={Object.entries(BRAND_META).map(([k, v]) => ({ key: k, label: v.name, color: v.color }))} />
             <ReferenceCard title={`${STORES.length} stores`} items={STORES.slice(0, 8).map(s => ({ key: s.code, label: s.location }))} more={STORES.length - 8} />
@@ -239,10 +283,8 @@ export function BulkUploadWizard() {
         </div>
       )}
 
-      {/* === STEP 2: UPLOAD === */}
       {step === 'upload' && currentMode && (
         <div className="grid md:grid-cols-[1fr_320px] gap-6">
-          {/* Dropzone */}
           <div>
             <div className="mb-4 flex items-center justify-between">
               <div>
@@ -292,12 +334,12 @@ export function BulkUploadWizard() {
               </button>
               <button
                 onClick={() => {
-                  // Load the sample directly for demo purposes
                   const csv = toCSV(currentMode.headers, currentMode.sample);
                   const results = validate(currentMode.sample, {
-                    mode: currentMode.key, validSKUs, validStores, validBrands, validCategories: CATEGORIES,
+                    mode: currentMode.key, validSKUs, validStores, validBrands, validCategories: CATEGORIES, onHandFor,
                   });
                   setRawText(csv);
+                  setMapped({ columns: [], values: [] });
                   setValidated(results);
                   setStep('preview');
                 }}
@@ -308,7 +350,6 @@ export function BulkUploadWizard() {
             </div>
           </div>
 
-          {/* Sidebar: format spec */}
           <aside className="space-y-4">
             <div className="p-5 bg-white rounded-xl border border-[color:var(--color-line)]">
               <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)] mb-3">CSV format</div>
@@ -336,10 +377,24 @@ export function BulkUploadWizard() {
         </div>
       )}
 
-      {/* === STEP 3: PREVIEW === */}
       {step === 'preview' && currentMode && (
         <div>
-          {/* Summary */}
+          {(mapped.columns.length > 0 || mapped.values.length > 0) && (
+            <div className="mb-4 p-4 rounded-lg border border-[color:var(--color-line)] bg-[color:var(--color-paper)] text-sm">
+              <div className="font-medium mb-1">This file was written for another system — here is what was translated.</div>
+              {mapped.columns.length > 0 && (
+                <div className="text-xs text-[color:var(--color-ink-muted)]">
+                  Columns: {mapped.columns.map(([from, to]) => `${from} → ${to}`).join(' · ')}
+                </div>
+              )}
+              {mapped.values.length > 0 && (
+                <div className="text-xs text-[color:var(--color-ink-muted)]">
+                  Values: {mapped.values.map(([from, to]) => `${from} → ${to}`).join(' · ')}
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="mb-6 grid grid-cols-2 md:grid-cols-4 gap-3">
             <SummaryCard label="Total rows" value={summary.total} color="ink" />
             <SummaryCard label="Ready to commit" value={summary.ok} color="success" />
@@ -347,7 +402,6 @@ export function BulkUploadWizard() {
             <SummaryCard label="Errors — skipped" value={summary.error} color="danger" />
           </div>
 
-          {/* Image folder attach (products mode only) */}
           {mode === 'products' && (
             <div className="mb-6 p-4 bg-white rounded-xl border border-[color:var(--color-line)]">
               <div className="flex items-start gap-4 flex-wrap">
@@ -414,7 +468,6 @@ export function BulkUploadWizard() {
                         <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
                           {imageSkus.slice(0, 30).map(sku => (
                             <div key={sku} className="shrink-0 text-center">
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
                                 src={images[sku]}
                                 alt={sku}
@@ -437,7 +490,6 @@ export function BulkUploadWizard() {
             </div>
           )}
 
-          {/* Filter chips */}
           <div className="mb-4 flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-1 border border-[color:var(--color-line)] rounded-md p-1 text-xs bg-white">
               {[
@@ -469,7 +521,6 @@ export function BulkUploadWizard() {
             </div>
           </div>
 
-          {/* Committing progress */}
           {committing && (
             <div className="mb-4 p-4 bg-white rounded-lg border border-[color:var(--color-line)]">
               <div className="flex items-center justify-between text-xs mb-2">
@@ -482,7 +533,6 @@ export function BulkUploadWizard() {
             </div>
           )}
 
-          {/* Preview table */}
           <div className="bg-white rounded-lg border border-[color:var(--color-line)] overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -541,7 +591,18 @@ export function BulkUploadWizard() {
             )}
           </div>
 
-          {/* Post-commit success */}
+          {commitError && (
+            <div className="mt-6 p-8 bg-[color:var(--color-danger)]/10 border border-[color:var(--color-danger)] rounded-xl text-center">
+              <XCircle className="w-10 h-10 text-[color:var(--color-danger)] mx-auto mb-3" />
+              <div className="font-serif text-3xl">Nothing was committed.</div>
+              <div className="mt-2 text-sm text-[color:var(--color-ink-soft)]">{commitError}</div>
+              <div className="mt-6 flex items-center justify-center gap-3">
+                <button onClick={commit} className="h-10 px-4 bg-[color:var(--color-ink)] text-[color:var(--color-cream)] rounded-md text-sm">Try again</button>
+                <button onClick={reset} className="h-10 px-4 border border-[color:var(--color-line)] rounded-md text-sm bg-white">Start over</button>
+              </div>
+            </div>
+          )}
+
           {committed && (
             <div className="mt-6 p-8 bg-[color:var(--color-success)]/10 border border-[color:var(--color-success)] rounded-xl text-center">
               <CheckCircle2 className="w-10 h-10 text-[color:var(--color-success)] mx-auto mb-3" />
@@ -632,8 +693,6 @@ function SummaryCard({ label, value, color }: { label: string; value: number; co
   );
 }
 
-/** Downscale + re-encode an image file as a JPEG data URL. Keeps
- *  localStorage payloads small while still looking decent on cards. */
 async function downscaleToDataUrl(file: File, maxW: number, maxH: number, quality: number): Promise<string> {
   const dataUrl = await new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
@@ -656,4 +715,46 @@ async function downscaleToDataUrl(file: File, maxW: number, maxH: number, qualit
   if (!ctx) return dataUrl;
   ctx.drawImage(img, 0, 0, w, h);
   return canvas.toDataURL('image/jpeg', quality);
+}
+
+function stockRowToMoves(row: Record<string, string>, catalog: Product[], index: Map<string, number>): StockMove[] {
+  const product = catalog.find(p => p.sku === row.sku);
+  const store = STORES.find(s => s.code === row.store_code || s.id === row.store_code);
+  if (!product || !store) return [];
+  const qty = Number(row.quantity) || 0;
+  const base = {
+    id: newMoveId(),
+    at: new Date().toISOString(),
+    productId: product.id,
+    sku: product.sku,
+    storeId: store.id,
+    storeCode: store.code,
+    reason: row.reason || undefined,
+    ref: row.batch || undefined,
+    notes: row.notes || undefined,
+  };
+  if (row.action === 'add') return [{ ...base, qty, kind: 'receipt' as MoveKind }];
+  if (row.action === 'remove') return [{ ...base, qty: -qty, kind: 'adjustment' as MoveKind }];
+  if (row.action === 'set') {
+    const current = onHand(product.id, store.id, index);
+    const delta = qty - current;
+    if (delta === 0) return [];
+    return [{ ...base, qty: delta, kind: 'adjustment' as MoveKind, reason: base.reason || 'Counted' }];
+  }
+  return [];
+}
+
+function transferRowToMoves(row: Record<string, string>, catalog: Product[]): StockMove[] {
+  const product = catalog.find(p => p.sku === row.sku);
+  const from = STORES.find(s => s.code === row.from_store_code || s.id === row.from_store_code);
+  const to = STORES.find(s => s.code === row.to_store_code || s.id === row.to_store_code);
+  if (!product || !from || !to) return [];
+  return transferMoves({
+    productId: product.id,
+    sku: product.sku,
+    from: { storeId: from.id, storeCode: from.code },
+    to: { storeId: to.id, storeCode: to.code },
+    qty: Number(row.quantity) || 0,
+    notes: row.notes || (row.expected_arrival ? `Expected ${row.expected_arrival}` : undefined),
+  });
 }

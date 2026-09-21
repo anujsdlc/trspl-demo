@@ -2,14 +2,34 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Lock, Users, Shield, Activity, Search, X, ShieldCheck, ShieldAlert,
-  Key, LogIn, Building2, Plus, Edit2, Trash2, AlertTriangle,
+  Lock,
+  Users,
+  Shield,
+  Activity,
+  Search,
+  X,
+  ShieldCheck,
+  ShieldAlert,
+  Key,
+  LogIn,
+  Building2,
+  Plus,
+  Trash2,
+  AlertTriangle,
 } from 'lucide-react';
 import {
-  loadUsers, saveUser, deleteUser, SEED_USERS,
-  loadRoles, saveRole, SEED_ROLES,
-  loadAudit, SEED_AUDIT,
-  type User, type UserStatus, type Role, type AuditEvent,
+  loadUsers,
+  saveUser,
+  deleteUser,
+  SEED_USERS,
+  loadRoles,
+  SEED_ROLES,
+  loadAudit,
+  SEED_AUDIT,
+  type User,
+  type UserStatus,
+  type Role,
+  type AuditEvent,
 } from '@/lib/erp/phase6';
 import { loadBranches, SEED_BRANCHES, type Branch } from '@/lib/erp/foundations';
 import { KPI, Th, StatusPill } from './ui';

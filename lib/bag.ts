@@ -1,11 +1,11 @@
-// Simple localStorage-backed shopping bag. Every mutation persists so the
-// bag survives reloads and the header count stays truthful across tabs.
+import { newMoveId, type StockMove } from './stock-ledger';
+import type { OrderTax } from './order-tax';
 
 export interface BagItem {
   productId: string;
   qty: number;
   addedAt: string;
-  storeCode?: string; // preferred pickup store
+  storeCode?: string;
 }
 
 const BAG_KEY = 'trs.bag.v1';
@@ -24,11 +24,8 @@ export function loadBag(): BagItem[] {
 export function saveBag(items: BagItem[]) {
   if (!isBrowser()) return;
   localStorage.setItem(BAG_KEY, JSON.stringify(items));
-  // Notify same-tab listeners.
   window.dispatchEvent(new Event('trs:bag-changed'));
 }
-
-// === Orders (placed via checkout) ============================================
 
 export interface OrderLine {
   productId: string;
@@ -38,6 +35,9 @@ export interface OrderLine {
   qty: number;
   unitPrice: number;
   lineTotal: number;
+  hsn?: string;
+  gstRate?: number;
+  uqc?: string;
 }
 
 export interface Order {
@@ -66,6 +66,7 @@ export interface Order {
   total: number;
   pointsEarned: number;
   status: 'placed' | 'packing' | 'shipped' | 'delivered' | 'cancelled';
+  tax?: OrderTax;
 }
 
 export function loadOrders(): Order[] {
@@ -84,6 +85,44 @@ export function saveOrder(order: Order) {
 
 export function findOrder(id: string): Order | undefined {
   return loadOrders().find(o => o.id === id);
+}
+
+export const ORDERS_STORE_KEY = 'trs.orders.v1';
+
+export function saleMoves(order: Order, storeIdFor: (code: string) => string | undefined): StockMove[] {
+  const storeCode = order.delivery.storeCode;
+  if (!storeCode) return [];
+  const storeId = storeIdFor(storeCode);
+  if (!storeId) return [];
+  return order.lines.map(l => ({
+    id: newMoveId(),
+    at: order.placedAt,
+    productId: l.productId,
+    sku: l.sku,
+    storeId,
+    storeCode,
+    qty: -l.qty,
+    kind: 'sale' as const,
+    ref: order.id,
+  }));
+}
+
+export async function publishOrder(order: Order): Promise<boolean> {
+  if (!isBrowser()) return false;
+  try {
+    const res = await fetch(`/api/erp/${encodeURIComponent(ORDERS_STORE_KEY)}`, { cache: 'no-store' });
+    const data = res.ok ? await res.json() : { rows: null };
+    const rows: Order[] = Array.isArray(data.rows) ? data.rows : [];
+    const next = [order, ...rows.filter(o => o.id !== order.id)];
+    const put = await fetch(`/api/erp/${encodeURIComponent(ORDERS_STORE_KEY)}`, {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ rows: next }),
+    });
+    return put.ok;
+  } catch {
+    return false;
+  }
 }
 
 export function newOrderId(): string {

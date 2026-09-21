@@ -2,16 +2,46 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import {
-  BarChart3, TrendingUp, Package, Receipt, ShoppingCart, FileText, Download,
-  Layers, Wallet, MapPin, Trophy,
+  BarChart3,
+  TrendingUp,
+  Package,
+  Receipt,
+  ShoppingCart,
+  FileText,
+  Download,
+  Wallet,
+  MapPin,
+  Trophy,
 } from 'lucide-react';
-import { loadPOs, loadSOs, loadSuppliers, loadCustomers, SEED_POS, SEED_SOS, SEED_SUPPLIERS, SEED_CUSTOMERS,
-  type PurchaseOrder, type SalesOrder, type Supplier, type Customer } from '@/lib/erp/phase2';
-import { loadBookMaster, loadBranches, loadGST, SEED_BOOK_MASTER, SEED_BRANCHES, SEED_GST,
-  type BookMaster, type Branch, type GSTRegistration } from '@/lib/erp/foundations';
+import {
+  loadPOs,
+  loadSOs,
+  loadSuppliers,
+  loadCustomers,
+  SEED_POS,
+  SEED_SOS,
+  SEED_SUPPLIERS,
+  SEED_CUSTOMERS,
+  type PurchaseOrder,
+  type SalesOrder,
+  type Supplier,
+  type Customer,
+} from '@/lib/erp/phase2';
+import {
+  loadBookMaster,
+  loadBranches,
+  loadGST,
+  SEED_BOOK_MASTER,
+  SEED_BRANCHES,
+  SEED_GST,
+  type BookMaster,
+  type Branch,
+  type GSTRegistration,
+} from '@/lib/erp/foundations';
 import { loadJVs, loadCoA, computeBalances, summariseByType, SEED_JVS, SEED_COA } from '@/lib/erp/phase3';
 import { loadExhibitions, SEED_EXHIBITIONS, type ExhibitionEvent } from '@/lib/erp/phase4';
 import { inr } from '@/lib/utils';
+import { downloadCSV } from '@/lib/csv';
 import { KPI, Th, StatusPill } from './ui';
 
 type Tab = 'management' | 'sales' | 'purchase' | 'stock' | 'gst' | 'exhibitions';
@@ -53,6 +83,23 @@ export function ReportsConsole() {
     inventory: coa.find(l => l.code === '1200')?.openingBalance ?? 0,
   }), [sos, pos, summary, coa]);
 
+  const exportCurrentView = () => {
+    downloadCSV(
+      `trs-report-${tab}.csv`,
+      ['metric', 'value'],
+      [
+        { metric: 'View', value: tab },
+        { metric: 'Sales (YTD)', value: String(kpi.revenue) },
+        { metric: 'Receivables', value: String(kpi.receivables) },
+        { metric: 'Purchase pipeline', value: String(kpi.payables) },
+        { metric: 'Net income', value: String(kpi.profit) },
+        { metric: 'Inventory value', value: String(kpi.inventory) },
+        { metric: 'Sales orders', value: String(sos.length) },
+        { metric: 'Purchase orders', value: String(pos.length) },
+      ],
+    );
+  };
+
   return (
     <div className="px-6 py-6 max-w-[1600px]">
       <div className="flex items-end justify-between gap-3 flex-wrap mb-6">
@@ -65,7 +112,7 @@ export function ReportsConsole() {
             One place for management, sales, purchase, stock, GST, and exhibition reporting — computed live from every prior phase.
           </p>
         </div>
-        <button className="h-10 px-4 border border-[color:var(--color-line)] rounded-md text-xs inline-flex items-center gap-1.5 hover:bg-[color:var(--color-paper)]">
+        <button onClick={exportCurrentView} className="h-10 px-4 border border-[color:var(--color-line)] rounded-md text-xs inline-flex items-center gap-1.5 hover:bg-[color:var(--color-paper)]">
           <Download className="w-3.5 h-3.5" /> Export current view
         </button>
       </div>
@@ -104,8 +151,6 @@ export function ReportsConsole() {
     </div>
   );
 }
-
-// ============================================================================
 
 function ManagementTab({ sos, pos, branches, customers, balances }: {
   sos: SalesOrder[]; pos: PurchaseOrder[];
@@ -223,8 +268,6 @@ function ManagementTab({ sos, pos, branches, customers, balances }: {
   );
 }
 
-// ============================================================================
-
 function SalesTab({ sos, customers }: { sos: SalesOrder[]; customers: Customer[] }) {
   const custById = useMemo(() => new Map(customers.map(c => [c.id, c])), [customers]);
   const topTitles = useMemo(() => {
@@ -324,8 +367,6 @@ function SalesTab({ sos, customers }: { sos: SalesOrder[]; customers: Customer[]
   );
 }
 
-// ============================================================================
-
 function PurchaseTab({ pos, suppliers }: { pos: PurchaseOrder[]; suppliers: Supplier[] }) {
   const supById = useMemo(() => new Map(suppliers.map(s => [s.id, s])), [suppliers]);
   const topSuppliers = useMemo(() => {
@@ -390,10 +431,8 @@ function PurchaseTab({ pos, suppliers }: { pos: PurchaseOrder[]; suppliers: Supp
   );
 }
 
-// ============================================================================
-
 function StockTab({ books, branches }: { books: BookMaster[]; branches: Branch[] }) {
-  const stockValue = books.reduce((s, b) => s + (b.mrp * 45), 0); // seed avg stock 45 per title
+  const stockValue = books.reduce((s, b) => s + (b.mrp * 45), 0);
   const byBoard = useMemo(() => {
     const map = new Map<string, { count: number; value: number }>();
     for (const b of books) {
@@ -467,8 +506,6 @@ function StockTab({ books, branches }: { books: BookMaster[]; branches: Branch[]
   );
 }
 
-// ============================================================================
-
 function GSTTab({ sos, gstRegs }: { sos: SalesOrder[]; gstRegs: GSTRegistration[] }) {
   const byState = useMemo(() => {
     const map = new Map<string, { invoices: number; taxable: number; gst: number; total: number }>();
@@ -515,8 +552,6 @@ function GSTTab({ sos, gstRegs }: { sos: SalesOrder[]; gstRegs: GSTRegistration[
     </div>
   );
 }
-
-// ============================================================================
 
 function ExhibitionsTab({ exhibitions }: { exhibitions: ExhibitionEvent[] }) {
   return (

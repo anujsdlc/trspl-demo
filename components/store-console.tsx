@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { STORES, BRAND_META, type Store, type StoreBrand } from '@/lib/stores';
-import { ALL_PRODUCTS, stockFor, PRODUCTS_BY_BRAND } from '@/lib/products';
+import { PRODUCTS_BY_BRAND } from '@/lib/products';
+import { loadMoves } from '@/lib/stock-ledger.client';
+import { deltaIndex, onHand } from '@/lib/stock-ledger';
+import { ORDERS_STORE_KEY, type Order } from '@/lib/bag';
 import { inr } from '@/lib/utils';
-import { MapPin, Search, RefreshCw, Zap, TrendingUp, AlertCircle, Package, Users, Clock, Building2, CheckCircle2, XCircle } from 'lucide-react';
+import { MapPin, Search, RefreshCw, Zap, Users, Clock, Building2, CheckCircle2, XCircle } from 'lucide-react';
 
-// Approx India map bounds
 const MAP_BOUNDS = { latMin: 8, latMax: 32, lngMin: 68, lngMax: 92 };
 
 function projectCoord([lat, lng]: [number, number], w: number, h: number) {
@@ -20,6 +22,32 @@ export function StoreConsole() {
   const [brandFilter, setBrandFilter] = useState<StoreBrand | 'all'>('all');
   const [selectedStore, setSelectedStore] = useState<Store | null>(STORES[0]);
 
+  const [stockIndex, setStockIndex] = useState<Map<string, number>>(new Map());
+  useEffect(() => { loadMoves().then(moves => setStockIndex(deltaIndex(moves))); }, []);
+
+  const [orders, setOrders] = useState<Order[]>([]);
+  useEffect(() => {
+    fetch(`/api/erp/${encodeURIComponent(ORDERS_STORE_KEY)}`, { cache: 'no-store' })
+      .then(res => (res.ok ? res.json() : { rows: null }))
+      .then(data => setOrders(Array.isArray(data.rows) ? (data.rows as Order[]) : []))
+      .catch(() => {});
+  }, []);
+
+  const salesByStore = useMemo(() => {
+    const cutoff = Date.now() - 7 * 86_400_000;
+    const map = new Map<string, { orders: number; revenue: number }>();
+    for (const o of orders) {
+      if (o.status === 'cancelled') continue;
+      if (o.delivery.method !== 'pickup' || !o.delivery.storeCode) continue;
+      if (new Date(o.placedAt).getTime() < cutoff) continue;
+      const row = map.get(o.delivery.storeCode) ?? { orders: 0, revenue: 0 };
+      row.orders += 1;
+      row.revenue += o.total;
+      map.set(o.delivery.storeCode, row);
+    }
+    return map;
+  }, [orders]);
+
   const filtered = useMemo(() => {
     let arr = [...STORES];
     if (query) {
@@ -30,32 +58,33 @@ export function StoreConsole() {
     return arr;
   }, [query, brandFilter]);
 
-  // Per-brand rollup for the top cards
   const brandRollup = useMemo(() => {
     return Object.entries(BRAND_META).map(([code, meta]) => {
       const stores = STORES.filter(s => s.brand === code);
-      const rev = stores.reduce((sum, s) => sum + ((s.id.charCodeAt(1) * 7) % 30 + 10) * 1000, 0);
+      const rev = stores.reduce((sum, s) => sum + (salesByStore.get(s.code)?.revenue ?? 0), 0);
       return { code: code as StoreBrand, meta, count: stores.length, rev };
     });
-  }, []);
+  }, [salesByStore]);
 
-  // Per-store synthetic stats
   function storeStats(s: Store) {
     const brandProducts = PRODUCTS_BY_BRAND[s.brand].slice(0, 40);
-    const stockUnits = brandProducts.reduce((sum, p) => sum + stockFor(p.id, s.id), 0);
-    const stockValue = brandProducts.reduce((sum, p) => sum + stockFor(p.id, s.id) * p.price, 0);
-    const lowStockCount = brandProducts.filter(p => stockFor(p.id, s.id) > 0 && stockFor(p.id, s.id) < 5).length;
-    const outStockCount = brandProducts.filter(p => stockFor(p.id, s.id) === 0).length;
-    const seed = s.id.charCodeAt(1) + s.id.charCodeAt(2);
-    const todaysOrders = (seed % 40) + 3;
-    const todaysRevenue = todaysOrders * ((seed % 20 + 10) * 100);
-    const staffCount = (seed % 4) + 2;
-    return { stockUnits, stockValue, lowStockCount, outStockCount, todaysOrders, todaysRevenue, staffCount };
+    const stockUnits = brandProducts.reduce((sum, p) => sum + onHand(p.id, s.id, stockIndex), 0);
+    const stockValue = brandProducts.reduce((sum, p) => sum + onHand(p.id, s.id, stockIndex) * p.price, 0);
+    const lowStockCount = brandProducts.filter(p => {
+      const q = onHand(p.id, s.id, stockIndex);
+      return q > 0 && q < 5;
+    }).length;
+    const outStockCount = brandProducts.filter(p => onHand(p.id, s.id, stockIndex) === 0).length;
+    const sold = salesByStore.get(s.code) ?? { orders: 0, revenue: 0 };
+    const staffCount = (s.id.charCodeAt(2) % 4) + 2;
+    return {
+      stockUnits, stockValue, lowStockCount, outStockCount,
+      weekOrders: sold.orders, weekRevenue: sold.revenue, staffCount,
+    };
   }
 
   return (
     <div className="px-6 py-6 max-w-[1800px]">
-      {/* Header */}
       <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
         <div>
           <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)] mb-1 flex items-center gap-2">
@@ -77,7 +106,6 @@ export function StoreConsole() {
         </div>
       </div>
 
-      {/* Brand rollup */}
       <div className="grid grid-cols-2 md:grid-cols-7 gap-3 mb-6">
         {brandRollup.map(b => (
           <div key={b.code} className="bg-white rounded-lg border border-[color:var(--color-line)] p-4 hover:border-[color:var(--color-line-strong)] transition">
@@ -86,15 +114,13 @@ export function StoreConsole() {
               <div className="text-[10px] font-mono text-[color:var(--color-ink-muted)]">{b.count}</div>
             </div>
             <div className="text-xs font-medium">{b.meta.name}</div>
-            <div className="text-[10px] text-[color:var(--color-ink-muted)] mt-0.5">{inr(b.rev)} today</div>
+            <div className="text-[10px] text-[color:var(--color-ink-muted)] mt-0.5">{inr(b.rev)} · 7 days</div>
           </div>
         ))}
       </div>
 
       <div className="grid lg:grid-cols-[1fr_400px] gap-6">
-        {/* Left: Map + Table */}
         <div className="space-y-6">
-          {/* India map */}
           <div className="bg-white rounded-xl border border-[color:var(--color-line)] p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -110,7 +136,6 @@ export function StoreConsole() {
             <IndiaMap stores={filtered} selectedId={selectedStore?.id} onSelect={setSelectedStore} />
           </div>
 
-          {/* Filter bar */}
           <div className="bg-white rounded-lg border border-[color:var(--color-line)] p-3 flex items-center gap-2 flex-wrap">
             <div className="flex items-center gap-2 h-9 px-3 bg-[color:var(--color-paper)] rounded-md border border-[color:var(--color-line)] flex-1 min-w-[240px]">
               <Search className="w-3.5 h-3.5 text-[color:var(--color-ink-muted)]" />
@@ -127,7 +152,6 @@ export function StoreConsole() {
             </div>
           </div>
 
-          {/* Store table */}
           <div className="bg-white rounded-lg border border-[color:var(--color-line)] overflow-hidden">
             <table className="w-full text-sm">
               <thead>
@@ -175,7 +199,6 @@ export function StoreConsole() {
           </div>
         </div>
 
-        {/* Right: Store detail */}
         <div className="space-y-4">
           {selectedStore && (() => {
             const meta = BRAND_META[selectedStore.brand];
@@ -183,7 +206,6 @@ export function StoreConsole() {
             return (
               <>
                 <div className="bg-white rounded-xl border border-[color:var(--color-line)] overflow-hidden">
-                  {/* Brand accent header */}
                   <div className="h-24 p-4 relative overflow-hidden" style={{ background: `linear-gradient(135deg, ${meta.color} 0%, ${meta.color}CC 100%)` }}>
                     <div className="text-[10px] uppercase tracking-widest text-white/70 font-mono">{meta.name} · {meta.category}</div>
                     <div className="font-serif text-2xl text-white mt-1">{selectedStore.location}</div>
@@ -210,15 +232,15 @@ export function StoreConsole() {
                     </div>
 
                     <div className="pt-4 border-t border-[color:var(--color-line)] space-y-3">
-                      <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)]">Today at a glance</div>
+                      <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)]">Counter sales · last 7 days</div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
                           <div className="text-[10px] text-[color:var(--color-ink-muted)]">Orders</div>
-                          <div className="editorial-num text-2xl">{stats.todaysOrders}</div>
+                          <div className="editorial-num text-2xl">{stats.weekOrders}</div>
                         </div>
                         <div>
                           <div className="text-[10px] text-[color:var(--color-ink-muted)]">Revenue</div>
-                          <div className="editorial-num text-2xl">{inr(stats.todaysRevenue)}</div>
+                          <div className="editorial-num text-2xl">{inr(stats.weekRevenue)}</div>
                         </div>
                       </div>
                     </div>
@@ -248,7 +270,6 @@ export function StoreConsole() {
                   </div>
                 </div>
 
-                {/* Sync log */}
                 <div className="bg-white rounded-xl border border-[color:var(--color-line)] p-5">
                   <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)] mb-3">
                     <Zap className="w-3 h-3" /> Recent sync events
@@ -296,14 +317,12 @@ function IndiaMap({ stores, selectedId, onSelect }: { stores: Store[]; selectedI
   return (
     <div className="relative">
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto max-h-[560px]">
-        {/* India silhouette (approximate) */}
         <path
           d="M 240 40 Q 200 35 185 55 L 165 75 Q 145 90 130 120 L 115 155 Q 100 175 90 210 L 85 250 Q 90 285 100 320 L 110 345 Q 125 370 130 400 L 140 445 Q 160 475 200 490 L 240 505 Q 275 515 300 525 Q 295 490 285 460 L 275 430 Q 290 395 305 365 L 320 340 Q 345 315 365 285 L 380 260 Q 395 235 400 205 L 410 175 Q 415 145 410 115 L 400 95 Q 390 75 375 65 L 345 55 Q 315 45 285 42 Z"
           fill="var(--color-paper)"
           stroke="var(--color-line-strong)"
           strokeWidth="1.5"
         />
-        {/* Grid overlay */}
         <g opacity="0.15">
           {Array.from({ length: 8 }, (_, i) => (
             <line key={`v${i}`} x1={(i / 8) * W} y1={0} x2={(i / 8) * W} y2={H} stroke="var(--color-ink)" strokeWidth="0.5" />
@@ -313,7 +332,6 @@ function IndiaMap({ stores, selectedId, onSelect }: { stores: Store[]; selectedI
           ))}
         </g>
 
-        {/* Store markers */}
         {stores.map(s => {
           const [x, y] = projectCoord(s.coords, W, H);
           const isSelected = s.id === selectedId;
@@ -340,7 +358,6 @@ function IndiaMap({ stores, selectedId, onSelect }: { stores: Store[]; selectedI
         })}
       </svg>
 
-      {/* Info overlay */}
       <div className="absolute top-3 left-3 text-[10px] font-mono text-[color:var(--color-ink-muted)] bg-white/80 backdrop-blur px-2 py-1 rounded">
         {stores.length} stores plotted
       </div>

@@ -1,21 +1,6 @@
-import { readList, writeList, upsertRow as upsertStore, deleteRow as deleteStore, readSingle, writeSingle } from './store';
-
-// ERP Phase 1 — Foundations data layer.
-// Branches, warehouses, GST registrations, and the extended book master.
-// All persisted in localStorage; each module ships with deterministic seed
-// data so screens are populated immediately.
-
-// ---------------------------------------------------------------------------
-// Common
-// ---------------------------------------------------------------------------
+import { readList, upsertRow as upsertStore, deleteRow as deleteStore } from './store';
 
 export type Status = 'active' | 'inactive';
-
-
-
-// ---------------------------------------------------------------------------
-// Branches
-// ---------------------------------------------------------------------------
 
 export type BranchType = 'HO' | 'branch' | 'sub-branch';
 
@@ -39,23 +24,19 @@ export interface Branch {
 const BRANCH_KEY = 'trs.erp.branches.v1';
 
 export const SEED_BRANCHES: Branch[] = [
-  { id: 'br-001', code: 'BR-DEL-HO', name: 'Delhi Head Office', type: 'HO', address: 'A-14, Okhla Phase II', city: 'New Delhi', state: 'Delhi', pincode: '110020', gstin: '07AABCT1332L1ZK', manager: 'Dhananjay Singh', phone: '+91 11 4000 8100', email: 'delhi.ho@trs.co.in', status: 'active', createdOn: '2022-04-01' },
-  { id: 'br-002', code: 'BR-BLR-01', name: 'Bangalore South Branch', type: 'branch', address: 'Wing A, KIAL Business Park', city: 'Bengaluru', state: 'Karnataka', pincode: '560300', gstin: '29AABCT1332L1Z9', manager: 'Abhisek Verma', phone: '+91 80 4900 2010', email: 'blr.branch@trs.co.in', status: 'active', createdOn: '2022-08-15' },
-  { id: 'br-003', code: 'BR-BOM-01', name: 'Mumbai West Branch', type: 'branch', address: 'CST Airport Road, Andheri East', city: 'Mumbai', state: 'Maharashtra', pincode: '400099', gstin: '27AABCT1332L1ZI', manager: 'S. Iyer', phone: '+91 22 4900 6000', email: 'mumbai@trs.co.in', status: 'active', createdOn: '2023-01-04' },
-  { id: 'br-004', code: 'BR-HYD-01', name: 'Hyderabad Central Branch', type: 'branch', address: 'GMR Aerocity, RGIA', city: 'Hyderabad', state: 'Telangana', pincode: '500409', gstin: '36AABCT1332L1ZH', manager: 'Vikram Rao', phone: '+91 40 4900 3200', email: 'hyd@trs.co.in', status: 'active', createdOn: '2023-05-22' },
-  { id: 'br-005', code: 'BR-COK-01', name: 'Kochi Branch', type: 'branch', address: 'CIAL Terminal 3', city: 'Kochi', state: 'Kerala', pincode: '683111', gstin: '32AABCT1332L1ZE', manager: 'K. Nair', phone: '+91 484 490 1010', email: 'kochi@trs.co.in', status: 'active', createdOn: '2023-11-18' },
-  { id: 'br-006', code: 'BR-GOA-01', name: 'Goa MOPA Branch', type: 'branch', address: 'Manohar Intl Airport', city: 'Goa', state: 'Goa', pincode: '403722', gstin: '30AABCT1332L1ZG', manager: 'R. Mehta', phone: '+91 832 490 4400', email: 'goa@trs.co.in', status: 'active', createdOn: '2024-01-11' },
-  { id: 'br-007', code: 'BR-CCU-01', name: 'Kolkata Sub-Branch', type: 'sub-branch', address: 'NSCBI Airport T2', city: 'Kolkata', state: 'West Bengal', pincode: '700052', gstin: '19AABCT1332L1ZK', manager: 'B. Chatterjee', phone: '+91 33 4900 8080', email: 'kolkata@trs.co.in', status: 'active', createdOn: '2024-06-30' },
-  { id: 'br-008', code: 'BR-CHN-01', name: 'Chennai Landside Branch', type: 'branch', address: 'MAA T4 Concourse', city: 'Chennai', state: 'Tamil Nadu', pincode: '600027', gstin: '33AABCT1332L1ZC', manager: 'C. Pillai', phone: '+91 44 4900 2727', email: 'chennai@trs.co.in', status: 'active', createdOn: '2024-08-05' },
+  { id: 'br-001', code: 'BR-DEL-HO', name: 'Delhi Head Office', type: 'HO', address: 'A-14, Okhla Phase II', city: 'New Delhi', state: 'Delhi', pincode: '110020', gstin: '07AABCT1332L1ZG', manager: 'Dhananjay Singh', phone: '+91 11 4000 8100', email: 'delhi.ho@trs.co.in', status: 'active', createdOn: '2022-04-01' },
+  { id: 'br-002', code: 'BR-BLR-01', name: 'Bangalore South Branch', type: 'branch', address: 'Wing A, KIAL Business Park', city: 'Bengaluru', state: 'Karnataka', pincode: '560300', gstin: '29AABCT1332L1ZA', manager: 'Abhisek Verma', phone: '+91 80 4900 2010', email: 'blr.branch@trs.co.in', status: 'active', createdOn: '2022-08-15' },
+  { id: 'br-003', code: 'BR-BOM-01', name: 'Mumbai West Branch', type: 'branch', address: 'CST Airport Road, Andheri East', city: 'Mumbai', state: 'Maharashtra', pincode: '400099', gstin: '27AABCT1332L1ZE', manager: 'S. Iyer', phone: '+91 22 4900 6000', email: 'mumbai@trs.co.in', status: 'active', createdOn: '2023-01-04' },
+  { id: 'br-004', code: 'BR-HYD-01', name: 'Hyderabad Central Branch', type: 'branch', address: 'GMR Aerocity, RGIA', city: 'Hyderabad', state: 'Telangana', pincode: '500409', gstin: '36AABCT1332L1ZF', manager: 'Vikram Rao', phone: '+91 40 4900 3200', email: 'hyd@trs.co.in', status: 'active', createdOn: '2023-05-22' },
+  { id: 'br-005', code: 'BR-COK-01', name: 'Kochi Branch', type: 'branch', address: 'CIAL Terminal 3', city: 'Kochi', state: 'Kerala', pincode: '683111', gstin: '32AABCT1332L1ZN', manager: 'K. Nair', phone: '+91 484 490 1010', email: 'kochi@trs.co.in', status: 'active', createdOn: '2023-11-18' },
+  { id: 'br-006', code: 'BR-GOA-01', name: 'Goa MOPA Branch', type: 'branch', address: 'Manohar Intl Airport', city: 'Goa', state: 'Goa', pincode: '403722', gstin: '30AABCT1332L1ZR', manager: 'R. Mehta', phone: '+91 832 490 4400', email: 'goa@trs.co.in', status: 'active', createdOn: '2024-01-11' },
+  { id: 'br-007', code: 'BR-CCU-01', name: 'Kolkata Sub-Branch', type: 'sub-branch', address: 'NSCBI Airport T2', city: 'Kolkata', state: 'West Bengal', pincode: '700052', gstin: '19AABCT1332L1ZB', manager: 'B. Chatterjee', phone: '+91 33 4900 8080', email: 'kolkata@trs.co.in', status: 'active', createdOn: '2024-06-30' },
+  { id: 'br-008', code: 'BR-CHN-01', name: 'Chennai Landside Branch', type: 'branch', address: 'MAA T4 Concourse', city: 'Chennai', state: 'Tamil Nadu', pincode: '600027', gstin: '33AABCT1332L1ZL', manager: 'C. Pillai', phone: '+91 44 4900 2727', email: 'chennai@trs.co.in', status: 'active', createdOn: '2024-08-05' },
 ];
 
 export async function loadBranches(): Promise<Branch[]> { return readList<Branch>(BRANCH_KEY, SEED_BRANCHES); }
 export async function saveBranch(b: Branch): Promise<void> { await upsertStore<Branch>(BRANCH_KEY, SEED_BRANCHES, b); }
 export async function deleteBranch(id: string): Promise<void> { await deleteStore(BRANCH_KEY, SEED_BRANCHES, id); }
-
-// ---------------------------------------------------------------------------
-// Warehouses
-// ---------------------------------------------------------------------------
 
 export type WarehouseType = 'branch' | 'godown' | 'exhibition' | 'in-transit';
 
@@ -79,27 +60,23 @@ export interface Warehouse {
 const WAREHOUSE_KEY = 'trs.erp.warehouses.v1';
 
 export const SEED_WAREHOUSES: Warehouse[] = [
-  { id: 'wh-001', code: 'WH-DEL-HO', name: 'Delhi HO Godown', type: 'godown', branchId: 'br-001', address: 'A-14 Basement, Okhla Phase II', capacitySqft: 12000, capacityTitles: 45000, manager: 'Amit Kumar', phone: '+91 98110 40001', status: 'active', gstin: '07AABCT1332L1ZK', createdOn: '2022-04-01' },
-  { id: 'wh-002', code: 'WH-DEL-BR', name: 'Delhi Branch Store', type: 'branch', branchId: 'br-001', address: 'A-14 Ground Floor', capacitySqft: 1800, capacityTitles: 6500, manager: 'S. Iyer', status: 'active', gstin: '07AABCT1332L1ZK', createdOn: '2022-04-01' },
-  { id: 'wh-003', code: 'WH-BLR-GD', name: 'Bengaluru Central Godown', type: 'godown', branchId: 'br-002', address: 'Whitefield Warehouse Cluster', capacitySqft: 18500, capacityTitles: 62000, manager: 'Abhisek Verma', phone: '+91 96400 22102', status: 'active', gstin: '29AABCT1332L1Z9', createdOn: '2022-09-04' },
-  { id: 'wh-004', code: 'WH-BLR-T2', name: 'BLR T2 Store', type: 'branch', branchId: 'br-002', address: 'KIA T2, Airside A', capacitySqft: 900, capacityTitles: 2400, manager: 'Nikita Sarang', status: 'active', gstin: '29AABCT1332L1Z9', createdOn: '2023-01-20' },
-  { id: 'wh-005', code: 'WH-BOM-GD', name: 'Mumbai Central Godown', type: 'godown', branchId: 'br-003', address: 'Bhiwandi Yard, Bhiwandi-Nashik Rd', capacitySqft: 22000, capacityTitles: 80000, manager: 'Sunil Sharma', status: 'active', gstin: '27AABCT1332L1ZI', createdOn: '2023-02-10' },
-  { id: 'wh-006', code: 'WH-BOM-T2', name: 'Mumbai T2 Store', type: 'branch', branchId: 'br-003', address: 'CSMIA T2 Concourse D', capacitySqft: 1200, capacityTitles: 3800, manager: 'M. Krishnan', status: 'active', gstin: '27AABCT1332L1ZI', createdOn: '2023-03-01' },
-  { id: 'wh-007', code: 'WH-HYD-GD', name: 'Hyderabad Godown', type: 'godown', branchId: 'br-004', address: 'Shamshabad Logistics Hub', capacitySqft: 15000, capacityTitles: 50000, manager: 'Vikram Rao', status: 'active', gstin: '36AABCT1332L1ZH', createdOn: '2023-06-15' },
-  { id: 'wh-008', code: 'WH-COK-GD', name: 'Kochi Godown', type: 'godown', branchId: 'br-005', address: 'Angamaly Industrial Corridor', capacitySqft: 8500, capacityTitles: 28000, manager: 'K. Nair', status: 'active', gstin: '32AABCT1332L1ZE', createdOn: '2023-12-01' },
-  { id: 'wh-009', code: 'WH-EX-CBSE', name: 'Delhi Pragati Maidan Exhibition', type: 'exhibition', branchId: 'br-001', address: 'Hall 4, Pragati Maidan (event-based)', capacityTitles: 5000, manager: 'Shubham Jaiswal', status: 'temporary', gstin: '07AABCT1332L1ZK', createdOn: '2026-08-12', notes: 'CBSE Book Fair — Oct 12–15, 2026' },
-  { id: 'wh-010', code: 'WH-EX-BLRK12', name: 'Bengaluru K12 Expo Booth', type: 'exhibition', branchId: 'br-002', address: 'BIEC Hall 3', capacityTitles: 2000, manager: 'Nikita Sarang', status: 'temporary', gstin: '29AABCT1332L1Z9', createdOn: '2026-09-01', notes: 'K12 Educators Expo — Sep 22–24' },
+  { id: 'wh-001', code: 'WH-DEL-HO', name: 'Delhi HO Godown', type: 'godown', branchId: 'br-001', address: 'A-14 Basement, Okhla Phase II', capacitySqft: 12000, capacityTitles: 45000, manager: 'Amit Kumar', phone: '+91 98110 40001', status: 'active', gstin: '07AABCT1332L1ZG', createdOn: '2022-04-01' },
+  { id: 'wh-002', code: 'WH-DEL-BR', name: 'Delhi Branch Store', type: 'branch', branchId: 'br-001', address: 'A-14 Ground Floor', capacitySqft: 1800, capacityTitles: 6500, manager: 'S. Iyer', status: 'active', gstin: '07AABCT1332L1ZG', createdOn: '2022-04-01' },
+  { id: 'wh-003', code: 'WH-BLR-GD', name: 'Bengaluru Central Godown', type: 'godown', branchId: 'br-002', address: 'Whitefield Warehouse Cluster', capacitySqft: 18500, capacityTitles: 62000, manager: 'Abhisek Verma', phone: '+91 96400 22102', status: 'active', gstin: '29AABCT1332L1ZA', createdOn: '2022-09-04' },
+  { id: 'wh-004', code: 'WH-BLR-T2', name: 'BLR T2 Store', type: 'branch', branchId: 'br-002', address: 'KIA T2, Airside A', capacitySqft: 900, capacityTitles: 2400, manager: 'Nikita Sarang', status: 'active', gstin: '29AABCT1332L1ZA', createdOn: '2023-01-20' },
+  { id: 'wh-005', code: 'WH-BOM-GD', name: 'Mumbai Central Godown', type: 'godown', branchId: 'br-003', address: 'Bhiwandi Yard, Bhiwandi-Nashik Rd', capacitySqft: 22000, capacityTitles: 80000, manager: 'Sunil Sharma', status: 'active', gstin: '27AABCT1332L1ZE', createdOn: '2023-02-10' },
+  { id: 'wh-006', code: 'WH-BOM-T2', name: 'Mumbai T2 Store', type: 'branch', branchId: 'br-003', address: 'CSMIA T2 Concourse D', capacitySqft: 1200, capacityTitles: 3800, manager: 'M. Krishnan', status: 'active', gstin: '27AABCT1332L1ZE', createdOn: '2023-03-01' },
+  { id: 'wh-007', code: 'WH-HYD-GD', name: 'Hyderabad Godown', type: 'godown', branchId: 'br-004', address: 'Shamshabad Logistics Hub', capacitySqft: 15000, capacityTitles: 50000, manager: 'Vikram Rao', status: 'active', gstin: '36AABCT1332L1ZF', createdOn: '2023-06-15' },
+  { id: 'wh-008', code: 'WH-COK-GD', name: 'Kochi Godown', type: 'godown', branchId: 'br-005', address: 'Angamaly Industrial Corridor', capacitySqft: 8500, capacityTitles: 28000, manager: 'K. Nair', status: 'active', gstin: '32AABCT1332L1ZN', createdOn: '2023-12-01' },
+  { id: 'wh-009', code: 'WH-EX-CBSE', name: 'Delhi Pragati Maidan Exhibition', type: 'exhibition', branchId: 'br-001', address: 'Hall 4, Pragati Maidan (event-based)', capacityTitles: 5000, manager: 'Shubham Jaiswal', status: 'temporary', gstin: '07AABCT1332L1ZG', createdOn: '2026-08-12', notes: 'CBSE Book Fair — Oct 12–15, 2026' },
+  { id: 'wh-010', code: 'WH-EX-BLRK12', name: 'Bengaluru K12 Expo Booth', type: 'exhibition', branchId: 'br-002', address: 'BIEC Hall 3', capacityTitles: 2000, manager: 'Nikita Sarang', status: 'temporary', gstin: '29AABCT1332L1ZA', createdOn: '2026-09-01', notes: 'K12 Educators Expo — Sep 22–24' },
   { id: 'wh-011', code: 'WH-TRN-N1', name: 'North Transit Van #1', type: 'in-transit', branchId: 'br-001', address: 'Route: DEL → CHD → LKN', manager: 'V. Rao', status: 'active', createdOn: '2024-11-04' },
-  { id: 'wh-012', code: 'WH-CCU-GD', name: 'Kolkata Sub-Branch Godown', type: 'godown', branchId: 'br-007', address: 'Kaikhali Depot', capacitySqft: 6500, capacityTitles: 22000, manager: 'B. Chatterjee', status: 'active', gstin: '19AABCT1332L1ZK', createdOn: '2024-07-11' },
+  { id: 'wh-012', code: 'WH-CCU-GD', name: 'Kolkata Sub-Branch Godown', type: 'godown', branchId: 'br-007', address: 'Kaikhali Depot', capacitySqft: 6500, capacityTitles: 22000, manager: 'B. Chatterjee', status: 'active', gstin: '19AABCT1332L1ZB', createdOn: '2024-07-11' },
 ];
 
 export async function loadWarehouses(): Promise<Warehouse[]> { return readList<Warehouse>(WAREHOUSE_KEY, SEED_WAREHOUSES); }
 export async function saveWarehouse(w: Warehouse): Promise<void> { await upsertStore<Warehouse>(WAREHOUSE_KEY, SEED_WAREHOUSES, w); }
 export async function deleteWarehouse(id: string): Promise<void> { await deleteStore(WAREHOUSE_KEY, SEED_WAREHOUSES, id); }
-
-// ---------------------------------------------------------------------------
-// GST registrations (per state, all under the same PAN / firm)
-// ---------------------------------------------------------------------------
 
 export interface GSTRegistration {
   id: string;
@@ -121,23 +98,22 @@ export interface GSTRegistration {
 const GST_KEY = 'trs.erp.gst.v1';
 
 export const SEED_GST: GSTRegistration[] = [
-  { id: 'gst-001', gstin: '07AABCT1332L1ZK', legalName: 'Travel Retail Services Pvt Ltd', tradeName: 'TRS Delhi', state: 'Delhi', stateCode: '07', address: 'A-14, Okhla Phase II, New Delhi', pincode: '110020', registrationDate: '2022-04-01', compositeScheme: false, ewaybillEnabled: true, einvoiceEnabled: true, status: 'active', turnoverBucket: 'above-100cr' },
-  { id: 'gst-002', gstin: '29AABCT1332L1Z9', legalName: 'Travel Retail Services Pvt Ltd', tradeName: 'TRS Karnataka', state: 'Karnataka', stateCode: '29', address: 'KIAL Business Park, Bengaluru', pincode: '560300', registrationDate: '2022-08-15', compositeScheme: false, ewaybillEnabled: true, einvoiceEnabled: true, status: 'active', turnoverBucket: '20-100cr' },
-  { id: 'gst-003', gstin: '27AABCT1332L1ZI', legalName: 'Travel Retail Services Pvt Ltd', tradeName: 'TRS Maharashtra', state: 'Maharashtra', stateCode: '27', address: 'CST Airport Road, Andheri East, Mumbai', pincode: '400099', registrationDate: '2023-01-04', compositeScheme: false, ewaybillEnabled: true, einvoiceEnabled: true, status: 'active', turnoverBucket: '20-100cr' },
-  { id: 'gst-004', gstin: '36AABCT1332L1ZH', legalName: 'Travel Retail Services Pvt Ltd', tradeName: 'TRS Telangana', state: 'Telangana', stateCode: '36', address: 'GMR Aerocity, RGIA, Hyderabad', pincode: '500409', registrationDate: '2023-05-22', compositeScheme: false, ewaybillEnabled: true, einvoiceEnabled: true, status: 'active', turnoverBucket: '5-20cr' },
-  { id: 'gst-005', gstin: '32AABCT1332L1ZE', legalName: 'Travel Retail Services Pvt Ltd', tradeName: 'TRS Kerala', state: 'Kerala', stateCode: '32', address: 'CIAL Terminal 3, Kochi', pincode: '683111', registrationDate: '2023-11-18', compositeScheme: false, ewaybillEnabled: true, einvoiceEnabled: true, status: 'active', turnoverBucket: '5-20cr' },
-  { id: 'gst-006', gstin: '30AABCT1332L1ZG', legalName: 'Travel Retail Services Pvt Ltd', tradeName: 'TRS Goa', state: 'Goa', stateCode: '30', address: 'Manohar Intl Airport, Mopa', pincode: '403722', registrationDate: '2024-01-11', compositeScheme: false, ewaybillEnabled: true, einvoiceEnabled: true, status: 'active', turnoverBucket: '5-20cr' },
-  { id: 'gst-007', gstin: '19AABCT1332L1ZK', legalName: 'Travel Retail Services Pvt Ltd', tradeName: 'TRS West Bengal', state: 'West Bengal', stateCode: '19', address: 'NSCBI Airport T2, Kolkata', pincode: '700052', registrationDate: '2024-06-30', compositeScheme: false, ewaybillEnabled: true, einvoiceEnabled: true, status: 'active', turnoverBucket: '5-20cr' },
-  { id: 'gst-008', gstin: '33AABCT1332L1ZC', legalName: 'Travel Retail Services Pvt Ltd', tradeName: 'TRS Tamil Nadu', state: 'Tamil Nadu', stateCode: '33', address: 'MAA T4 Concourse', pincode: '600027', registrationDate: '2024-08-05', compositeScheme: false, ewaybillEnabled: true, einvoiceEnabled: true, status: 'active', turnoverBucket: '5-20cr' },
+  { id: 'gst-001', gstin: '07AABCT1332L1ZG', legalName: 'Travel Retail Services Pvt Ltd', tradeName: 'TRS Delhi', state: 'Delhi', stateCode: '07', address: 'A-14, Okhla Phase II, New Delhi', pincode: '110020', registrationDate: '2022-04-01', compositeScheme: false, ewaybillEnabled: true, einvoiceEnabled: true, status: 'active', turnoverBucket: 'above-100cr' },
+  { id: 'gst-002', gstin: '29AABCT1332L1ZA', legalName: 'Travel Retail Services Pvt Ltd', tradeName: 'TRS Karnataka', state: 'Karnataka', stateCode: '29', address: 'KIAL Business Park, Bengaluru', pincode: '560300', registrationDate: '2022-08-15', compositeScheme: false, ewaybillEnabled: true, einvoiceEnabled: true, status: 'active', turnoverBucket: '20-100cr' },
+  { id: 'gst-003', gstin: '27AABCT1332L1ZE', legalName: 'Travel Retail Services Pvt Ltd', tradeName: 'TRS Maharashtra', state: 'Maharashtra', stateCode: '27', address: 'CST Airport Road, Andheri East, Mumbai', pincode: '400099', registrationDate: '2023-01-04', compositeScheme: false, ewaybillEnabled: true, einvoiceEnabled: true, status: 'active', turnoverBucket: '20-100cr' },
+  { id: 'gst-004', gstin: '36AABCT1332L1ZF', legalName: 'Travel Retail Services Pvt Ltd', tradeName: 'TRS Telangana', state: 'Telangana', stateCode: '36', address: 'GMR Aerocity, RGIA, Hyderabad', pincode: '500409', registrationDate: '2023-05-22', compositeScheme: false, ewaybillEnabled: true, einvoiceEnabled: true, status: 'active', turnoverBucket: '5-20cr' },
+  { id: 'gst-005', gstin: '32AABCT1332L1ZN', legalName: 'Travel Retail Services Pvt Ltd', tradeName: 'TRS Kerala', state: 'Kerala', stateCode: '32', address: 'CIAL Terminal 3, Kochi', pincode: '683111', registrationDate: '2023-11-18', compositeScheme: false, ewaybillEnabled: true, einvoiceEnabled: true, status: 'active', turnoverBucket: '5-20cr' },
+  { id: 'gst-006', gstin: '30AABCT1332L1ZR', legalName: 'Travel Retail Services Pvt Ltd', tradeName: 'TRS Goa', state: 'Goa', stateCode: '30', address: 'Manohar Intl Airport, Mopa', pincode: '403722', registrationDate: '2024-01-11', compositeScheme: false, ewaybillEnabled: true, einvoiceEnabled: true, status: 'active', turnoverBucket: '5-20cr' },
+  { id: 'gst-007', gstin: '19AABCT1332L1ZB', legalName: 'Travel Retail Services Pvt Ltd', tradeName: 'TRS West Bengal', state: 'West Bengal', stateCode: '19', address: 'NSCBI Airport T2, Kolkata', pincode: '700052', registrationDate: '2024-06-30', compositeScheme: false, ewaybillEnabled: true, einvoiceEnabled: true, status: 'active', turnoverBucket: '5-20cr' },
+  { id: 'gst-008', gstin: '33AABCT1332L1ZL', legalName: 'Travel Retail Services Pvt Ltd', tradeName: 'TRS Tamil Nadu', state: 'Tamil Nadu', stateCode: '33', address: 'MAA T4 Concourse', pincode: '600027', registrationDate: '2024-08-05', compositeScheme: false, ewaybillEnabled: true, einvoiceEnabled: true, status: 'active', turnoverBucket: '5-20cr' },
+  { id: 'gst-009', gstin: '06AABCT1332L1ZI', legalName: 'Travel Retail Services Pvt Ltd', tradeName: 'TRS Haryana', state: 'Haryana', stateCode: '06', address: 'Cyber Hub, DLF Phase 2, Gurgaon', pincode: '122001', registrationDate: '2024-09-12', compositeScheme: false, ewaybillEnabled: true, einvoiceEnabled: true, status: 'active', turnoverBucket: 'below-5cr' },
+  { id: 'gst-010', gstin: '23AABCT1332L1ZM', legalName: 'Travel Retail Services Pvt Ltd', tradeName: 'TRS Madhya Pradesh', state: 'Madhya Pradesh', stateCode: '23', address: 'Devi Ahilyabai Holkar Airport, Indore', pincode: '453112', registrationDate: '2025-02-03', compositeScheme: false, ewaybillEnabled: true, einvoiceEnabled: true, status: 'active', turnoverBucket: 'below-5cr' },
+  { id: 'gst-011', gstin: '21AABCT1332L1ZQ', legalName: 'Travel Retail Services Pvt Ltd', tradeName: 'TRS Odisha', state: 'Odisha', stateCode: '21', address: 'Biju Patnaik Intl Airport, Bhubaneshwar', pincode: '751020', registrationDate: '2025-04-21', compositeScheme: false, ewaybillEnabled: true, einvoiceEnabled: true, status: 'active', turnoverBucket: 'below-5cr' },
 ];
 
 export async function loadGST(): Promise<GSTRegistration[]> { return readList<GSTRegistration>(GST_KEY, SEED_GST); }
 export async function saveGST(row: GSTRegistration): Promise<void> { await upsertStore<GSTRegistration>(GST_KEY, SEED_GST, row); }
 export async function deleteGST(id: string): Promise<void> { await deleteStore(GST_KEY, SEED_GST, id); }
-
-// ---------------------------------------------------------------------------
-// Book master — extended for publisher/distributor domain
-// ---------------------------------------------------------------------------
 
 export type Board = 'CBSE' | 'ICSE' | 'IB' | 'IGCSE' | 'State Board' | 'UGC' | 'General';
 export type Binding = 'paperback' | 'hardcover' | 'spiral' | 'ebook';
@@ -196,10 +172,6 @@ export const SUBJECTS = ['Mathematics', 'Science', 'Physics', 'Chemistry', 'Biol
 export const LANGUAGES = ['English', 'Hindi', 'Kannada', 'Tamil', 'Marathi', 'Bengali', 'Malayalam', 'Telugu', 'Gujarati'];
 export const PUBLISHERS = ['NCERT', 'Bharati Bhawan', 'S. Chand', 'Rachna Sagar', 'Frank Bros.', 'Cambridge Univ. Press', 'Oxford Univ. Press', 'KTBS', 'Malayala Manorama', 'Lucent', 'Selina', 'VK Global', 'Oswaal Books', 'MIT / PHI', 'Arihant', 'Educart'];
 
-// ---------------------------------------------------------------------------
-// ERP module registry — used by the ERP shell sidebar
-// ---------------------------------------------------------------------------
-
 export interface ERPModule {
   key: string;
   label: string;
@@ -223,12 +195,12 @@ export const ERP_MODULES: ERPModule[] = [
   { key: 'accounts',      label: 'Accounting',          href: '/admin/erp/accounts',            icon: 'BookMinus',       status: 'live',        phase: 3, section: 'Finance' },
   { key: 'gst-returns',   label: 'GST Returns',         href: '/admin/erp/accounts/gst',        icon: 'FileText',        status: 'live',        phase: 3, section: 'Finance' },
   { key: 'bank-recon',    label: 'Bank Reconciliation', href: '/admin/erp/accounts/bank-recon', icon: 'Banknote',        status: 'live',        phase: 3, section: 'Finance' },
-  { key: 'exhibitions',   label: 'Exhibitions & Fairs', href: '/admin/erp/exhibitions',         icon: 'Tent',            status: 'live',        phase: 4, section: 'Field Ops' },
+  { key: 'exhibitions',   label: 'Exhibitions & Fairs', href: '/admin/inventory/exhibitions',   icon: 'Tent',            status: 'live',        phase: 4, section: 'Field Ops' },
   { key: 'offline-pos',   label: 'Offline Billing App', href: '/admin/erp/offline',             icon: 'Wifi',            status: 'live',        phase: 4, section: 'Field Ops' },
   { key: 'crm',           label: 'CRM & Leads',         href: '/admin/erp/crm',                 icon: 'HeartHandshake',  status: 'live',        phase: 4, section: 'Field Ops' },
   { key: 'reports',       label: 'Reports & Dashboards',href: '/admin/erp/reports',             icon: 'BarChart3',       status: 'live',        phase: 5, section: 'Insight' },
   { key: 'hr',            label: 'HR & Attendance',     href: '/admin/erp/hr',                  icon: 'UserRound',       status: 'live',        phase: 5, section: 'Insight' },
-  { key: 'tally',         label: 'Tally Migration',     href: '/admin/erp/migration/tally',     icon: 'FileInput',       status: 'live',        phase: 6, section: 'Admin' },
+  { key: 'tally',         label: 'Tally Migration',     href: '/admin/registrations/tally',     icon: 'FileInput',       status: 'live',        phase: 6, section: 'Admin' },
   { key: 'security',      label: 'Security & Access',   href: '/admin/erp/security',            icon: 'Lock',            status: 'live',        phase: 6, section: 'Admin' },
   { key: 'system',        label: 'System Settings',     href: '/admin/erp/system',              icon: 'Settings2',       status: 'live',        phase: 6, section: 'Admin' },
 ];

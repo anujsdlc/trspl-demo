@@ -1,14 +1,4 @@
-import { readList, writeList, upsertRow as upsertStore, deleteRow as deleteStore, readSingle, writeSingle } from './store';
-
-// ERP Phase 6 — Admin data layer.
-// Tally migration jobs, Security (users, roles, audit trail), System (company,
-// backups, alerts).
-
-
-
-// ---------------------------------------------------------------------------
-// Tally migration
-// ---------------------------------------------------------------------------
+import { readList, upsertRow as upsertStore, deleteRow as deleteStore, readSingle, writeSingle } from './store';
 
 export type TallyEntity =
   | 'ledgers' | 'customers' | 'suppliers' | 'items'
@@ -53,17 +43,13 @@ export async function loadMigrations(): Promise<TallyMigrationJob[]> { return re
 export async function saveMigration(m: TallyMigrationJob): Promise<void> { await upsertStore<TallyMigrationJob>(MIG_KEY, SEED_MIGRATIONS, m); }
 export async function deleteMigration(id: string): Promise<void> { await deleteStore(MIG_KEY, SEED_MIGRATIONS, id); }
 
-// ---------------------------------------------------------------------------
-// Security — users, roles, audit
-// ---------------------------------------------------------------------------
-
 export type UserStatus = 'active' | 'invited' | 'locked' | 'disabled';
 
 export interface Role {
   id: string;
   name: string;
   description: string;
-  permissions: string[];      // 'module.action'
+  permissions: string[];
   builtIn: boolean;
 }
 
@@ -88,7 +74,7 @@ export interface AuditEvent {
   id: string;
   at: string;
   userId: string;
-  action: string;     // 'update' | 'create' | 'delete' | 'login' | 'export'
+  action: string;
   module: string;
   entity?: string;
   ip: string;
@@ -147,10 +133,6 @@ export async function loadUsers(): Promise<User[]> { return readList<User>(USER_
 export async function saveUser(u: User): Promise<void> { await upsertStore<User>(USER_KEY, SEED_USERS, u); }
 export async function deleteUser(id: string): Promise<void> { await deleteStore(USER_KEY, SEED_USERS, id); }
 export async function loadAudit(): Promise<AuditEvent[]> { return readList<AuditEvent>(AUDIT_KEY, SEED_AUDIT); }
-
-// ---------------------------------------------------------------------------
-// System — company config + backups + alerts
-// ---------------------------------------------------------------------------
 
 export interface Company {
   legalName: string;

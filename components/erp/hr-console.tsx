@@ -2,15 +2,33 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import {
-  UserRound, Plus, Search, X, Edit2, Trash2, MapPin, Phone, Mail,
-  Calendar, ClipboardCheck, ClipboardList, TrendingUp, AlertTriangle,
-  CheckCircle2, XCircle,
+  UserRound,
+  Plus,
+  Search,
+  X,
+  Edit2,
+  Trash2,
+  Calendar,
+  ClipboardCheck,
+  TrendingUp,
+  AlertTriangle,
+  CheckCircle2,
+  XCircle,
 } from 'lucide-react';
 import {
-  loadEmployees, saveEmployee, deleteEmployee, SEED_EMPLOYEES,
-  loadAttendance, SEED_ATTENDANCE,
-  loadLeaves, saveLeave, SEED_LEAVES,
-  type Employee, type EmployeeType, type LeaveApplication, type LeaveStatus,
+  loadEmployees,
+  saveEmployee,
+  deleteEmployee,
+  SEED_EMPLOYEES,
+  loadAttendance,
+  SEED_ATTENDANCE,
+  loadLeaves,
+  saveLeave,
+  SEED_LEAVES,
+  type Employee,
+  type EmployeeType,
+  type LeaveApplication,
+  type LeaveStatus,
   type AttendanceRow,
 } from '@/lib/erp/phase5';
 import { loadBranches, SEED_BRANCHES, type Branch } from '@/lib/erp/foundations';
@@ -100,8 +118,6 @@ export function HRConsole() {
     </div>
   );
 }
-
-// ============================================================================
 
 function EmployeesTab({ employees, branches, onSave, onDelete, hydrated }: {
   employees: Employee[];
@@ -278,8 +294,6 @@ function EmployeeModal({ row, branches, onClose, onSave }: { row: Employee | nul
   );
 }
 
-// ============================================================================
-
 function AttendanceTab({ attendance, employees }: { attendance: AttendanceRow[]; employees: Employee[] }) {
   const empById = useMemo(() => new Map(employees.map(e => [e.id, e])), [employees]);
   const totals = useMemo(() => ({
@@ -340,8 +354,6 @@ function AttendanceTab({ attendance, employees }: { attendance: AttendanceRow[];
     </>
   );
 }
-
-// ============================================================================
 
 function LeavesTab({ leaves, employees, onDecide }: {
   leaves: LeaveApplication[]; employees: Employee[];
@@ -426,8 +438,6 @@ function LeavesTab({ leaves, employees, onDecide }: {
     </div>
   );
 }
-
-// ============================================================================
 
 function PayrollTab({ employees, attendance }: { employees: Employee[]; attendance: AttendanceRow[] }) {
   const attById = useMemo(() => new Map(attendance.map(a => [a.employeeId, a])), [attendance]);

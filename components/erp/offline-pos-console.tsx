@@ -2,13 +2,30 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Wifi, WifiOff, Plus, Search, X, Laptop, Smartphone, Tablet, RefreshCw,
-  AlertTriangle, CheckCircle2, Copy, HardDrive, Clock,
+  Wifi,
+  Plus,
+  Search,
+  X,
+  Laptop,
+  Smartphone,
+  Tablet,
+  RefreshCw,
+  AlertTriangle,
+  CheckCircle2,
+  Copy,
+  HardDrive,
+  Clock,
 } from 'lucide-react';
 import {
-  loadDevices, saveDevice, deleteDevice, SEED_DEVICES,
-  loadOfflineTxns, saveOfflineTxn, SEED_OFFLINE_TXNS,
-  type OfflineDevice, type DeviceStatus, type OfflineTxn,
+  loadDevices,
+  saveDevice,
+  SEED_DEVICES,
+  loadOfflineTxns,
+  saveOfflineTxn,
+  SEED_OFFLINE_TXNS,
+  type OfflineDevice,
+  type DeviceStatus,
+  type OfflineTxn,
 } from '@/lib/erp/phase4';
 import { inr } from '@/lib/utils';
 import { KPI, Th, StatusPill } from './ui';

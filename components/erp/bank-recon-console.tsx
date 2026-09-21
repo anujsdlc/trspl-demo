@@ -3,13 +3,27 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
-  Landmark, ArrowLeft, Upload, CheckCircle2, X, Link2, AlertTriangle, Search,
-  RefreshCw, Wallet,
+  Landmark,
+  ArrowLeft,
+  Upload,
+  CheckCircle2,
+  X,
+  Link2,
+  AlertTriangle,
+  Search,
+  RefreshCw,
 } from 'lucide-react';
 import {
-  loadBankEntries, saveBankEntry, SEED_BANK_ENTRIES,
-  loadCoA, loadJVs, SEED_COA, SEED_JVS,
-  type BankEntry, type Ledger, type JournalEntry,
+  loadBankEntries,
+  saveBankEntry,
+  SEED_BANK_ENTRIES,
+  loadCoA,
+  loadJVs,
+  SEED_COA,
+  SEED_JVS,
+  type BankEntry,
+  type Ledger,
+  type JournalEntry,
 } from '@/lib/erp/phase3';
 import { inr } from '@/lib/utils';
 import { KPI, Th, StatusPill } from './ui';
@@ -60,7 +74,6 @@ export function BankReconConsole() {
   }, [bankEntries]);
 
   const bookBalance = useMemo(() => {
-    // sum of posted journal impact on this ledger
     let d = 0, c = 0;
     for (const j of journals) {
       if (j.status !== 'posted') continue;
@@ -76,7 +89,6 @@ export function BankReconConsole() {
   }, [bankId, journals, ledgers]);
 
   const bankBalance = useMemo(() => {
-    // Use latest balance in file
     const arr = bankEntries.slice().sort((a, b) => b.txnDate.localeCompare(a.txnDate));
     return arr[0]?.balance ?? 0;
   }, [bankEntries]);
@@ -84,8 +96,6 @@ export function BankReconConsole() {
   const diff = bankBalance - bookBalance;
 
   function autoMatchAll() {
-    // Naive auto-match: mark all currently-unmatched credits as matched to a
-    // pending JV in date-order. In production this would be rule-based.
     const next = entries.map(e => {
       if (e.bankLedgerId !== bankId) return e;
       if (e.matchStatus === 'matched') return e;

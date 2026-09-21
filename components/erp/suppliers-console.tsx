@@ -2,11 +2,22 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Truck, Plus, Search, X, Edit2, Trash2, Star, Phone, Mail, MapPin,
+  Truck,
+  Plus,
+  Search,
+  X,
+  Edit2,
+  Trash2,
+  Star,
+  MapPin,
 } from 'lucide-react';
 import {
-  loadSuppliers, saveSupplier, deleteSupplier, SEED_SUPPLIERS,
-  type Supplier, type SupplierType,
+  loadSuppliers,
+  saveSupplier,
+  deleteSupplier,
+  SEED_SUPPLIERS,
+  type Supplier,
+  type SupplierType,
 } from '@/lib/erp/phase2';
 import { inr } from '@/lib/utils';
 import { KPI, Th, Field, StatusPill } from './ui';

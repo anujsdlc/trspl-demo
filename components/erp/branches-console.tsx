@@ -2,11 +2,23 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Building2, Plus, Search, X, Edit2, Trash2, MapPin, Phone, Mail, User,
-  ArrowUpDown, CheckCircle2, XCircle,
+  Building2,
+  Plus,
+  Search,
+  X,
+  Edit2,
+  Trash2,
+  ArrowUpDown,
+  CheckCircle2,
+  XCircle,
 } from 'lucide-react';
 import {
-  loadBranches, saveBranch, deleteBranch, SEED_BRANCHES, type Branch, type BranchType,
+  loadBranches,
+  saveBranch,
+  deleteBranch,
+  SEED_BRANCHES,
+  type Branch,
+  type BranchType,
 } from '@/lib/erp/foundations';
 
 const TYPES: BranchType[] = ['HO', 'branch', 'sub-branch'];

@@ -3,33 +3,80 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import {
-  Building2, Warehouse, Landmark, BookOpenText, ShoppingCart, Receipt,
-  Users, Truck, BookMinus, FileText, Banknote, Tent, Wifi, HeartHandshake,
-  BarChart3, UserRound, FileInput, Lock, Settings2, ArrowRight, LayoutDashboard,
+  Building2,
+  Warehouse,
+  Landmark,
+  BookOpenText,
+  ShoppingCart,
+  Receipt,
+  Users,
+  Truck,
+  BookMinus,
+  FileText,
+  Banknote,
+  Tent,
+  Wifi,
+  HeartHandshake,
+  BarChart3,
+  UserRound,
+  FileInput,
+  Lock,
+  Settings2,
+  ArrowRight,
+  LayoutDashboard,
 } from 'lucide-react';
 import {
-  loadBranches, loadWarehouses, loadGST, loadBookMaster, ERP_MODULES,
-  SEED_BRANCHES, SEED_WAREHOUSES, SEED_GST, SEED_BOOK_MASTER,
+  loadBranches,
+  loadWarehouses,
+  loadGST,
+  loadBookMaster,
+  ERP_MODULES,
+  SEED_BRANCHES,
+  SEED_WAREHOUSES,
+  SEED_GST,
+  SEED_BOOK_MASTER,
 } from '@/lib/erp/foundations';
 import {
-  loadSuppliers, loadCustomers, loadPOs, loadSOs,
-  SEED_SUPPLIERS, SEED_CUSTOMERS, SEED_POS, SEED_SOS,
+  loadSuppliers,
+  loadCustomers,
+  loadPOs,
+  loadSOs,
+  SEED_SUPPLIERS,
+  SEED_CUSTOMERS,
+  SEED_POS,
+  SEED_SOS,
 } from '@/lib/erp/phase2';
 import {
-  loadCoA, loadJVs, loadBankEntries, computeBalances, summariseByType,
-  SEED_COA, SEED_JVS, SEED_BANK_ENTRIES,
+  loadCoA,
+  loadJVs,
+  loadBankEntries,
+  computeBalances,
+  summariseByType,
+  SEED_COA,
+  SEED_JVS,
+  SEED_BANK_ENTRIES,
 } from '@/lib/erp/phase3';
 import {
-  loadExhibitions, loadDevices, loadLeads,
-  SEED_EXHIBITIONS, SEED_DEVICES, SEED_LEADS,
+  loadExhibitions,
+  loadDevices,
+  loadLeads,
+  SEED_EXHIBITIONS,
+  SEED_DEVICES,
+  SEED_LEADS,
 } from '@/lib/erp/phase4';
 import {
-  loadEmployees, loadAttendance, loadLeaves,
-  SEED_EMPLOYEES, SEED_ATTENDANCE, SEED_LEAVES,
+  loadEmployees,
+  loadLeaves,
+  SEED_EMPLOYEES,
+  SEED_LEAVES,
 } from '@/lib/erp/phase5';
 import {
-  loadMigrations, loadUsers, loadAlerts,
-  SEED_MIGRATIONS, SEED_USERS, SEED_ALERTS,
+  loadMigrations,
+  loadUsers,
+  loadAlerts,
+  SEED_MIGRATIONS,
+  SEED_USERS,
+  SEED_ALERTS,
 } from '@/lib/erp/phase6';
 
 const ICONS: Record<string, React.ElementType> = {
@@ -107,7 +154,6 @@ export function ERPDashboard() {
   const phase4 = ERP_MODULES.filter(m => m.phase === 4 && m.status === 'live');
   const phase5 = ERP_MODULES.filter(m => m.phase === 5 && m.status === 'live');
   const phase6 = ERP_MODULES.filter(m => m.phase === 6 && m.status === 'live');
-  const coming = ERP_MODULES.filter(m => m.status === 'coming-soon');
 
   return (
     <div className="px-6 py-6 max-w-[1600px]">
@@ -119,7 +165,6 @@ export function ERPDashboard() {
         </p>
       </div>
 
-      {/* Phase 1 — foundations */}
       <div className="mb-10">
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -159,7 +204,6 @@ export function ERPDashboard() {
         </div>
       </div>
 
-      {/* Phase 2 — Buy → Sell */}
       <div className="mb-10">
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -199,7 +243,6 @@ export function ERPDashboard() {
         </div>
       </div>
 
-      {/* Phase 3 — Finance */}
       <div className="mb-10">
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -237,7 +280,6 @@ export function ERPDashboard() {
         </div>
       </div>
 
-      {/* Phase 4 — Field Ops */}
       <div className="mb-10">
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -275,7 +317,6 @@ export function ERPDashboard() {
         </div>
       </div>
 
-      {/* Phase 5 — Insight */}
       <div className="mb-10">
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -311,7 +352,6 @@ export function ERPDashboard() {
         </div>
       </div>
 
-      {/* Phase 6 — Admin */}
       <div className="mb-10">
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -349,7 +389,6 @@ export function ERPDashboard() {
         </div>
       </div>
 
-      {/* All phases complete */}
       <div className="mb-4 p-6 bg-[color:var(--color-ink)] text-white rounded-xl flex items-center justify-between gap-4 flex-wrap">
         <div>
           <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-mustard)] flex items-center gap-2 mb-1">

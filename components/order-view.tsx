@@ -3,7 +3,13 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import {
-  CheckCircle2, Package, MapPin, Truck, ShoppingBag, Sparkles, ArrowRight, ArrowLeft,
+  CheckCircle2,
+  Package,
+  MapPin,
+  Truck,
+  Sparkles,
+  ArrowRight,
+  ArrowLeft,
 } from 'lucide-react';
 import { findOrder, type Order } from '@/lib/bag';
 import { SafeImage } from './safe-image';
@@ -36,7 +42,6 @@ export function OrderView({ id }: { id: string }) {
         <ArrowLeft className="w-3 h-3" /> Back to Relay
       </Link>
 
-      {/* Success hero */}
       <div className="text-center max-w-2xl mx-auto py-8">
         <div className="w-14 h-14 rounded-full bg-[color:var(--color-success)]/10 flex items-center justify-center mx-auto mb-4">
           <CheckCircle2 className="w-7 h-7 text-[color:var(--color-success)]" />
@@ -56,7 +61,6 @@ export function OrderView({ id }: { id: string }) {
 
       <div className="grid lg:grid-cols-[1fr_380px] gap-8 mt-8">
         <div className="space-y-6">
-          {/* Timeline */}
           <div className="bg-white rounded-xl border border-[color:var(--color-line)] p-6">
             <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)] mb-4">Status</div>
             <ol className="grid grid-cols-4 gap-2">
@@ -81,7 +85,6 @@ export function OrderView({ id }: { id: string }) {
             </div>
           </div>
 
-          {/* Items */}
           <div className="bg-white rounded-xl border border-[color:var(--color-line)] p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)]">{order.lines.length} item(s)</div>
@@ -104,7 +107,6 @@ export function OrderView({ id }: { id: string }) {
             </div>
           </div>
 
-          {/* Skyline earn */}
           <div className="bg-[color:var(--color-ink)] text-white rounded-xl p-6">
             <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-white/60 mb-2">
               <Sparkles className="w-3 h-3 text-[color:var(--color-crimson-soft)]" /> Skyline Programme
@@ -117,7 +119,6 @@ export function OrderView({ id }: { id: string }) {
           </div>
         </div>
 
-        {/* Summary */}
         <aside className="space-y-6">
           <div className="bg-white rounded-xl border border-[color:var(--color-line)] p-5">
             <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)] mb-3">Payment</div>

@@ -3,10 +3,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ALL_PRODUCTS, MANGA, FICTION, PRODUCTS_BY_BRAND, type Product } from '@/lib/products';
+import { ALL_PRODUCTS, FICTION, type Product } from '@/lib/products';
 import { loadClientCatalog } from '@/lib/catalog.client';
 import { BRAND_META } from '@/lib/stores';
-import { Search, X, ArrowUpRight, Sparkles, Flame } from 'lucide-react';
+import { X, ArrowUpRight, Sparkles, Flame } from 'lucide-react';
 import { inr } from '@/lib/utils';
 
 const TRENDING = [
@@ -65,15 +65,12 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
 
   if (!open) return null;
 
-  // Prefer live-catalog fiction picks so admin-added books can surface here;
-  // fall back to the seed-derived FICTION shelf while the fetch is pending.
   const featured = (catalog.filter(p => p.category === 'fiction' && p.featured).slice(0, 4).length >= 4
     ? catalog.filter(p => p.category === 'fiction' && p.featured).slice(0, 4)
     : FICTION.slice(0, 4));
 
   return (
     <div className="fixed inset-0 z-[60] bg-[color:var(--color-cream)] overflow-hidden flex flex-col animate-in fade-in duration-200">
-      {/* Top bar */}
       <div className="border-b border-[color:var(--color-line)]">
         <div className="container-editorial flex items-center justify-between h-14">
           <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-[color:var(--color-ink-muted)]">
@@ -90,7 +87,6 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
         </div>
       </div>
 
-      {/* Massive input */}
       <div className="container-editorial pt-10 md:pt-16 pb-6">
         <div className="relative">
           <input
@@ -109,18 +105,15 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
             </button>
           )}
         </div>
-        {/* Cursor underline */}
         <div className="mt-2 h-1 w-full bg-[color:var(--color-ink)] relative overflow-hidden rounded-full">
           <div className="absolute inset-y-0 left-0 w-1/3 bg-[color:var(--color-crimson)] sync-slide" />
         </div>
       </div>
 
-      {/* Body */}
       <div className="flex-1 overflow-y-auto pb-16">
         <div className="container-editorial">
           {!q.trim() ? (
             <div className="grid md:grid-cols-[1fr_1fr] gap-12 md:gap-20 pt-6">
-              {/* Trending */}
               <div>
                 <div className="text-[10px] uppercase tracking-[0.3em] text-[color:var(--color-ink-muted)] mb-6 flex items-center gap-2">
                   <Flame className="w-3.5 h-3.5 text-[color:var(--color-crimson)]" />
@@ -146,7 +139,6 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
                 </div>
               </div>
 
-              {/* Moods + featured */}
               <div>
                 <div className="text-[10px] uppercase tracking-[0.3em] text-[color:var(--color-ink-muted)] mb-6">
                   Shop by mood
@@ -259,7 +251,6 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
         </div>
       </div>
 
-      {/* Bottom hint */}
       <div className="border-t border-[color:var(--color-line)] bg-white">
         <div className="container-editorial h-11 flex items-center justify-between text-[10px] font-mono uppercase tracking-widest text-[color:var(--color-ink-muted)]">
           <div className="flex items-center gap-4">

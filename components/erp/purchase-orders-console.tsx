@@ -2,14 +2,26 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import {
-  ShoppingCart, Plus, Search, X, ArrowRight, PackageCheck, PackageX,
-  ClipboardCheck, ClipboardList, FileText, Truck, Package, CheckCircle2,
-  AlertTriangle,
+  ShoppingCart,
+  Plus,
+  Search,
+  X,
+  ArrowRight,
+  PackageCheck,
+  ClipboardCheck,
+  ClipboardList,
+  FileText,
+  CheckCircle2,
 } from 'lucide-react';
 import {
-  loadPOs, savePO, deletePO, SEED_POS,
-  loadSuppliers, SEED_SUPPLIERS,
-  type PurchaseOrder, type POStatus, type Supplier,
+  loadPOs,
+  savePO,
+  SEED_POS,
+  loadSuppliers,
+  SEED_SUPPLIERS,
+  type PurchaseOrder,
+  type POStatus,
+  type Supplier,
 } from '@/lib/erp/phase2';
 import { inr } from '@/lib/utils';
 import { KPI, Th, StatusPill } from './ui';
@@ -275,7 +287,6 @@ function PODrawer({ po, suppliers, onClose, onAdvance }: { po: PurchaseOrder; su
             </div>
           </div>
 
-          {/* Actions */}
           <div className="bg-white rounded-lg border border-[color:var(--color-line)] p-4">
             <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)] mb-3">Advance the PO</div>
             <div className="grid grid-cols-3 gap-2 text-sm">

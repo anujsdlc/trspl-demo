@@ -4,11 +4,15 @@ import { FavouritesProvider } from '@/components/favourites';
 import { StoreNav, StoreFooter } from '@/components/store-nav';
 import { ProductActions } from '@/components/product-actions';
 import { UploadedProductFallback } from '@/components/uploaded-product-fallback';
-import { getProduct, ALL_PRODUCTS, stockFor, totalStock } from '@/lib/products';
+import { ALL_PRODUCTS, stockFor } from '@/lib/products';
+import { getServerCatalog, getServerProduct } from '@/lib/catalog.server';
 import { STORES, BOOK_STORES, BRAND_META } from '@/lib/stores';
 import { CATEGORY_MULTIPLIER, TIERS } from '@/lib/loyalty';
 import { inr } from '@/lib/utils';
 import { ChevronLeft, ChevronRight, MapPin, Sparkles, Truck, ShieldCheck, Package, RefreshCw } from 'lucide-react';
+
+// KV-backed catalog is dynamic; give the detail page the same fresh read.
+export const dynamic = 'force-dynamic';
 
 export function generateStaticParams() {
   return ALL_PRODUCTS.slice(0, 20).map(p => ({ id: p.id }));
@@ -16,7 +20,7 @@ export function generateStaticParams() {
 
 export default async function ProductPage({ params }: PageProps<'/product/[id]'>) {
   const { id } = await params;
-  const product = getProduct(id);
+  const product = await getServerProduct(id);
   if (!product) {
     // Might be a product added via the bulk-upload wizard — persisted in
     // localStorage. Hand off to a client fallback that checks there.
@@ -42,7 +46,8 @@ export default async function ProductPage({ params }: PageProps<'/product/[id]'>
   const basePoints = Math.floor((product.price / 100) * baseTier.earn * catMult);
   const platinumPoints = Math.floor((product.price / 100) * platinumTier.earn * catMult);
 
-  const related = ALL_PRODUCTS.filter(p => p.category === product.category && p.id !== product.id).slice(0, 8);
+  const fullCatalog = await getServerCatalog();
+  const related = fullCatalog.filter(p => p.category === product.category && p.id !== product.id).slice(0, 8);
 
   return (
     <FavouritesProvider>

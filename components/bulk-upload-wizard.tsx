@@ -89,7 +89,7 @@ export function BulkUploadWizard() {
 
     // Persist based on the current mode.
     if (mode === 'products') {
-      addUploadedProducts(commitableRows.map(r => rowToProduct(r.raw, images[r.raw.sku?.toUpperCase()])));
+      await addUploadedProducts(commitableRows.map(r => rowToProduct(r.raw, images[r.raw.sku?.toUpperCase()])));
     } else if (mode === 'stock') {
       saveStockAdjustments(commitableRows.map(r => rowToStockAdjustment(r.raw)));
     } else if (mode === 'price') {

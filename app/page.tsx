@@ -4,11 +4,13 @@ import { StoreNav, StoreFooter } from '@/components/store-nav';
 import { LoyaltyCardPreview } from '@/components/loyalty-card';
 import { SafeImage } from '@/components/safe-image';
 import { ProductShelf, TerminalPickShelf, CategoryTileRow } from '@/components/product-shelf';
-import {
-  FEATURED, MANGA, FICTION, NONFIC, PRODUCTS_BY_BRAND, PRODUCTS_BY_CATEGORY,
-  ALL_PRODUCTS, type Product,
-} from '@/lib/products';
+import { type Product } from '@/lib/products';
+import { getServerCatalog } from '@/lib/catalog.server';
 import { BRAND_META, type StoreBrand } from '@/lib/stores';
+
+// Read the merged storefront catalog fresh on every request so ERP/admin
+// additions surface immediately.
+export const dynamic = 'force-dynamic';
 import {
   ChocoBayMark, PashmaMark, MotechMark, MishtaMark, SmilenMark, GladysMark,
 } from '@/components/brand-marks';
@@ -18,41 +20,49 @@ import {
   Smartphone, ShoppingBag, Zap, Gift, BookOpen,
 } from 'lucide-react';
 
-export default function HomePage() {
+export default async function HomePage() {
+  // Pull the live catalog: bundled seed + admin bulk uploads + ERP book master.
+  const catalog = await getServerCatalog();
+
+  const featured = catalog.filter(p => p.featured);
+  const byCategory = groupBy(catalog, p => p.category);
+  const byBrand = groupBy(catalog, p => p.brand);
+
   // === Hero anchor ===
-  const heroFeature = FEATURED[0];
+  const heroFeature = featured[0] ?? catalog[0];
 
   // === Merchandising slices ===
-  const bogo = ALL_PRODUCTS.filter(p => p.bogo);
+  const bogo = catalog.filter(p => p.bogo);
+  const fictionShelf = byCategory.get('fiction') ?? [];
   const newArrivals = [
-    ...ALL_PRODUCTS.filter(p => p.newArrival),
-    ...FICTION.slice(0, 6),
+    ...catalog.filter(p => p.newArrival),
+    ...fictionShelf.slice(0, 6),
   ].slice(0, 10);
-  const relayPicks = ALL_PRODUCTS.filter(p => p.relayPick).slice(0, 10);
+  const relayPicks = catalog.filter(p => p.relayPick).slice(0, 10);
   const bestsellers = [
-    ...FICTION.filter(p => p.featured),
-    ...ALL_PRODUCTS.filter(p => p.bestseller),
+    ...fictionShelf.filter(p => p.featured),
+    ...catalog.filter(p => p.bestseller),
   ].slice(0, 10);
 
-  const snacks = PRODUCTS_BY_CATEGORY.snacks;
-  const drinks = PRODUCTS_BY_CATEGORY.drinks;
-  const travelEssentials = PRODUCTS_BY_CATEGORY.travel;
-  const wellness = PRODUCTS_BY_CATEGORY['personal-care'];
-  const magazines = PRODUCTS_BY_CATEGORY.magazines;
+  const snacks = byCategory.get('snacks') ?? [];
+  const drinks = byCategory.get('drinks') ?? [];
+  const travelEssentials = byCategory.get('travel') ?? [];
+  const wellness = byCategory.get('personal-care') ?? [];
+  const magazines = byCategory.get('magazines') ?? [];
 
   // Tech from Relay (chargers, cables, power banks, earphones) + Motech premium
   const techShelf = [
-    ...PRODUCTS_BY_BRAND.RLY.filter(p => p.category === 'tech'),
-    ...PRODUCTS_BY_BRAND.MTC.slice(0, 4),
+    ...(byBrand.get('RLY') ?? []).filter(p => p.category === 'tech'),
+    ...(byBrand.get('MTC') ?? []).slice(0, 4),
   ];
 
   // Gifting = Choco Bay + Mishta + Relay gifts + Smilen + Gladys
   const gifting = [
-    ...PRODUCTS_BY_BRAND.CB.slice(0, 4),
-    ...PRODUCTS_BY_BRAND.MSH.slice(0, 3),
-    ...PRODUCTS_BY_BRAND.SML.slice(0, 2),
-    ...PRODUCTS_BY_BRAND.GLD.slice(0, 1),
-    ...PRODUCTS_BY_CATEGORY.gifts.filter(p => p.brand === 'RLY'),
+    ...(byBrand.get('CB') ?? []).slice(0, 4),
+    ...(byBrand.get('MSH') ?? []).slice(0, 3),
+    ...(byBrand.get('SML') ?? []).slice(0, 2),
+    ...(byBrand.get('GLD') ?? []).slice(0, 1),
+    ...(byCategory.get('gifts') ?? []).filter(p => p.brand === 'RLY'),
   ];
 
   // Terminal picks — hardcoded to a signature store; a real app would infer
@@ -64,13 +74,13 @@ export default function HomePage() {
     ...techShelf.slice(0, 1),
   ];
 
-  const chocolates = PRODUCTS_BY_BRAND.CB.slice(0, 4);
-  const tech = PRODUCTS_BY_BRAND.MTC.slice(0, 4);
-  const luxury = PRODUCTS_BY_BRAND.PSH.slice(0, 3);
-  const relayBooks = PRODUCTS_BY_BRAND.RLY.slice(0, 4);
-  const mishta = PRODUCTS_BY_BRAND.MSH.slice(0, 3);
-  const smilen = PRODUCTS_BY_BRAND.SML.slice(0, 3);
-  const gladys = PRODUCTS_BY_BRAND.GLD.slice(0, 3);
+  const chocolates = (byBrand.get('CB') ?? []).slice(0, 4);
+  const tech = (byBrand.get('MTC') ?? []).slice(0, 4);
+  const luxury = (byBrand.get('PSH') ?? []).slice(0, 3);
+  const relayBooks = (byBrand.get('RLY') ?? []).slice(0, 4);
+  const mishta = (byBrand.get('MSH') ?? []).slice(0, 3);
+  const smilen = (byBrand.get('SML') ?? []).slice(0, 3);
+  const gladys = (byBrand.get('GLD') ?? []).slice(0, 3);
 
   const departmentTiles = [
     { label: 'Snacks',    href: '/browse?cat=snacks',        image: 'https://images.unsplash.com/photo-1613919113640-25732ec5e61f?w=400&q=80' },
@@ -167,7 +177,7 @@ export default function HomePage() {
         title="Relay Recommends."
         subtitle="Hand-picked by our store teams — the small joys that make every transit better."
         href="/browse?sort=featured"
-        products={relayPicks.length > 3 ? relayPicks : FEATURED}
+        products={relayPicks.length > 3 ? relayPicks : featured}
         Icon={Sparkles}
       />
 
@@ -348,6 +358,17 @@ export default function HomePage() {
       <StoreFooter />
     </FavouritesProvider>
   );
+}
+
+function groupBy<T, K>(arr: T[], keyFn: (t: T) => K): Map<K, T[]> {
+  const map = new Map<K, T[]>();
+  for (const item of arr) {
+    const k = keyFn(item);
+    const bucket = map.get(k) ?? [];
+    bucket.push(item);
+    map.set(k, bucket);
+  }
+  return map;
 }
 
 function ShelfHeader({ kicker, title, href }: { kicker: string; title: string; href: string }) {

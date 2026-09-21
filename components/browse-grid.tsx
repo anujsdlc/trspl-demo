@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { ALL_PRODUCTS, type Category, type Product } from '@/lib/products';
-import { loadUploadedProducts } from '@/lib/inventory-store';
+import { loadClientCatalog } from '@/lib/catalog.client';
 import { BRAND_META, type StoreBrand } from '@/lib/stores';
 import { BookCard } from './book-card';
 import { Filter, X, SlidersHorizontal } from 'lucide-react';
@@ -48,11 +48,9 @@ export function BrowseGrid({ initialCat, initialBrand }: { initialCat: string; i
   const [inStock, setInStock] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // Include products added via bulk upload alongside the seed catalog.
-  const [uploaded, setUploaded] = useState<Product[]>([]);
-  useEffect(() => { setUploaded(loadUploadedProducts()); }, []);
-
-  const catalog = useMemo(() => [...uploaded, ...ALL_PRODUCTS], [uploaded]);
+  // Full merged catalog: bulk-uploaded + ERP book master + bundled seed.
+  const [catalog, setCatalog] = useState<Product[]>(ALL_PRODUCTS);
+  useEffect(() => { loadClientCatalog().then(setCatalog); }, []);
 
   const filtered = useMemo(() => {
     let arr = [...catalog];

@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { loadBag, saveBag, type BagItem } from '@/lib/bag';
 import { ALL_PRODUCTS, type Product } from '@/lib/products';
-import { loadUploadedProducts } from '@/lib/inventory-store';
+import { loadClientCatalog } from '@/lib/catalog.client';
 
 interface BagCtx {
   items: BagItem[];
@@ -22,12 +22,12 @@ const BagContext = createContext<BagCtx | null>(null);
 
 export function BagProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<BagItem[]>([]);
-  const [uploaded, setUploaded] = useState<Product[]>([]);
+  const [catalog, setCatalog] = useState<Product[]>(ALL_PRODUCTS);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     setItems(loadBag());
-    setUploaded(loadUploadedProducts());
+    loadClientCatalog().then(setCatalog);
     setHydrated(true);
     const onChange = () => setItems(loadBag());
     window.addEventListener('trs:bag-changed', onChange);
@@ -39,8 +39,8 @@ export function BagProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const productsById = useMemo(
-    () => new Map<string, Product>([...ALL_PRODUCTS, ...uploaded].map(p => [p.id, p])),
-    [uploaded]
+    () => new Map<string, Product>(catalog.map(p => [p.id, p])),
+    [catalog]
   );
 
   const persist = useCallback((next: BagItem[]) => {

@@ -1,23 +1,64 @@
 // Local persistence for bulk-upload commits.
-// Products / stock adjustments / price changes / transfers all live in
-// localStorage under their own keys so admin actions survive reloads and
-// show up in the Inventory Console.
+//
+// Products live in Vercel KV so the storefront (server + client) can render
+// them. Stock adjustments, price changes, and transfers remain in
+// localStorage since they're admin audit logs, not shopper-facing.
 
 import type { Product, Category } from './products';
 import type { StoreBrand } from './stores';
+import { UPLOADED_PRODUCTS_KEY } from './catalog';
 
 // ---------------------------------------------------------------------------
-// New products added via the bulk-upload wizard
+// Uploaded products — persisted server-side via /api/erp/[key]
 // ---------------------------------------------------------------------------
 
-const PRODUCTS_KEY = 'trs.inventory.products.v1';
+function isBrowser() { return typeof window !== 'undefined'; }
+
+async function fetchUploaded(): Promise<Product[]> {
+  if (!isBrowser()) return [];
+  try {
+    const res = await fetch(`/api/erp/${encodeURIComponent(UPLOADED_PRODUCTS_KEY)}`, { cache: 'no-store' });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data.rows) ? (data.rows as Product[]) : [];
+  } catch { return []; }
+}
+
+async function writeUploaded(rows: Product[]): Promise<void> {
+  if (!isBrowser()) return;
+  try {
+    await fetch(`/api/erp/${encodeURIComponent(UPLOADED_PRODUCTS_KEY)}`, {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ rows }),
+    });
+  } catch {}
+}
+
+export async function loadUploadedProducts(): Promise<Product[]> {
+  return fetchUploaded();
+}
+
+export async function addUploadedProducts(products: Product[]): Promise<void> {
+  const existing = await fetchUploaded();
+  const existingSkus = new Set(existing.map(p => p.sku));
+  const fresh = products.filter(p => !existingSkus.has(p.sku));
+  await writeUploaded([...fresh, ...existing]);
+}
+
+export async function clearUploadedProducts(): Promise<void> {
+  await writeUploaded([]);
+}
+
+// ---------------------------------------------------------------------------
+// Adjustments — stock, price, transfer — logged in localStorage
+// ---------------------------------------------------------------------------
+
 const STOCK_KEY = 'trs.inventory.stock.v1';
 const PRICE_KEY = 'trs.inventory.prices.v1';
 const TRANSFER_KEY = 'trs.inventory.transfers.v1';
 
-function isBrowser() { return typeof window !== 'undefined'; }
-
-function read<T>(key: string): T[] {
+function readLocal<T>(key: string): T[] {
   if (!isBrowser()) return [];
   try {
     const raw = localStorage.getItem(key);
@@ -25,25 +66,10 @@ function read<T>(key: string): T[] {
   } catch { return []; }
 }
 
-function write<T>(key: string, rows: T[]) {
+function writeLocal<T>(key: string, rows: T[]) {
   if (!isBrowser()) return;
   localStorage.setItem(key, JSON.stringify(rows));
 }
-
-export function loadUploadedProducts(): Product[] { return read<Product>(PRODUCTS_KEY); }
-
-export function addUploadedProducts(products: Product[]) {
-  const existing = loadUploadedProducts();
-  const existingSkus = new Set(existing.map(p => p.sku));
-  const fresh = products.filter(p => !existingSkus.has(p.sku));
-  write(PRODUCTS_KEY, [...fresh, ...existing]);
-}
-
-export function clearUploadedProducts() { write(PRODUCTS_KEY, []); }
-
-// ---------------------------------------------------------------------------
-// Adjustments — stock, price, transfer — logged as audit entries
-// ---------------------------------------------------------------------------
 
 export interface StockAdjustment {
   sku: string;
@@ -76,19 +102,19 @@ export interface TransferRecord {
 }
 
 export function saveStockAdjustments(items: StockAdjustment[]) {
-  write(STOCK_KEY, [...items, ...read<StockAdjustment>(STOCK_KEY)]);
+  writeLocal(STOCK_KEY, [...items, ...readLocal<StockAdjustment>(STOCK_KEY)]);
 }
-export function loadStockAdjustments(): StockAdjustment[] { return read<StockAdjustment>(STOCK_KEY); }
+export function loadStockAdjustments(): StockAdjustment[] { return readLocal<StockAdjustment>(STOCK_KEY); }
 
 export function savePriceChanges(items: PriceChange[]) {
-  write(PRICE_KEY, [...items, ...read<PriceChange>(PRICE_KEY)]);
+  writeLocal(PRICE_KEY, [...items, ...readLocal<PriceChange>(PRICE_KEY)]);
 }
-export function loadPriceChanges(): PriceChange[] { return read<PriceChange>(PRICE_KEY); }
+export function loadPriceChanges(): PriceChange[] { return readLocal<PriceChange>(PRICE_KEY); }
 
 export function saveTransfers(items: TransferRecord[]) {
-  write(TRANSFER_KEY, [...items, ...read<TransferRecord>(TRANSFER_KEY)]);
+  writeLocal(TRANSFER_KEY, [...items, ...readLocal<TransferRecord>(TRANSFER_KEY)]);
 }
-export function loadTransfers(): TransferRecord[] { return read<TransferRecord>(TRANSFER_KEY); }
+export function loadTransfers(): TransferRecord[] { return readLocal<TransferRecord>(TRANSFER_KEY); }
 
 // ---------------------------------------------------------------------------
 // CSV row → domain type converters used by the bulk-upload commit path.

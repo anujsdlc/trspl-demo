@@ -8,6 +8,7 @@ import { STORES, BRAND_META, type StoreBrand } from '@/lib/stores';
 import { inr } from '@/lib/utils';
 import {
   loadUploadedProducts, loadStockAdjustments, loadPriceChanges,
+  type StockAdjustment, type PriceChange,
 } from '@/lib/inventory-store';
 import {
   Search, Download, Upload, Filter, ArrowUpDown, AlertTriangle,
@@ -42,10 +43,10 @@ interface EnrichedProduct extends Product {
 export function InventoryConsole() {
   // Load bulk-uploaded products + adjustments from localStorage on mount.
   const [uploadedProducts, setUploadedProducts] = useState<Product[]>([]);
-  const [stockAdjustments, setStockAdjustments] = useState<ReturnType<typeof loadStockAdjustments>>([]);
-  const [priceChanges, setPriceChanges] = useState<ReturnType<typeof loadPriceChanges>>([]);
+  const [stockAdjustments, setStockAdjustments] = useState<StockAdjustment[]>([]);
+  const [priceChanges, setPriceChanges] = useState<PriceChange[]>([]);
   useEffect(() => {
-    setUploadedProducts(loadUploadedProducts());
+    loadUploadedProducts().then(setUploadedProducts);
     setStockAdjustments(loadStockAdjustments());
     setPriceChanges(loadPriceChanges());
   }, []);

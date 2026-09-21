@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ALL_PRODUCTS, MANGA, FICTION, PRODUCTS_BY_BRAND, type Product } from '@/lib/products';
-import { loadUploadedProducts } from '@/lib/inventory-store';
+import { loadClientCatalog } from '@/lib/catalog.client';
 import { BRAND_META } from '@/lib/stores';
 import { Search, X, ArrowUpRight, Sparkles, Flame } from 'lucide-react';
 import { inr } from '@/lib/utils';
@@ -32,10 +32,10 @@ const MOODS = [
 
 export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [q, setQ] = useState('');
-  const [uploaded, setUploaded] = useState<Product[]>([]);
+  const [catalog, setCatalog] = useState<Product[]>(ALL_PRODUCTS);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { setUploaded(loadUploadedProducts()); }, []);
+  useEffect(() => { loadClientCatalog().then(setCatalog); }, []);
 
   useEffect(() => {
     if (open) {
@@ -53,7 +53,7 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
   const results = useMemo(() => {
     if (!q.trim()) return [];
     const query = q.toLowerCase().trim();
-    return [...uploaded, ...ALL_PRODUCTS]
+    return catalog
       .filter(p =>
         p.title.toLowerCase().includes(query) ||
         p.sku.toLowerCase().includes(query) ||
@@ -61,7 +61,7 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
         p.tags.some(t => t.toLowerCase().includes(query))
       )
       .slice(0, 8);
-  }, [q, uploaded]);
+  }, [q, catalog]);
 
   if (!open) return null;
 

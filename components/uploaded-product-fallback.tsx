@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { ArrowLeft, MapPin, ShieldCheck, Truck, Package } from 'lucide-react';
 import { SafeImage } from './safe-image';
 import { ProductActions } from './product-actions';
-import { loadUploadedProducts } from '@/lib/inventory-store';
+import { loadClientCatalog } from '@/lib/catalog.client';
 import { STORES, BRAND_META } from '@/lib/stores';
 import { CATEGORY_MULTIPLIER, TIERS } from '@/lib/loyalty';
 import { inr } from '@/lib/utils';
@@ -20,8 +20,9 @@ import type { Product } from '@/lib/products';
 export function UploadedProductFallback({ id }: { id: string }) {
   const [product, setProduct] = useState<Product | null | undefined>(undefined);
   useEffect(() => {
-    const uploaded = loadUploadedProducts();
-    setProduct(uploaded.find(p => p.id === id) ?? null);
+    loadClientCatalog().then(catalog => {
+      setProduct(catalog.find(p => p.id === id) ?? null);
+    });
   }, [id]);
 
   if (product === undefined) {

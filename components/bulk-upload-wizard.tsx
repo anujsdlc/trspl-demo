@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useMemo, useCallback, useRef } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { ALL_PRODUCTS } from '@/lib/products';
+import { ALL_PRODUCTS, type Product } from '@/lib/products';
+import { loadClientCatalog } from '@/lib/catalog.client';
 import { STORES, BRAND_META } from '@/lib/stores';
 import {
   parseCSV, toCSV, downloadCSV, validate, BULK_MODES, type BulkMode, type ValidatedRow,
@@ -44,7 +45,11 @@ export function BulkUploadWizard() {
   const [images, setImages] = useState<Record<string, string>>({});
   const [processingImages, setProcessingImages] = useState(false);
 
-  const validSKUs = useMemo(() => new Set(ALL_PRODUCTS.map(p => p.sku)), []);
+  // Merge seed + admin-added products so the CSV validator recognises SKUs
+  // that were added in earlier upload sessions or through the ERP.
+  const [liveCatalog, setLiveCatalog] = useState<Product[]>(ALL_PRODUCTS);
+  useEffect(() => { loadClientCatalog().then(setLiveCatalog); }, []);
+  const validSKUs = useMemo(() => new Set(liveCatalog.map(p => p.sku)), [liveCatalog]);
   const validStores = useMemo(() => new Set([...STORES.map(s => s.code), ...STORES.map(s => s.id)]), []);
   const validBrands = useMemo(() => Object.keys(BRAND_META), []);
 

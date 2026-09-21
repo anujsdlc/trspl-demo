@@ -1,12 +1,15 @@
 import { FavouritesProvider } from '@/components/favourites';
 import { StoreNav, StoreFooter } from '@/components/store-nav';
 import { BrowseGrid } from '@/components/browse-grid';
-import { ALL_PRODUCTS } from '@/lib/products';
+import { getServerCatalog } from '@/lib/catalog.server';
+
+export const dynamic = 'force-dynamic';
 
 export default async function BrowsePage({ searchParams }: PageProps<'/browse'>) {
   const params = await searchParams;
   const initialCat = (params.cat as string) || 'all';
   const initialBrand = (params.brand as string) || 'all';
+  const catalog = await getServerCatalog();
 
   return (
     <FavouritesProvider>
@@ -18,7 +21,7 @@ export default async function BrowsePage({ searchParams }: PageProps<'/browse'>)
             The whole shelf. <span className="italic">Filtered.</span>
           </h1>
           <p className="mt-6 text-[color:var(--color-ink-muted)] max-w-xl">
-            {ALL_PRODUCTS.length.toLocaleString()} products across 7 sub-brands. Live inventory across 51 stores.
+            {catalog.length.toLocaleString()} products across 7 sub-brands. Live inventory across 51 stores.
           </p>
         </div>
         <BrowseGrid initialCat={initialCat} initialBrand={initialBrand} />

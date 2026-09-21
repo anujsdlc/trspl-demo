@@ -91,7 +91,7 @@ export function BrowseGrid({ initialCat, initialBrand }: { initialCat: string; i
         )}
         <FacetGroup title="Category">
           {CATEGORIES.map(c => (
-            <FacetRow key={c.key} active={cat === c.key} onClick={() => setCat(c.key)} count={c.key === 'all' ? ALL_PRODUCTS.length : facetCategoryCounts.get(c.key)}>
+            <FacetRow key={c.key} active={cat === c.key} onClick={() => setCat(c.key)} count={c.key === 'all' ? catalog.length : facetCategoryCounts.get(c.key)}>
               {c.label}
             </FacetRow>
           ))}
@@ -99,7 +99,7 @@ export function BrowseGrid({ initialCat, initialBrand }: { initialCat: string; i
 
         <FacetGroup title="Brand">
           {BRANDS.map(b => (
-            <FacetRow key={b.key} active={brand === b.key} onClick={() => setBrand(b.key)} count={b.key === 'all' ? ALL_PRODUCTS.length : facetBrandCounts.get(b.key)}>
+            <FacetRow key={b.key} active={brand === b.key} onClick={() => setBrand(b.key)} count={b.key === 'all' ? catalog.length : facetBrandCounts.get(b.key)}>
               <span className="flex items-center gap-2">
                 {b.color && <span className="w-2 h-2 rounded-full" style={{ background: b.color }} />}
                 {b.label}

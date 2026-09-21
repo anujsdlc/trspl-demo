@@ -65,7 +65,11 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
 
   if (!open) return null;
 
-  const featured = FICTION.slice(0, 4);
+  // Prefer live-catalog fiction picks so admin-added books can surface here;
+  // fall back to the seed-derived FICTION shelf while the fetch is pending.
+  const featured = (catalog.filter(p => p.category === 'fiction' && p.featured).slice(0, 4).length >= 4
+    ? catalog.filter(p => p.category === 'fiction' && p.featured).slice(0, 4)
+    : FICTION.slice(0, 4));
 
   return (
     <div className="fixed inset-0 z-[60] bg-[color:var(--color-cream)] overflow-hidden flex flex-col animate-in fade-in duration-200">
@@ -74,7 +78,7 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
         <div className="container-editorial flex items-center justify-between h-14">
           <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-[color:var(--color-ink-muted)]">
             <Sparkles className="w-3 h-3 text-[color:var(--color-crimson)]" />
-            Instant search across {ALL_PRODUCTS.length.toLocaleString()} products · 51 stores
+            Instant search across {catalog.length.toLocaleString()} products · 51 stores
           </div>
           <button
             onClick={onClose}

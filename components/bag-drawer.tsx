@@ -1,5 +1,6 @@
 'use client';
 
+import { DEMO_MEMBER, pointsForBasket, tierFor } from '@/lib/loyalty';
 import Link from 'next/link';
 import { X, Minus, Plus, Trash2, ShoppingBag, ArrowRight, Sparkles } from 'lucide-react';
 import { useBag } from './bag-provider';
@@ -22,7 +23,14 @@ export function BagDrawer({ open, onClose }: BagDrawerProps) {
   const delivery = subtotal >= FREE_DELIVERY_THRESHOLD || subtotal === 0 ? 0 : DELIVERY_FEE;
   const total = subtotal + delivery;
   const toFreeDelivery = Math.max(0, FREE_DELIVERY_THRESHOLD - subtotal);
-  const pointsEarned = Math.floor(subtotal * 0.05);
+  const tier = tierFor(DEMO_MEMBER.ytdSpend);
+  const pointsEarned = pointsForBasket(
+    items.map(i => {
+      const product = productFor(i.productId);
+      return { amount: (product?.price ?? 0) * i.qty, category: product?.category };
+    }),
+    tier,
+  );
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex justify-end animate-fade-in" onClick={onClose}>

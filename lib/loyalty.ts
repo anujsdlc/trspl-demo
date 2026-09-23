@@ -126,6 +126,21 @@ export const REDEMPTION = {
   capPerOrder: 0.20,    // max 20% of order value can be paid with points
 };
 
+export interface BasketLine {
+  amount: number;
+  category?: string;
+}
+
+export function pointsForBasket(lines: BasketLine[], tier: Tier): number {
+  const subtotal = lines.reduce((sum, l) => sum + l.amount, 0);
+  const earned = lines.reduce((sum, l) => {
+    const mult = l.category ? CATEGORY_MULTIPLIER[l.category]?.mult ?? 1 : 1;
+    return sum + (l.amount / 100) * tier.earn * mult;
+  }, 0);
+  const volume = [...VOLUME_TIERS].reverse().find(v => subtotal >= v.min) ?? VOLUME_TIERS[0];
+  return Math.floor(earned * volume.bonus);
+}
+
 export function tierFor(annualSpend: number): Tier {
   return [...TIERS].reverse().find(t => annualSpend >= t.threshold) ?? TIERS[0];
 }
@@ -143,9 +158,9 @@ export function calculatePoints(opts: {
   const { amount, category, tier } = opts;
   const base = Math.floor((amount / 100) * tier.earn);
   const catMult = category ? (CATEGORY_MULTIPLIER[category]?.mult ?? 1) : 1;
-  const multiplied = Math.floor(base * catMult);
+  const multiplied = Math.floor((amount / 100) * tier.earn * catMult);
   const vol = [...VOLUME_TIERS].reverse().find(v => amount >= v.min)!;
-  const total = Math.floor(multiplied * vol.bonus);
+  const total = pointsForBasket([{ amount, category }], tier);
   return {
     base,
     multiplied,

@@ -6,6 +6,7 @@ import { CheckoutView } from '@/components/checkout-view';
 import { BagProvider } from '@/components/bag-provider';
 import { ALL_PRODUCTS } from '@/lib/products';
 import { loadOrders, saveBag } from '@/lib/bag';
+import { DEMO_MEMBER, pointsForBasket, tierFor } from '@/lib/loyalty';
 import { fieldFor } from '../helpers';
 
 const CHEAP = ALL_PRODUCTS.find(p => p.price <= 200) ?? ALL_PRODUCTS[0];
@@ -48,13 +49,16 @@ describe('CheckoutView — empty state', () => {
 });
 
 describe('CheckoutView — summary math', () => {
-  it('picks free delivery for pickup and computes points at 5%', async () => {
+  it('picks free delivery for pickup and earns at the shopper tier', async () => {
     seedBag([{ productId: EXPENSIVE.id, qty: 1 }]);
     renderCheckout();
 
     await screen.findByRole('button', { name: /place order/i });
     expect(screen.getAllByText(/^free$/i).length).toBeGreaterThan(0);
-    const expectedPoints = Math.floor(EXPENSIVE.price * 0.05);
+    const expectedPoints = pointsForBasket(
+      [{ amount: EXPENSIVE.price, category: EXPENSIVE.category }],
+      tierFor(DEMO_MEMBER.ytdSpend),
+    );
     expect(
       screen.getByText(new RegExp(`\\+${expectedPoints.toLocaleString('en-IN')} pts`))
     ).toBeInTheDocument();

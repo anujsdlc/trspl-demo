@@ -1,5 +1,6 @@
 import { ALL_PRODUCTS, stockFor, type Product } from './products';
 import { BASE_MEMBERS } from './members';
+import { TIERS, pointsForBasket, tierFor } from './loyalty';
 import { STORES, type Store } from './stores';
 import { gstRateFor } from './gst-rates';
 import { computeOrderTax } from './order-tax';
@@ -99,6 +100,7 @@ export function generateSeed({
 }: SeedOptions): SeedResult {
   const rand = mulberry32(seed);
   const shoppers = buildShoppers(rand, 160);
+  const tierByEmail = new Map(BASE_MEMBERS.map(m => [m.email.toLowerCase(), tierFor(m.ytdSpend)]));
 
   const byBrand = new Map<string, Product[]>();
   for (const p of ALL_PRODUCTS) {
@@ -211,7 +213,10 @@ export function generateSeed({
         delivery_fee: deliveryFee,
         discount: 0,
         total: subtotal + deliveryFee,
-        pointsEarned: Math.floor(subtotal * 0.05),
+        pointsEarned: pointsForBasket(
+          lines.map(l => ({ amount: l.lineTotal, category: categoryFor(l.productId) })),
+          tierByEmail.get(shopper.email.toLowerCase()) ?? TIERS[0],
+        ),
         status,
       };
 

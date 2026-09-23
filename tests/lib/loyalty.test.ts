@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  TIERS, tierFor, nextTier, calculatePoints, REDEMPTION, CATEGORY_MULTIPLIER,
+  TIERS, tierFor, nextTier, calculatePoints, pointsForBasket, REDEMPTION, CATEGORY_MULTIPLIER,
 } from '@/lib/loyalty';
 
 describe('tierFor', () => {
@@ -79,6 +79,34 @@ describe('calculatePoints', () => {
     expect(r.breakdown.join(' | ')).toContain('pts per ₹100');
     expect(r.breakdown.some(x => x.includes('2×'))).toBe(true);
     expect(r.breakdown.some(x => x.includes('Volume'))).toBe(true);
+  });
+});
+
+describe('pointsForBasket', () => {
+  it('matches calculatePoints when the basket holds one category', () => {
+    for (const tier of TIERS) {
+      for (const [amount, category] of [[399, 'fiction'], [12999, 'cashmere'], [2499, 'tech']] as [number, string][]) {
+        expect(pointsForBasket([{ amount, category }], tier)).toBe(calculatePoints({ amount, category, tier }).total);
+      }
+    }
+  });
+
+  it('earns each line at its own category multiplier', () => {
+    const tier = TIERS[0];
+    const mixed = pointsForBasket([{ amount: 1000, category: 'fiction' }, { amount: 1000, category: 'cashmere' }], tier);
+    const flat = pointsForBasket([{ amount: 2000, category: 'fiction' }], tier);
+    expect(mixed).toBeGreaterThan(flat);
+  });
+
+  it('applies the volume bonus to the basket total, not to each line', () => {
+    const tier = TIERS[0];
+    const split = pointsForBasket([{ amount: 3000, category: 'stationery' }, { amount: 3000, category: 'stationery' }], tier);
+    expect(split).toBe(pointsForBasket([{ amount: 6000, category: 'stationery' }], tier));
+  });
+
+  it('rewards a higher tier for the same basket', () => {
+    const lines = [{ amount: 5000, category: 'fiction' }];
+    expect(pointsForBasket(lines, TIERS[3])).toBeGreaterThan(pointsForBasket(lines, TIERS[0]));
   });
 });
 

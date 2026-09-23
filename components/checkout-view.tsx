@@ -25,6 +25,7 @@ import { gstRateFor } from '@/lib/gst-rates';
 import { loadGST, SEED_GST, type GSTRegistration } from '@/lib/erp/foundations';
 import { STORES } from '@/lib/stores';
 import { inr } from '@/lib/utils';
+import { DEMO_MEMBER, pointsForBasket, tierFor } from '@/lib/loyalty';
 
 const RELAY_STORES = STORES.filter(s => s.brand === 'RLY').slice(0, 12);
 const FREE_DELIVERY_THRESHOLD = 599;
@@ -52,7 +53,14 @@ export function CheckoutView() {
 
   const delivery = method === 'pickup' ? 0 : subtotal >= FREE_DELIVERY_THRESHOLD ? 0 : DELIVERY_FEE;
   const total = subtotal + delivery;
-  const pointsEarned = Math.floor(subtotal * 0.05);
+  const tier = tierFor(DEMO_MEMBER.ytdSpend);
+  const pointsEarned = pointsForBasket(
+    items.map(i => {
+      const product = productFor(i.productId);
+      return { amount: (product?.price ?? 0) * i.qty, category: product?.category };
+    }),
+    tier,
+  );
 
   if (items.length === 0) {
     return (

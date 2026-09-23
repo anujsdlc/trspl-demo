@@ -1,4 +1,5 @@
 import { ALL_PRODUCTS, stockFor, type Product } from './products';
+import { BASE_MEMBERS } from './members';
 import { STORES, type Store } from './stores';
 import { gstRateFor } from './gst-rates';
 import { computeOrderTax } from './order-tax';
@@ -51,6 +52,12 @@ interface Shopper {
 function buildShoppers(rand: () => number, count: number): Shopper[] {
   const people: Shopper[] = [];
   const seen = new Set<string>();
+  for (const m of BASE_MEMBERS.slice(0, Math.floor(count * 0.75))) {
+    const email = m.email.toLowerCase();
+    if (seen.has(email)) continue;
+    seen.add(email);
+    people.push({ name: m.name, email, phone: m.phone });
+  }
   while (people.length < count) {
     const first = FIRST[Math.floor(rand() * FIRST.length)];
     const last = LAST[Math.floor(rand() * LAST.length)];
@@ -91,7 +98,7 @@ export function generateSeed({
   seed = 20260921,
 }: SeedOptions): SeedResult {
   const rand = mulberry32(seed);
-  const shoppers = buildShoppers(rand, 80);
+  const shoppers = buildShoppers(rand, 160);
 
   const byBrand = new Map<string, Product[]>();
   for (const p of ALL_PRODUCTS) {

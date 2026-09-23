@@ -41,6 +41,7 @@ import {
   type Member,
 } from '@/lib/members';
 import { inr } from '@/lib/utils';
+import { ORDERS_STORE_KEY, type Order } from '@/lib/bag';
 
 type SortKey = 'name' | 'tier' | 'points' | 'ytdSpend' | 'joinDate' | 'lastVisit';
 type SortDir = 'asc' | 'desc';
@@ -56,16 +57,22 @@ export function LoyaltyMembersConsole() {
   const [members, setMembers] = useState<Member[]>(BASE_MEMBERS);
   const [hydrated, setHydrated] = useState(false);
 
+  const [orders, setOrders] = useState<Order[]>([]);
+
   useEffect(() => {
     setMembers(loadMembers());
     setHydrated(true);
+    fetch(`/api/erp/${encodeURIComponent(ORDERS_STORE_KEY)}`, { cache: 'no-store' })
+      .then(r => (r.ok ? r.json() : { rows: [] }))
+      .then(d => setOrders(Array.isArray(d.rows) ? (d.rows as Order[]) : []))
+      .catch(() => {});
   }, []);
 
   function refresh() {
     setMembers(loadMembers());
   }
 
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(useSearchParams().get('q') ?? '');
   const [tierFilter, setTierFilter] = useState<TierKey | 'all'>('all');
   const [sortKey, setSortKey] = useState<SortKey>('ytdSpend');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
@@ -345,6 +352,7 @@ export function LoyaltyMembersConsole() {
       {activeMember && (
         <MemberDetailDrawer
           member={activeMember}
+          orders={orders}
           onClose={() => setActiveMemberId(null)}
           onUpdate={handleUpdate}
           onDelete={handleDelete}
@@ -553,8 +561,9 @@ function Label({ children }: { children: React.ReactNode }) {
   return <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)] mb-1.5">{children}</div>;
 }
 
-function MemberDetailDrawer({ member, onClose, onUpdate, onDelete }: {
+function MemberDetailDrawer({ member, orders, onClose, onUpdate, onDelete }: {
   member: Member;
+  orders: Order[];
   onClose: () => void;
   onUpdate: (id: string, patch: Partial<Member>) => void;
   onDelete: (id: string) => void;
@@ -669,7 +678,7 @@ function MemberDetailDrawer({ member, onClose, onUpdate, onDelete }: {
 
           <div className="bg-white rounded-lg border border-[color:var(--color-line)] p-5">
             <div className="text-[10px] uppercase tracking-widest text-[color:var(--color-ink-muted)] mb-3">Recent activity</div>
-            <ActivityFeed member={member} />
+            <ActivityFeed member={member} orders={orders} />
           </div>
 
           <button className="w-full h-10 bg-[color:var(--color-ink)] text-[color:var(--color-cream)] rounded-md text-xs font-medium hover:bg-[color:var(--color-crimson)] inline-flex items-center justify-center gap-2">
@@ -769,28 +778,44 @@ function AdjustPointsPanel({ member, mode, onCancel, onApply }: {
   );
 }
 
-function ActivityFeed({ member }: { member: Member }) {
-  const seed = member.id.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
-  const rng = () => { const t = Math.sin(seed) * 10000; return t - Math.floor(t); };
-  const items = [
-    { when: '2 hrs ago', title: `Earned +${Math.floor(rng() * 300 + 50)} pts`, sub: `${member.favouriteStore || 'DEL T3-Intl'} · order #TRS-${Math.floor(rng() * 9000 + 1000)}`, tag: 'earn' },
-    { when: 'Yesterday', title: 'Boarding-pass linked bonus', sub: member.boardingPassPnr ? `PNR ${member.boardingPassPnr}` : 'Auto-detected at gate', tag: 'bonus' },
-    { when: '3 days ago', title: 'Redeemed 400 pts', sub: '₹200 off · Choco Bay Ferrero box', tag: 'redeem' },
-    { when: '2 weeks ago', title: 'Tier evaluation', sub: `Held ${member.tier} status`, tag: 'tier' },
-    { when: 'Member since', title: member.joinDate, sub: 'Sign-up welcome +250 pts', tag: 'join' },
-  ];
+function ActivityFeed({ member, orders }: { member: Member; orders: Order[] }) {
+  const mine = useMemo(
+    () => orders
+      .filter(o => o.customer.email.toLowerCase() === member.email.toLowerCase())
+      .sort((a, b) => b.placedAt.localeCompare(a.placedAt))
+      .slice(0, 5),
+    [orders, member.email],
+  );
+
   return (
     <div className="space-y-2 text-xs">
-      {items.map((a, i) => (
-        <div key={i} className="flex items-center gap-3 py-1.5 border-b border-[color:var(--color-line)] last:border-0">
-          <div className="text-[9px] font-mono uppercase tracking-widest w-16 text-[color:var(--color-ink-muted)]">{a.tag}</div>
+      {mine.map(o => (
+        <div key={o.id} className="flex items-center gap-3 py-1.5 border-b border-[color:var(--color-line)] last:border-0">
+          <div className="text-[9px] font-mono uppercase tracking-widest w-16 text-[color:var(--color-ink-muted)]">earn</div>
           <div className="flex-1">
-            <div>{a.title}</div>
-            <div className="text-[color:var(--color-ink-muted)] text-[11px]">{a.sub}</div>
+            <div>Earned +{o.pointsEarned.toLocaleString('en-IN')} pts · {inr(o.total)}</div>
+            <div className="text-[color:var(--color-ink-muted)] text-[11px]">
+              {o.delivery.method === 'pickup' ? o.delivery.storeCode : o.delivery.city} · {o.id} · {o.status}
+            </div>
           </div>
-          <div className="text-[10px] font-mono text-[color:var(--color-ink-faint)]">{a.when}</div>
+          <div className="text-[10px] font-mono text-[color:var(--color-ink-faint)]">
+            {new Date(o.placedAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+          </div>
         </div>
       ))}
+      {mine.length === 0 && (
+        <div className="py-2 text-[color:var(--color-ink-muted)]">
+          No orders have been placed against this member yet.
+        </div>
+      )}
+      <div className="flex items-center gap-3 py-1.5">
+        <div className="text-[9px] font-mono uppercase tracking-widest w-16 text-[color:var(--color-ink-muted)]">join</div>
+        <div className="flex-1">
+          <div>Joined the programme</div>
+          <div className="text-[color:var(--color-ink-muted)] text-[11px]">{member.favouriteStore}</div>
+        </div>
+        <div className="text-[10px] font-mono text-[color:var(--color-ink-faint)]">{member.joinDate}</div>
+      </div>
     </div>
   );
 }

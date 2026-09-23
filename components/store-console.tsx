@@ -1,5 +1,6 @@
 'use client';
 
+import { useSearchParams } from 'next/navigation';
 import { useState, useMemo, useEffect } from 'react';
 import { STORES, BRAND_META, type Store, type StoreBrand } from '@/lib/stores';
 import { PRODUCTS_BY_BRAND } from '@/lib/products';
@@ -18,7 +19,7 @@ function projectCoord([lat, lng]: [number, number], w: number, h: number) {
 }
 
 export function StoreConsole() {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(useSearchParams().get('q') ?? '');
   const [brandFilter, setBrandFilter] = useState<StoreBrand | 'all'>('all');
   const [selectedStore, setSelectedStore] = useState<Store | null>(STORES[0]);
 

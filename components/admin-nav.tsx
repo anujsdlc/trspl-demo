@@ -1,11 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { STORES } from '@/lib/stores';
+import { AdminSearch } from './admin-search';
 import { ORDERS_STORE_KEY, type Order } from '@/lib/bag';
-import { LayoutDashboard, Package, MapPin, Award, ShoppingCart, TrendingUp, Users, Settings, Search, Bell, Command, Building2, Landmark, Receipt } from 'lucide-react';
+import { LayoutDashboard, Package, MapPin, Award, ShoppingCart, TrendingUp, Users, Settings, Search, Bell, Command, Building2, Landmark, Receipt, LogOut } from 'lucide-react';
 
 const NAV = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
@@ -22,6 +23,28 @@ const NAV = [
 
 export function AdminNav() {
   const path = usePathname();
+  const router = useRouter();
+
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  const signOut = () => {
+    try {
+      localStorage.removeItem('trs.admin.auth');
+    } catch {}
+    document.cookie = 'trs_admin=; path=/; max-age=0';
+    router.replace('/admin/login');
+  };
 
   const [openOrders, setOpenOrders] = useState<number | null>(null);
   useEffect(() => {
@@ -71,13 +94,24 @@ export function AdminNav() {
             );
           })}
         </nav>
-        <div className="hidden md:flex items-center gap-1 h-9 px-3 border border-[color:var(--color-line)] rounded-md text-xs text-[color:var(--color-ink-muted)] bg-[color:var(--color-paper)]">
+        <button
+          onClick={() => setSearchOpen(true)}
+          aria-label="Search the console"
+          className="hidden md:flex items-center gap-1 h-9 px-3 border border-[color:var(--color-line)] rounded-md text-xs text-[color:var(--color-ink-muted)] bg-[color:var(--color-paper)] hover:border-[color:var(--color-line-strong)] hover:text-[color:var(--color-ink)] transition"
+        >
           <Search className="w-3 h-3" />
           <span>Search SKU, order, member…</span>
           <span className="ml-2 flex items-center gap-0.5 font-mono">
             <Command className="w-2.5 h-2.5" />K
           </span>
-        </div>
+        </button>
+        <button
+          onClick={() => setSearchOpen(true)}
+          aria-label="Search the console"
+          className="md:hidden p-2 hover:bg-[color:var(--color-paper)] rounded-md"
+        >
+          <Search className="w-4 h-4" />
+        </button>
         <button className="relative p-2 hover:bg-[color:var(--color-paper)] rounded-md" aria-label="Notifications">
           <Bell className="w-4 h-4" />
           <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-[color:var(--color-crimson)] rounded-full" />
@@ -91,8 +125,18 @@ export function AdminNav() {
             <div className="font-medium leading-tight">Dhananjay S.</div>
             <div className="text-[10px] text-[color:var(--color-ink-muted)]">COO · TRS HO</div>
           </div>
+          <button
+            onClick={signOut}
+            title="Sign out"
+            aria-label="Sign out"
+            className="p-2 ml-1 rounded-md hover:bg-[color:var(--color-paper)] text-[color:var(--color-ink-muted)] hover:text-[color:var(--color-crimson)] transition"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
       </div>
+
+      <AdminSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
     </div>
   );
 }

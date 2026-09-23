@@ -3,8 +3,11 @@ import { STORES } from './stores';
 
 const STORE_IDS = new Set(STORES.map(s => s.id));
 
+const IMPORTED_PRODUCT = /^(up|tally)-/;
+
 export function openingBalance(productId: string, locationId: string): number {
-  return STORE_IDS.has(locationId) ? stockFor(productId, locationId) : 0;
+  if (!STORE_IDS.has(locationId) || IMPORTED_PRODUCT.test(productId)) return 0;
+  return stockFor(productId, locationId);
 }
 
 export const STOCK_MOVES_KEY = 'trs.stock.moves.v1';

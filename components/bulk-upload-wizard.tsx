@@ -66,6 +66,7 @@ export function BulkUploadWizard() {
   const [committing, setCommitting] = useState(false);
   const [committed, setCommitted] = useState(false);
   const [commitError, setCommitError] = useState<string | null>(null);
+  const [commitNote, setCommitNote] = useState('');
   const [progress, setProgress] = useState(0);
   const [filter, setFilter] = useState<'all' | 'ok' | 'warning' | 'error'>('all');
   const [isDragging, setIsDragging] = useState(false);
@@ -133,16 +134,32 @@ export function BulkUploadWizard() {
     const commitableRows = validated.filter(v => v.status !== 'error');
     const commitable = commitableRows.length;
 
+    const ref = `BLK-${Date.now().toString(36).toUpperCase()}`;
+
     try {
       if (mode === 'products') {
-        await addUploadedProducts(commitableRows.map(r => rowToProduct(r.raw, images[r.raw.sku?.toUpperCase()])));
+        const products = commitableRows.map(r => rowToProduct(r.raw, images[r.raw.sku?.toUpperCase()]));
+        await addUploadedProducts(products);
+        const opening = commitableRows.flatMap((r, i) => openingStockMoves(r.raw, products[i], ref));
+        if (opening.length > 0) await appendMoves(opening);
+        setCommitNote(
+          `${plural(products.length, 'product')} added to the catalogue` +
+          (opening.length > 0
+            ? `, and ${plural(opening.length, 'opening stock receipt')} posted to the ledger under ${ref}.`
+            : ', with no opening stock.'),
+        );
       } else if (mode === 'stock') {
         const index = deltaIndex(await loadMoves());
-        await appendMoves(commitableRows.flatMap(r => stockRowToMoves(r.raw, liveCatalog, index)));
+        const moves = commitableRows.flatMap(r => stockRowToMoves(r.raw, liveCatalog, index));
+        await appendMoves(moves);
+        setCommitNote(`${plural(moves.length, 'stock move')} posted to the ledger.`);
       } else if (mode === 'price') {
         savePriceChanges(commitableRows.map(r => rowToPriceChange(r.raw)));
+        setCommitNote(`${plural(commitable, 'price change')} saved.`);
       } else if (mode === 'transfer') {
-        await appendMoves(commitableRows.flatMap(r => transferRowToMoves(r.raw, liveCatalog)));
+        const moves = commitableRows.flatMap(r => transferRowToMoves(r.raw, liveCatalog));
+        await appendMoves(moves);
+        setCommitNote(`${plural(moves.length / 2, 'transfer')} posted to the ledger under ${ref}.`);
       }
     } catch (err) {
       setCommitError(err instanceof Error ? err.message : 'The upload could not be saved.');
@@ -164,7 +181,7 @@ export function BulkUploadWizard() {
 
   const reset = () => {
     setMode(null); setStep('mode'); setRawText(''); setValidated([]);
-    setCommitted(false); setCommitError(null); setProgress(0); setFilter('all');
+    setCommitted(false); setCommitError(null); setCommitNote(''); setProgress(0); setFilter('all');
     setMapped({ columns: [], values: [] });
     setImages({});
   };
@@ -607,9 +624,7 @@ export function BulkUploadWizard() {
             <div className="mt-6 p-8 bg-[color:var(--color-success)]/10 border border-[color:var(--color-success)] rounded-xl text-center">
               <CheckCircle2 className="w-10 h-10 text-[color:var(--color-success)] mx-auto mb-3" />
               <div className="font-serif text-3xl">All {summary.ok + summary.warning} rows committed.</div>
-              <div className="mt-2 text-sm text-[color:var(--color-ink-soft)]">
-                Changes have been written to inventory across all affected stores. Audit trail entry #TRS-BLK-{Math.floor(Math.random() * 900 + 100)} created.
-              </div>
+              <div className="mt-2 text-sm text-[color:var(--color-ink-soft)]">{commitNote}</div>
               <div className="mt-6 flex items-center justify-center gap-3">
                 <button onClick={reset} className="h-10 px-4 border border-[color:var(--color-line)] rounded-md text-sm bg-white">Upload another file</button>
                 <Link href="/admin/inventory" className="h-10 px-4 bg-[color:var(--color-ink)] text-[color:var(--color-cream)] rounded-md text-sm inline-flex items-center gap-2">
@@ -715,6 +730,35 @@ async function downscaleToDataUrl(file: File, maxW: number, maxH: number, qualit
   if (!ctx) return dataUrl;
   ctx.drawImage(img, 0, 0, w, h);
   return canvas.toDataURL('image/jpeg', quality);
+}
+
+function plural(n: number, noun: string): string {
+  return `${n} ${noun}${n === 1 ? '' : 's'}`;
+}
+
+function openingStockMoves(row: Record<string, string>, product: Product, ref: string): StockMove[] {
+  if (!row.initial_stock_stores) return [];
+  const at = new Date().toISOString();
+  const moves: StockMove[] = [];
+  for (const chunk of row.initial_stock_stores.split(';')) {
+    const [code, raw] = chunk.split(':').map(part => part.trim());
+    const store = STORES.find(s => s.id === code || s.code === code);
+    const qty = Number(raw);
+    if (!store || !Number.isFinite(qty) || qty <= 0) continue;
+    moves.push({
+      id: newMoveId(),
+      at,
+      productId: product.id,
+      sku: product.sku,
+      storeId: store.id,
+      storeCode: store.code,
+      qty,
+      kind: 'receipt' as MoveKind,
+      reason: 'Opening stock',
+      ref,
+    });
+  }
+  return moves;
 }
 
 function stockRowToMoves(row: Record<string, string>, catalog: Product[], index: Map<string, number>): StockMove[] {

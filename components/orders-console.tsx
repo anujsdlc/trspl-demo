@@ -1,5 +1,6 @@
 'use client';
 
+import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { ORDERS_STORE_KEY, type Order } from '@/lib/bag';
 import {
@@ -68,7 +69,7 @@ export function OrdersConsole() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(useSearchParams().get('q') ?? '');
   const [status, setStatus] = useState<'all' | Order['status']>('all');
   const [open, setOpen] = useState<Order | null>(null);
   const [fetchedAt, setFetchedAt] = useState(0);

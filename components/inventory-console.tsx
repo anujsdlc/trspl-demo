@@ -1,5 +1,6 @@
 'use client';
 
+import { useSearchParams } from 'next/navigation';
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import NextLink from 'next/link';
@@ -135,7 +136,7 @@ export function InventoryConsole() {
     });
   }, [uploadedProducts, priceOverrides, stockIndex]);
 
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(useSearchParams().get('q') ?? '');
   const [brand, setBrand] = useState<StoreBrand | 'all'>('all');
   const [category, setCategory] = useState<string>('all');
   const [stockStatus, setStockStatus] = useState<StockStatus>('all');
@@ -147,6 +148,7 @@ export function InventoryConsole() {
   const [adjustModal, setAdjustModal] = useState<EnrichedProduct | null>(null);
   const [transferModal, setTransferModal] = useState<EnrichedProduct | null>(null);
   const [tab, setTab] = useState<'items' | 'batches' | 'audit' | 'transfers'>('items');
+  const [limit, setLimit] = useState(60);
 
   const filtered = useMemo(() => {
     let arr = [...enriched];
@@ -370,7 +372,7 @@ export function InventoryConsole() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.slice(0, 60).map(p => (
+                  {filtered.slice(0, limit).map(p => (
                     <Fragment key={p.id}>
                       <tr
                         className={`border-b border-[color:var(--color-line)] hover:bg-[color:var(--color-paper)]/30 transition ${selected.has(p.id) ? 'bg-[color:var(--color-crimson)]/5' : ''}`}
@@ -428,9 +430,12 @@ export function InventoryConsole() {
                 </tbody>
               </table>
             </div>
-            {filtered.length > 60 && (
+            {filtered.length > limit && (
               <div className="p-4 text-center text-xs text-[color:var(--color-ink-muted)] border-t border-[color:var(--color-line)]">
-                Showing 60 of {filtered.length.toLocaleString('en-IN')} · <button className="underline">Load more</button>
+                Showing {limit.toLocaleString('en-IN')} of {filtered.length.toLocaleString('en-IN')} ·{' '}
+                <button onClick={() => setLimit(n => n + 120)} className="underline hover:text-[color:var(--color-crimson)]">Load more</button>
+                {' · '}
+                <button onClick={() => setLimit(filtered.length)} className="underline hover:text-[color:var(--color-crimson)]">Show all</button>
               </div>
             )}
           </div>
@@ -442,7 +447,7 @@ export function InventoryConsole() {
       {tab === 'transfers' && <TransfersTab moves={moves} />}
     </div>
 
-    {drawerProduct && <ProductDrawer product={drawerProduct} onClose={() => setDrawerProduct(null)} />}
+    {drawerProduct && <ProductDrawer product={drawerProduct} moves={moves} onClose={() => setDrawerProduct(null)} />}
     {adjustModal && (
       <AdjustStockModal
         product={adjustModal}
@@ -542,7 +547,15 @@ function ExpandedStockDetail({ product }: { product: EnrichedProduct }) {
   );
 }
 
-function ProductDrawer({ product, onClose }: { product: EnrichedProduct; onClose: () => void }) {
+function ProductDrawer({ product, moves, onClose }: { product: EnrichedProduct; moves: StockMove[]; onClose: () => void }) {
+  const history = useMemo(
+    () => moves
+      .filter(m => m.productId === product.id)
+      .sort((a, b) => b.at.localeCompare(a.at))
+      .slice(0, 6),
+    [moves, product.id],
+  );
+
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex justify-end" onClick={onClose}>
       <div className="w-full max-w-2xl bg-[color:var(--color-cream)] h-full overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
@@ -615,19 +628,25 @@ function ProductDrawer({ product, onClose }: { product: EnrichedProduct; onClose
               <History className="w-3 h-3" /> Recent activity
             </div>
             <div className="space-y-2 text-xs">
-              {[
-                { t: '2 units sold', s: `at ${product.storeStock[0]?.storeCode}`, when: '4 min ago', tag: 'sale' },
-                { t: '1 unit reserved · Order #TRS-4820', s: `at ${product.storeStock[1]?.storeCode}`, when: '18 min ago', tag: 'reserve' },
-                { t: '12 units transferred', s: `${product.storeStock[2]?.storeCode} → ${product.storeStock[3]?.storeCode}`, when: '2h ago', tag: 'transfer' },
-                { t: 'Price updated · ₹899 → ₹849', s: 'by category manager', when: 'yesterday', tag: 'adjust' },
-                { t: 'Stock received · 40 units', s: `at ${product.storeStock[0]?.storeCode}`, when: '3d ago', tag: 'receipt' },
-              ].map((a, i) => (
-                <div key={i} className="flex items-center gap-3 py-1.5 border-b border-[color:var(--color-line)] last:border-0">
-                  <div className="text-[9px] font-mono uppercase tracking-widest w-16 text-[color:var(--color-ink-muted)]">{a.tag}</div>
-                  <div className="flex-1">{a.t} <span className="text-[color:var(--color-ink-muted)]">· {a.s}</span></div>
-                  <div className="text-[10px] font-mono text-[color:var(--color-ink-faint)]">{a.when}</div>
+              {history.map(m => (
+                <div key={m.id} className="flex items-center gap-3 py-1.5 border-b border-[color:var(--color-line)] last:border-0">
+                  <div className="text-[9px] font-mono uppercase tracking-widest w-16 text-[color:var(--color-ink-muted)]">{m.kind}</div>
+                  <div className="flex-1">
+                    {m.qty > 0 ? '+' : ''}{m.qty} {Math.abs(m.qty) === 1 ? 'unit' : 'units'}
+                    <span className="text-[color:var(--color-ink-muted)]">
+                      {' · '}at {m.storeCode}{m.reason ? ` · ${m.reason}` : ''}{m.ref ? ` · ${m.ref}` : ''}
+                    </span>
+                  </div>
+                  <div className="text-[10px] font-mono text-[color:var(--color-ink-faint)]">
+                    {new Date(m.at).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                  </div>
                 </div>
               ))}
+              {history.length === 0 && (
+                <div className="py-3 text-[color:var(--color-ink-muted)]">
+                  Nothing has moved yet. This product has no entries in the ledger.
+                </div>
+              )}
             </div>
           </div>
         </div>
